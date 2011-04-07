@@ -49,14 +49,15 @@ You can fire events at anytime:
 
 custom events
 -------------
-There are three custom events already provided for you, including mouseenter, mouseleave, and mousewheel.
-
 Custom events use Dean Edward's event model outlined (here)[http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/].
 
 You can you use them like you would any other events:
 
     evnt.add(el, 'partytime', handler);
-    evnt.fireEvent(el, 'partytime');
+    evnt.fire(el, 'partytime');
+
+
+There are three custom events already provided for you... these include mouseenter, mouseleave, and mousewheel.
 
 Browser Support
 ---------------
