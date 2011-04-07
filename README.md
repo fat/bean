@@ -17,6 +17,9 @@ Or you can pass entire objects:
       },
       mouseover: function (e) {
         // codez
+      },
+      'focus blur': function (e) {
+        // codez
       }
     });
 
