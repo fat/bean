@@ -23,6 +23,9 @@ Or you can pass entire objects:
       }
     });
 
+it even supports delegation:
+
+    evnt.add(element, '.myClass', handler, qwery)
 
 remove
 ------
