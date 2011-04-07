@@ -60,7 +60,6 @@
     }
   }
 
-
   function nativeHandler (element, fn) {
     return function(event){
       event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
