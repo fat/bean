@@ -3,6 +3,10 @@
 
   var _uid = 1,
       overOut = /over|out/;
+      addEvent = 'addEventListener',
+      attachEvent = 'attachEvent',
+      removeEvent = 'removeEventListener',
+      detachEvent = 'detachEvent';
 
   function isDescendant(parent, child) {
     var node = child.parentNode;
@@ -23,20 +27,14 @@
     return (handler._uid = handler._uid) || _uid++;
   }
 
-  function addNativeListener(element, type, fn) {
-    if (element.addEventListener) {
-      element.addEventListener(type, fn, false);
-    } else {
-      element.attachEvent('on' + type, fn);
+  function listener (element, type, fn, add, custom) {
+    if (element[addEvent]) { //w3c
+      return element[add ? addEvent : removeEvent](type, fn, false);
     }
-  }
-
-  function removeNativeListener(element, type, fn) {
-    if (element.removeEventListener) {
-      element.removeEventListener(type, fn, false);
-    } else {
-      element.detachEvent('on' + type, fn);
+    if (custom) {
+      element['_on' + custom] = element['_' + custom] || 0;
     }
+    element[add ? attachEvent : detachEvent]('on' + type, fn);
   }
 
   function fireNativeEvent(element, type) {
@@ -52,38 +50,7 @@
     }
   }
 
-  function nativeHandler(element, fn) {
-    return function (event) {
-      event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
-      if (fn.call(element, event) === false) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-    };
-  }
-
-  function addCustomListener(element, type, fn) {
-    if (element.addEventListener) {
-      element.addEventListener(type, fn, false);
-    } else {
-      element['_on' + type] = 0;
-      element.attachEvent("onpropertychange", function (event) {
-        if (event.propertyName == '_on' + type) {
-          fn.apply(element, arguments);
-        }
-      });
-    }
-  }
-
-  function removeCustomListener(element, type, fn) {
-    if (element.addEventListener) {
-      element.removeEventListener(type, fn, false);
-    } else {
-      element.detachEvent("onpropertychange", fn);
-    }
-  }
-
-  function fireCustomEvent(element, type) {
+  function fireCustomEvent (element, type) {
     if (element.addEventListener) {
       var customeEvent = document.createEvent("UIEvents");
       customeEvent.initEvent(type, false, false);
@@ -93,13 +60,26 @@
     }
   }
 
-  function customHandler(custom, fn) {
-    return function (event) {
-      if (custom.condition.call(this, event)) {
-        return fn.call(this, event);
+
+  function nativeHandler (element, fn) {
+    return function(event){
+      event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
+      if (fn.call(element, event) === false) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }
+    }
+  }
+
+  function customHandler (element, fn, type, condition) {
+    return function(event) {
+      if (condition ? condition.call(this, event) : event.propertyName == '_' + type) {
+        fn.call(element, event);
       }
       return true;
-    };
+    });
   }
 
   function addEvent(element, type, fn) {
@@ -113,35 +93,39 @@
     }
     var uid = retrieveUid(fn);
     if (handlers[uid]) {
-      return element;
+      return element; //don't add same handler twice
     }
     var custom = customEvents[type];
     if (custom) {
       if (custom.condition) {
-        fn = customHandler(custom, fn);
+        fn = customHandler(element, fn, type, custom.condition);
       }
       type = custom.base || type;
     }
-    if (nativeEvents.indexOf(type) != -1) {
+    if (nativeEvents.indexOf(type) != -1 || element[addEvent]) {
       fn = nativeHandler(element, fn);
-      addNativeListener(element, type, fn);
+      listener(element, type, fn, true);
     } else {
-      addCustomListener(element, type, fn);
+      element._customEvents = true;
+      fn = customHandler(element, fn, type);
+      listener(element, 'onpropertychange', fn, true, type);
     }
     handlers[uid] = fn;
     fn._uid = uid;
     return element;
   }
 
-  function addEvents(element, events, fn) {
+  function add(element, events, fn, $) {
     if (typeof events == 'object') {
       for (var type in events) {
         if (events.hasOwnProperty(type)) {
           addEvent(element, type, events[type]);
         }
       }
-    } else {
+    } else if (typeof fn == 'function') {
       addEvent(element, events, fn);
+    } else {
+      //delegation
     }
     return element;
   }
@@ -153,9 +137,9 @@
     }
     delete events[type][handler._uid];
     if (customEvents[type] && !nativeEvents[customEvents[type].base]) {
-      removeCustomListener(element, type, handler, arguments[3]);
+      removeCustomListener(element, type, handler)
     } else {
-      removeNativeListener(element, type, handler, arguments[3]);
+      listener(element, type, handler);
     }
     return element;
   }
@@ -292,7 +276,7 @@
   };
 
   var evnt = {
-    add: addEvents,
+    add: add,
     remove: removeEvents,
     clone: cloneEvents,
     fire: fireEvent

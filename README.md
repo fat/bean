@@ -1,6 +1,5 @@
 Bean - Just events.
 ------------------
-
 Bean is an event api. It's pretty awesome.
 
 add
