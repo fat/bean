@@ -1,7 +1,7 @@
 require('../support/smoosh').config({
   "JAVASCRIPT": {
     "DIST_DIR": "./",
-    "ender": [
+    "bean": [
       "./src/copyright.js",
       "./src/event.js"
     ]
