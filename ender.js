@@ -1,3 +1,9 @@
+/*!
+  * event.js - copyright @dedfat
+  * https://github.com/fat/bean
+  * Follow our software http://twitter.com/dedfat
+  * MIT License
+  */
 //smooshing mootools eventy stuff and dean edwards eventy stuff
 !function (context) {
 
