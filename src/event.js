@@ -19,6 +19,10 @@
     return false;
   }
 
+  function isElement(obj) {
+    return !!obj.nodeName;
+  }
+
   function retrieveEvents(element) {
     var uid = retrieveUid(element);
     return (registry[uid] = registry[uid] || {});
@@ -29,6 +33,9 @@
   }
 
   function listener(element, type, fn, add, custom) {
+    if (!isElement(element)) {
+      return; //don't add events to objects
+    }
     if (element[addEvent]) {
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
@@ -52,7 +59,7 @@
 
   function customHandler(element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.call(this, event) : event.propertyName == '_' + type) {
+      if (condition ? condition.call(this, event) : (event && event.propertyName == '_' + type) || 1) {
         fn.apply(element, [event].concat(args));
       }
       return true;
@@ -132,6 +139,13 @@
 
   function remove(element, events, fn) {
     var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
+    if (isString && /\s/.test(events)) {
+      var events = events.split(' ');
+      for (var i = events.length; i--;){
+        remove(element, events[i]);
+      }
+      return element;
+    }
     if (!attached || (isString && !attached[events])) {
       return element;
     }
@@ -155,24 +169,36 @@
   }
 
   function fire(element, type) {
-    var evt;
-    if (nativeEvents.indexOf(type) > -1) {
-      if (document.createEventObject) {
-        evt = document.createEventObject();
-        element.fireEvent('on' + type, evt);
+    var evt, k, i, types = type.split(' ');
+    for (i = types.length; i--;) {
+      type = types[i];
+      console.log(type);
+      if (!isElement(element)) {
+        var handlers = retrieveEvents(element)[type];
+        for (k in handlers) {
+          if (handlers.hasOwnProperty(k)) {
+            handlers[k]();
+          }
+        }
       }
-      else {
-        evt = document.createEvent("HTMLEvents");
-        evt.initEvent(type, true, true);
-        element.dispatchEvent(evt);
-      }
-    } else {
-      if (element[addEvent]) {
-        evt = document.createEvent("UIEvents");
-        evt.initUIEvent(type, true, true, window, 1);
-        element.dispatchEvent(evt);
+      if (nativeEvents.indexOf(type) > -1) {
+        if (document.createEventObject) {
+          evt = document.createEventObject();
+          element.fireEvent('on' + type, evt);
+        }
+        else {
+          evt = document.createEvent("HTMLEvents");
+          evt.initEvent(type, true, true);
+          element.dispatchEvent(evt);
+        }
       } else {
-        element['_on' + type]++;
+        if (element[addEvent]) {
+          evt = document.createEvent("UIEvents");
+          evt.initUIEvent(type, true, true, window, 1);
+          element.dispatchEvent(evt);
+        } else {
+          element['_on' + type]++;
+        }
       }
     }
     return element;

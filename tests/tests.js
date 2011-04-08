@@ -6,10 +6,20 @@ sink('add', function (test, ok) {
     ok(el == returned, 'element equals returned value')
   });
 
-  test('add: should be able to add single events', 1, function () {
+  test('add: should be able to add single events to elements', 1, function () {
     var el = document.createElement('input');
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
     Syn.click(el);
+  });
+
+  test('add: should be able to add single events to objects', 1, function () {
+    var obj = {};
+    evnt.add(obj, 'complete', function () {
+      ok(true, 'event was called');
+    });
+    evnt.fire(obj, 'complete');
+    evnt.remove(obj);
+    evnt.fire(obj, 'complete');
   });
 
   test('add: scope should be equal to element', 1, function () {
@@ -93,6 +103,13 @@ sink('add', function (test, ok) {
     var el = document.createElement('input');
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
     evnt.fire(el, 'click');
+  });
+
+  test('fire: should be able to fire multiple events by space seperation', 2, function () {
+    var el = document.createElement('input');
+    evnt.add(el, 'mousedown', function () {ok(true, 'event was called')});
+    evnt.add(el, 'mouseup', function () {ok(true, 'event was called')});
+    evnt.fire(el, 'mousedown mouseup');
   });
 
   test('custom: should be able to add single custom events', 1, function () {
@@ -186,6 +203,21 @@ sink('add', function (test, ok) {
       };
     evnt.add(el, 'click', handler1);
     evnt.add(el, 'click', handler2);
+    Syn.click(el);
+  });
+
+  test('remove: should be able to remove all events of a specific type', 2, function () {
+    var el = document.createElement('input'),
+      handler1 = function () {
+        ok(true, 'element has a class');
+      },
+      handler2 = function () {
+        ok(true, 'element has a class');
+        evnt.remove(el, 'mousedown mouseup');
+        Syn.click(el);
+      };
+    evnt.add(el, 'mousedown', handler1);
+    evnt.add(el, 'mouseup', handler2);
     Syn.click(el);
   });
 

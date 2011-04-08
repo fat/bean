@@ -28,7 +28,9 @@ Or you can pass entire objects:
 
 it even supports delegation:
 
-    evnt.add(element, '.myClass', handler, qwery)
+    evnt.add(element, '.myClass', handler, qwery);
+    //or
+    evnt.add(element, [el, el2, el3], handler, qwery);
 
 remove
 ------
@@ -39,6 +41,10 @@ You can remove single event handlers, like this:
 Or remove all click events for a particular element:
 
     evnt.remove(element, 'click');
+
+Or remove multiple event types at once like this:
+
+    evnt.remove(element, 'mousedown mouseup');
 
 Or remove all events for the entire element:
 
@@ -67,6 +73,14 @@ You can you use them like you would any other events:
 
 
 There are three custom events already provided for you... these include mouseenter, mouseleave, and mousewheel.
+
+object support
+--------------
+Everything you can do with an element, you can also do with an object! This is particularly useful for class stuff.
+
+    var klass = new Klass();
+    evnt.add(klass, 'complete', handler);
+
 
 Browser Support
 ---------------
