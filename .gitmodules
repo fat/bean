@@ -4,3 +4,6 @@
 [submodule "support/smoosh"]
 	path = support/smoosh
 	url = git://github.com/fat/smoosh.git
+[submodule "support/syn"]
+	path = support/syn
+	url = https://github.com/jupiterjs/syn.git

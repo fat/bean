@@ -6,7 +6,11 @@ add
 ---
 You can add events one at a time, like this:
 
-    evnt.add(element, 'click', handler});
+    evnt.add(element, 'click', handler);
+
+Or specify multiple types at once:
+
+    evnt.add(element, 'keydown keyup', handler);
 
 Or you can pass entire objects:
 

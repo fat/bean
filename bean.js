@@ -4,7 +4,7 @@
   * Follow our software http://twitter.com/dedfat
   * MIT License
   */
-//smooshing mootools eventy stuff and dean edwards eventy stuff
+//cheers to the entire mootools team, dean edwards, and dperini for lots of inspiration/guidance
 !function (context) {
 
   var _uid = 1,
@@ -34,7 +34,7 @@
   }
 
   function listener(element, type, fn, add, custom) {
-    if (element[addEvent]) { //w3c
+    if (element[addEvent]) {
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
     if (custom) {
@@ -43,10 +43,10 @@
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   }
 
-  function nativeHandler(element, fn) {
+  function nativeHandler(element, fn, args) {
     return function (event) {
       event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
-      if (fn.call(element, event) === false) {
+      if (fn.apply(element, [event].concat(args)) === false) {
         if (event) {
           event.preventDefault();
           event.stopPropagation();
@@ -55,16 +55,16 @@
     };
   }
 
-  function customHandler(element, fn, type, condition) {
+  function customHandler(element, fn, type, condition, args) {
     return function (event) {
       if (condition ? condition.call(this, event) : event.propertyName == '_' + type) {
-        fn.call(element, event);
+        fn.apply(element, [event].concat(args));
       }
       return true;
     };
   }
 
-  function addListener(element, type, fn) {
+  function addListener(element, type, fn, args) {
     var events = retrieveEvents(element),
         handlers = events[type];
     if (!handlers) {
@@ -75,7 +75,7 @@
     }
     var uid = retrieveUid(fn);
     if (handlers[uid]) {
-      return element; //don't add same handler twice
+      return element;
     }
     var custom = customEvents[type];
     if (custom) {
@@ -85,10 +85,10 @@
       type = custom.base || type;
     }
     if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
-      fn = nativeHandler(element, fn);
+      fn = nativeHandler(element, fn, args);
       listener(element, type, fn, true);
-    } else { //ie custom events
-      fn = customHandler(element, fn, type);
+    } else {
+      fn = customHandler(element, fn, type, false, args);
       listener(element, 'onpropertychange', fn, true, type);
     }
     handlers[uid] = fn;
@@ -120,7 +120,10 @@
         }
       }
     } else {
-      addListener(element, events, fn);
+      events = events.split(' ');
+      for (var i = events.length; i--;) {
+        addListener(element, events[i], fn, Array.prototype.slice.call(arguments, 3));
+      }
     }
     return element;
   }
@@ -150,7 +153,7 @@
     return element;
   }
 
-  function fire(element, type, args) {
+  function fire(element, type) {
     var evt;
     if (nativeEvents.indexOf(type) > -1) {
       if (document.createEventObject) {
@@ -174,19 +177,18 @@
   }
 
   function clone(element, from, type) {
-    var events = retrieveEvents(from), eventType, fat, k, obj;
+    var events = retrieveEvents(from), uid, obj, method, k;
     if (!events) {
       return element;
     }
     obj = type ? events[type] : events;
-    method = type ? add : function (e, k) {
-      clone(element, from, k);
-    };
+    method = type ? add : clone;
     for (k in obj) {
       if (obj.hasOwnProperty(k)) {
-        method(element, type || k, obj[k]);
+        method(element, type || from, type ? obj[k] : k);
       }
     }
+
     return element;
   }
 
@@ -248,17 +250,9 @@
   }
 
   var customEvents = {
-    mouseenter: {
-      base: 'mouseover',
-      condition: check
-    },
-    mouseleave: {
-      base: 'mouseout',
-      condition: check
-    },
-    mousewheel: {
-      base: (navigator.userAgent.indexOf("Firefox") != -1) ? 'DOMMouseScroll' : 'mousewheel'
-    }
+    mouseenter: { base: 'mouseover', condition: check },
+    mouseleave: { base: 'mouseout', condition: check },
+    mousewheel: { base: (navigator.userAgent.indexOf("Firefox") != -1) ? 'DOMMouseScroll' : 'mousewheel' }
   };
 
   var evnt = {
