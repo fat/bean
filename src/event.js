@@ -20,11 +20,11 @@
   }
 
   function retrieveEvents(element) {
-    return (element._events = element._events) || {};
+    return element._events = element._events || {};
   }
 
   function retrieveUid(handler) {
-    return (handler._uid = handler._uid) || _uid++;
+    return handler._uid = handler._uid || _uid++;
   }
 
   function listener (element, type, fn, add, custom) {
@@ -35,29 +35,6 @@
       element['_on' + custom] = element['_' + custom] || 0;
     }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
-  }
-
-  function fireNativeEvent(element, type) {
-    var evt;
-    if (document.createEventObject) {
-      evt = document.createEventObject();
-      return element.fireEvent('on' + type, evt);
-    }
-    else {
-      evt = document.createEvent("HTMLEvents");
-      evt.initEvent(type, true, true);
-      return !element.dispatchEvent(evt);
-    }
-  }
-
-  function fireCustomEvent (element, type) {
-    if (element.addEventListener) {
-      var customeEvent = document.createEvent("UIEvents");
-      customeEvent.initEvent(type, false, false);
-      element.dispatchEvent(fakeEvent);
-    } else {
-      element['_on' + type]++;
-    }
   }
 
   function nativeHandler (element, fn) {
@@ -78,10 +55,10 @@
         fn.call(element, event);
       }
       return true;
-    });
+    }
   }
 
-  function addEvent(element, type, fn) {
+  function addListener(element, type, fn) {
     var events = retrieveEvents(element),
         handlers = events[type];
     if (!handlers) {
@@ -101,11 +78,10 @@
       }
       type = custom.base || type;
     }
-    if (nativeEvents.indexOf(type) != -1 || element[addEvent]) {
+    if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
       fn = nativeHandler(element, fn);
       listener(element, type, fn, true);
-    } else {
-      element._customEvents = true;
+    } else { //ie custom events
       fn = customHandler(element, fn, type);
       listener(element, 'onpropertychange', fn, true, type);
     }
@@ -114,89 +90,93 @@
     return element;
   }
 
-  function add(element, events, fn, $) {
-    if (typeof events == 'object') {
-      for (var type in events) {
-        if (events.hasOwnProperty(type)) {
-          addEvent(element, type, events[type]);
-        }
-      }
-    } else if (typeof fn == 'function') {
-      addEvent(element, events, fn);
-    } else {
-      //delegation
-    }
-    return element;
-  }
-
-  function removeEvent(element, type, handler) {
+  function removeListener(element, type, handler) {
     var events = retrieveEvents(element);
     if (!events || !events[type]) {
       return element;
     }
+    handler = events[type][handler._uid];
     delete events[type][handler._uid];
-    if (customEvents[type] && !nativeEvents[customEvents[type].base]) {
-      removeCustomListener(element, type, handler)
+    type = customEvents[type] ? customEvents[type].base : type;
+    if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
+      listener(element, type, handler, false);
     } else {
-      listener(element, type, handler);
+      listener(element, 'onpropertychange', handler, false, type);
     }
     return element;
   }
 
-  function removeEvents(element, events, fn) {
-    var type, uid, attached, typeEvents, event;
+  function add(element, events, fn, $) {
     if (typeof events == 'object') {
-      for (event in events) {
-        if (events.hasOwnProperty(event)) {
-          removeEvent(element, event, events[event]);
+      for (var type in events) {
+        if (events.hasOwnProperty(type)) {
+          addListener(element, type, events[type]);
         }
       }
+    } else {
+      addListener(element, events, fn);
+    }
+    return element;
+  }
+
+  function remove(element, events, fn) {
+    var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
+    if (!attached || (isString && !attached[events])) {
       return element;
     }
-    attached = retrieveEvents(element);
-    if (!attached) {
-      return element;
+    if (typeof fn == 'function') {
+      rm(element, events, fn);
     }
-    if (!events) {
-      for (type in attached) {
-        removeEvents(element, type);
-      }
-      attached = null;
-    } else if (attached[events]) {
-      if (fn) {
-        removeEvent(element, events, fn);
+    else {
+      if (!events) {
+        events = attached;
+        rm = remove;
       } else {
-        typeEvents = attached[events];
-        for (uid in typeEvents) {
-          removeEvent(element, events, typeEvents[uid]);
+        type = isString && events;
+        events = fn || attached[events] || events;
+      }
+      for (k in events) {
+        if (events.hasOwnProperty(k)) {
+          rm(element, type || k, events[k]);
         }
-        delete attached[events];
       }
     }
     return element;
   }
 
-  function fireEvent(element, type, args) {
-    if (customEvents[type]) {
-      fireCustomEvent(element, type, args);
+  function fire (element, type, args) {
+    var evt
+    if (nativeEvents.indexOf(type) > -1) {
+      if (document.createEventObject) {
+        evt = document.createEventObject();
+        return element.fireEvent('on' + type, evt);
+      }
+      else {
+        evt = document.createEvent("HTMLEvents");
+        evt.initEvent(type, true, true);
+        return !element.dispatchEvent(evt);
+      }
     } else {
-      fireNativeEvent(element, type);
+      if (element[addEvent]) {
+        evt = document.createEvent("UIEvents");
+        evt.initEvent(type, false, false);
+        element.dispatchEvent(evt);
+      } else {
+        element['_on' + type]++;
+      }
     }
   }
 
-  function cloneEvents(element, from, type) {
-    var events = retrieveEvents(from), eventType, typeEvents, k;
+  function clone (element, from, type) {
+    var events = retrieveEvents(from), eventType, fat, k, obj;
     if (!events) {
       return element;
     }
-    if (!type) {
-      for (eventType in events) {
-        cloneEvents(element, from, eventType);
-      }
-    } else if (events[type]) {
-      typeEvents = events[type];
-      for (k in typeEvents) {
-        addEvent(element, type, typeEvents[k]);
+    obj = type ? events[type] : events;
+    method = type ? add : function (e, k) {clone(element, from, k);};
+    for (k in obj) {
+      if (obj.hasOwnProperty(k)) {
+        method(element, type || k, obj[k]);
       }
     }
     return element;
@@ -237,17 +217,16 @@
     this.cancelBubble = true;
   };
 
-  var nativeEvents = [ 'click', 'dblclick', 'mouseup', 'mousedown', 'contextmenu', //mouse buttons
-    'mousewheel', 'DOMMouseScroll', //mouse wheel
-    'mouseover', 'mouseout', 'mousemove', 'selectstart', 'selectend', //mouse movement
-    'keydown', 'keypress', 'keyup', //keyboard
-    'orientationchange', // mobile
-    'touchstart', 'touchmove', 'touchend', 'touchcancel', // touch
-    'gesturestart', 'gesturechange', 'gestureend', // gesture
-    'focus', 'blur', 'change', 'reset', 'select', 'submit', //form elements
-    'load', 'unload', 'beforeunload', 'resize', 'move', 'DOMContentLoaded', 'readystatechange', //window
-    'error', 'abort', 'scroll' //misc
-  ];
+  var nativeEvents = 'click,dblclick,mouseup,mousedown,contextmenu,' + //mouse buttons
+    'mousewheel,DOMMouseScroll,' + //mouse wheel
+    'mouseover,mouseout,mousemove,selectstart,selectend,' + //mouse movement
+    'keydown,keypress,keyup,' + //keyboard
+    'orientationchange,' + // mobile
+    'touchstart,touchmove,touchend,touchcancel,' + // touch
+    'gesturestart,gesturechange,gestureend,' + // gesture
+    'focus,blur,change,reset,select,submit,' + //form elements
+    'load,unload,beforeunload,resize,move,DOMContentLoaded,readystatechange,' + //window
+    'error,abort,scroll'.split(','); //misc
 
   function check(event) {
     var related = event.relatedTarget;
@@ -276,9 +255,9 @@
 
   var evnt = {
     add: add,
-    remove: removeEvents,
-    clone: cloneEvents,
-    fire: fireEvent
+    remove: remove,
+    clone: clone,
+    fire: fire
   };
 
   var oldEvnt = context.evnt;

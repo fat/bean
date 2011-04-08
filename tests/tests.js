@@ -141,7 +141,6 @@ sink('removeEvents', function (test, ok) {
     evnt.add(el, 'click', handler);
     evnt.add(el, 'click', handler2);
     evnt.add(el, 'mouseover', handler3);
-
     evnt.remove(el);
   });
 
@@ -175,7 +174,6 @@ sink('removeEvents', function (test, ok) {
 
     evnt.add(el, 'click', handler);
     evnt.add(el, 'click', handler2);
-
     evnt.remove(el, obj);
   });
 
