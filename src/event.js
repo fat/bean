@@ -2,7 +2,7 @@
 !function (context) {
 
   var _uid = 1,
-      overOut = /over|out/;
+      overOut = /over|out/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -20,14 +20,14 @@
   }
 
   function retrieveEvents(element) {
-    return element._events = element._events || {};
+    return (element._events = element._events || {});
   }
 
   function retrieveUid(handler) {
-    return handler._uid = handler._uid || _uid++;
+    return (handler._uid = handler._uid || _uid++);
   }
 
-  function listener (element, type, fn, add, custom) {
+  function listener(element, type, fn, add, custom) {
     if (element[addEvent]) { //w3c
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
@@ -37,8 +37,8 @@
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   }
 
-  function nativeHandler (element, fn) {
-    return function(event){
+  function nativeHandler(element, fn) {
+    return function (event) {
       event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
       if (fn.call(element, event) === false) {
         if (event) {
@@ -46,16 +46,16 @@
           event.stopPropagation();
         }
       }
-    }
+    };
   }
 
-  function customHandler (element, fn, type, condition) {
-    return function(event) {
+  function customHandler(element, fn, type, condition) {
+    return function (event) {
       if (condition ? condition.call(this, event) : event.propertyName == '_' + type) {
         fn.call(element, event);
       }
       return true;
-    }
+    };
   }
 
   function addListener(element, type, fn) {
@@ -144,8 +144,8 @@
     return element;
   }
 
-  function fire (element, type, args) {
-    var evt
+  function fire(element, type, args) {
+    var evt;
     if (nativeEvents.indexOf(type) > -1) {
       if (document.createEventObject) {
         evt = document.createEventObject();
@@ -167,13 +167,15 @@
     }
   }
 
-  function clone (element, from, type) {
+  function clone(element, from, type) {
     var events = retrieveEvents(from), eventType, fat, k, obj;
     if (!events) {
       return element;
     }
     obj = type ? events[type] : events;
-    method = type ? add : function (e, k) {clone(element, from, k);};
+    method = type ? add : function (e, k) {
+      clone(element, from, k);
+    };
     for (k in obj) {
       if (obj.hasOwnProperty(k)) {
         method(element, type || k, obj[k]);
