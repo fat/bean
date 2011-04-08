@@ -1,7 +1,7 @@
 //cheers to the entire mootools team, dean edwards, and dperini for lots of inspiration/guidance
 !function (context) {
 
-  var _uid = 1,
+  var _uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
@@ -20,11 +20,12 @@
   }
 
   function retrieveEvents(element) {
-    return (element._events = element._events || {});
+    var uid = retrieveUid(element);
+    return (registry[uid] = registry[uid] || {});
   }
 
-  function retrieveUid(handler) {
-    return (handler._uid = handler._uid || _uid++);
+  function retrieveUid(obj) {
+    return (obj._uid = obj._uid || _uid++);
   }
 
   function listener(element, type, fn, add, custom) {
@@ -80,6 +81,13 @@
     }
     if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
       fn = nativeHandler(element, fn, args);
+      if (type == 'unload') { //unload only once
+        var org = fn;
+        fn = function() {
+          removeListener(element, 'unload', fn);
+          org();
+        };
+      }
       listener(element, type, fn, true);
     } else {
       fn = customHandler(element, fn, type, false, args);
@@ -87,7 +95,7 @@
     }
     handlers[uid] = fn;
     fn._uid = uid;
-    return element;
+    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
   }
 
   function removeListener(element, type, handler) {
@@ -129,8 +137,7 @@
     }
     if (typeof fn == 'function') {
       rm(element, events, fn);
-    }
-    else {
+    } else {
       if (!events) {
         events = attached;
         rm = remove;
@@ -152,22 +159,23 @@
     if (nativeEvents.indexOf(type) > -1) {
       if (document.createEventObject) {
         evt = document.createEventObject();
-        return element.fireEvent('on' + type, evt);
+        element.fireEvent('on' + type, evt);
       }
       else {
         evt = document.createEvent("HTMLEvents");
         evt.initEvent(type, true, true);
-        return !element.dispatchEvent(evt);
+        element.dispatchEvent(evt);
       }
     } else {
       if (element[addEvent]) {
         evt = document.createEvent("UIEvents");
-        evt.initEvent(type, false, false);
+        evt.initUIEvent(type, true, true, window, 1);
         element.dispatchEvent(evt);
       } else {
         element['_on' + type]++;
       }
     }
+    return element;
   }
 
   function clone(element, from, type) {
@@ -255,6 +263,28 @@
     clone: clone,
     fire: fire
   };
+
+  var clean = function(el){
+  	var uid = el._uid;
+  	remove(el); //remove all events
+  	if (uid) {
+  	  delete collected[uid];
+		  delete registry[uid];
+    }
+  };
+
+  if (window[attachEvent]) {
+    add(window, 'unload', function(){
+  	  for (k in collected) {
+  	    if (collected.hasOwnProperty(k)) {
+  	      clean(collected[k]);
+  	    }
+  	  }
+  	  if (window.CollectGarbage) {
+  	    CollectGarbage();
+  	  }
+  	});
+  }
 
   var oldEvnt = context.evnt;
   evnt.noConflict = function () {

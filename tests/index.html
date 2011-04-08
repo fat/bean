@@ -10,10 +10,22 @@
     <script src="../support/syn/browsers.js"></script>
     <script src="../support/syn/key.js"></script>
     <script src="../src/event.js"></script>
+    <style>
+     #fixtures {
+       position:absolute;
+       top: -999em;
+     }
+    </style>
   </head>
   <body>
     <h1>Event Tests</h1>
      <ol id="tests"></ol>
      <script src="tests.js"></script>
+     <div id="fixtures">
+       <input id="input" type="text" />
+       <div id="foo">
+         <div id="bar"></div>
+       </div>
+     </div>
   </body>
 </html>
