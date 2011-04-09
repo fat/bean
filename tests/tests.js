@@ -131,7 +131,7 @@ sink('add', function (test, ok) {
   test('custom: should bubble up dom like traditional events', 1, function () {
     if (!window.addEventListener) {
       //dean edwards onpropertychange hack doesn't bubble unfortunately :(
-      ok(true, 'internet explorer is not a bubler, turns out.')
+      return ok(true, 'internet explorer is not a bubler, turns out.')
     }
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
