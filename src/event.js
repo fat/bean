@@ -1,4 +1,4 @@
-//cheers to the entire mootools team, dean edwards, and dperini for lots of inspiration/guidance
+//cheers to the entire mootools team, dean edwards, and dperini
 !function (context) {
 
   var _uid = 1, registry = {}, collected = {},
@@ -34,7 +34,7 @@
 
   function listener(element, type, fn, add, custom) {
     if (!isElement(element)) {
-      return; //don't add events to objects
+      return;
     }
     if (element[addEvent]) {
       return element[add ? addEvent : removeEvent](type, fn, false);
@@ -121,17 +121,36 @@
     return element;
   }
 
-  function add(element, events, fn, $) {
-    if (typeof events == 'object') {
+  function processDelegates(selector, fn, $) {
+    return function(e) {
+      var array = typeof selector == 'string' ? $(selector, this) : selector;
+  		for (var target = e.target; target && target != this; target = target.parentNode){
+        for (var i = array.length; i--;) {
+          if (array[i] == target) {
+            return fn.apply(target, arguments);
+          }
+        }
+      }
+    }
+  }
+
+  function add(element, events, fn, delegatefn, $) {
+    if (typeof events == 'object' && !fn) {
       for (var type in events) {
         if (events.hasOwnProperty(type)) {
           addListener(element, type, events[type]);
         }
       }
     } else {
-      events = events.split(' ');
-      for (var i = events.length; i--;) {
-        addListener(element, events[i], fn, Array.prototype.slice.call(arguments, 3));
+      var isDelegation = typeof fn == 'string',
+        types = (isDelegation ? fn : events).split(' ');
+      for (var i = types.length; i--;) {
+        addListener(
+          element,
+          types[i],
+          isDelegation ? processDelegates(events, delegatefn, $) : fn,
+          Array.prototype.slice.call(arguments, isDelegation ? 4 : 3)
+        );
       }
     }
     return element;
@@ -279,8 +298,7 @@
 
   var customEvents = {
     mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: (navigator.userAgent.indexOf("Firefox") != -1) ? 'DOMMouseScroll' : 'mousewheel' }
+    mouseleave: { base: 'mouseout', condition: check }
   };
 
   var evnt = {

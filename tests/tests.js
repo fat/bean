@@ -263,6 +263,40 @@ sink('add', function (test, ok) {
     Syn.click(el2).key('j');
   });
 
+  test('delegate: should be able to do event delegation on selectors', 4, function () {
+    var el1 = document.getElementById('foo');
+    var el2 = document.getElementById('bar');
+    var el3 = document.getElementById('baz');
+    var el4 = document.getElementById('bang');
+    evnt.remove(el1);
+    evnt.remove(el2);
+    evnt.remove(el3);
+    evnt.add(el1, '.bar', 'click', function () {
+      ok(true, 'event was called');
+      ok(this == el2, 'context was set to delegated element');
+    }, qwery);
+    Syn.click(el2);
+    Syn.click(el3);
+    Syn.click(el4);
+  });
+
+  test('delegate: should be able to delegation on arary', 4, function () {
+    var el1 = document.getElementById('foo');
+    var el2 = document.getElementById('bar');
+    var el3 = document.getElementById('baz');
+    var el4 = document.getElementById('bang');
+    evnt.remove(el1);
+    evnt.remove(el2);
+    evnt.remove(el3);
+    evnt.add(el1, [el2], 'click', function () {
+      ok(true, 'event was called');
+      ok(this == el2, 'context was set to delegated element');
+    }, qwery);
+    Syn.click(el2);
+    Syn.click(el3);
+    Syn.click(el4);
+  });
+
 });
 
 window.onload = start;

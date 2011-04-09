@@ -4,10 +4,10 @@
   * Follow our software http://twitter.com/dedfat
   * MIT License
   */
-//cheers to the entire mootools team, dean edwards, and dperini for lots of inspiration/guidance
+//cheers to the entire mootools team, dean edwards, and dperini
 !function (context) {
 
-  var _uid = 1,
+  var _uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
@@ -25,15 +25,23 @@
     return false;
   }
 
-  function retrieveEvents(element) {
-    return (element._events = element._events || {});
+  function isElement(obj) {
+    return !!obj.nodeName;
   }
 
-  function retrieveUid(handler) {
-    return (handler._uid = handler._uid || _uid++);
+  function retrieveEvents(element) {
+    var uid = retrieveUid(element);
+    return (registry[uid] = registry[uid] || {});
+  }
+
+  function retrieveUid(obj) {
+    return (obj._uid = obj._uid || _uid++);
   }
 
   function listener(element, type, fn, add, custom) {
+    if (!isElement(element)) {
+      return;
+    }
     if (element[addEvent]) {
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
@@ -57,7 +65,7 @@
 
   function customHandler(element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.call(this, event) : event.propertyName == '_' + type) {
+      if (condition ? condition.call(this, event) : (event && event.propertyName == '_' + type) || 1) {
         fn.apply(element, [event].concat(args));
       }
       return true;
@@ -86,6 +94,13 @@
     }
     if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
       fn = nativeHandler(element, fn, args);
+      if (type == 'unload') { //unload only once
+        var org = fn;
+        fn = function() {
+          removeListener(element, 'unload', fn);
+          org();
+        };
+      }
       listener(element, type, fn, true);
     } else {
       fn = customHandler(element, fn, type, false, args);
@@ -93,7 +108,7 @@
     }
     handlers[uid] = fn;
     fn._uid = uid;
-    return element;
+    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
   }
 
   function removeListener(element, type, handler) {
@@ -112,17 +127,36 @@
     return element;
   }
 
-  function add(element, events, fn, $) {
-    if (typeof events == 'object') {
+  function processDelegates(selector, fn, $) {
+    return function(e) {
+      var array = typeof selector == 'string' ? $(selector, this) : selector;
+  		for (var target = e.target; target && target != this; target = target.parentNode){
+        for (var i = array.length; i--;) {
+          if (array[i] == target) {
+            return fn.apply(target, arguments);
+          }
+        }
+      }
+    }
+  }
+
+  function add(element, events, fn, delegatefn, $) {
+    if (typeof events == 'object' && !fn) {
       for (var type in events) {
         if (events.hasOwnProperty(type)) {
           addListener(element, type, events[type]);
         }
       }
     } else {
-      events = events.split(' ');
-      for (var i = events.length; i--;) {
-        addListener(element, events[i], fn, Array.prototype.slice.call(arguments, 3));
+      var isDelegation = typeof fn == 'string',
+        types = (isDelegation ? fn : events).split(' ');
+      for (var i = types.length; i--;) {
+        addListener(
+          element,
+          types[i],
+          isDelegation ? processDelegates(events, delegatefn, $) : fn,
+          Array.prototype.slice.call(arguments, isDelegation ? 4 : 3)
+        );
       }
     }
     return element;
@@ -130,13 +164,19 @@
 
   function remove(element, events, fn) {
     var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
+    if (isString && /\s/.test(events)) {
+      var events = events.split(' ');
+      for (var i = events.length; i--;){
+        remove(element, events[i]);
+      }
+      return element;
+    }
     if (!attached || (isString && !attached[events])) {
       return element;
     }
     if (typeof fn == 'function') {
       rm(element, events, fn);
-    }
-    else {
+    } else {
       if (!events) {
         events = attached;
         rm = remove;
@@ -154,26 +194,39 @@
   }
 
   function fire(element, type) {
-    var evt;
-    if (nativeEvents.indexOf(type) > -1) {
-      if (document.createEventObject) {
-        evt = document.createEventObject();
-        return element.fireEvent('on' + type, evt);
+    var evt, k, i, types = type.split(' ');
+    for (i = types.length; i--;) {
+      type = types[i];
+      console.log(type);
+      if (!isElement(element)) {
+        var handlers = retrieveEvents(element)[type];
+        for (k in handlers) {
+          if (handlers.hasOwnProperty(k)) {
+            handlers[k]();
+          }
+        }
       }
-      else {
-        evt = document.createEvent("HTMLEvents");
-        evt.initEvent(type, true, true);
-        return !element.dispatchEvent(evt);
-      }
-    } else {
-      if (element[addEvent]) {
-        evt = document.createEvent("UIEvents");
-        evt.initEvent(type, false, false);
-        element.dispatchEvent(evt);
+      if (nativeEvents.indexOf(type) > -1) {
+        if (document.createEventObject) {
+          evt = document.createEventObject();
+          element.fireEvent('on' + type, evt);
+        }
+        else {
+          evt = document.createEvent("HTMLEvents");
+          evt.initEvent(type, true, true);
+          element.dispatchEvent(evt);
+        }
       } else {
-        element['_on' + type]++;
+        if (element[addEvent]) {
+          evt = document.createEvent("UIEvents");
+          evt.initUIEvent(type, true, true, window, 1);
+          element.dispatchEvent(evt);
+        } else {
+          element['_on' + type]++;
+        }
       }
     }
+    return element;
   }
 
   function clone(element, from, type) {
@@ -251,8 +304,7 @@
 
   var customEvents = {
     mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: (navigator.userAgent.indexOf("Firefox") != -1) ? 'DOMMouseScroll' : 'mousewheel' }
+    mouseleave: { base: 'mouseout', condition: check }
   };
 
   var evnt = {
@@ -261,6 +313,28 @@
     clone: clone,
     fire: fire
   };
+
+  var clean = function(el){
+  	var uid = el._uid;
+  	remove(el); //remove all events
+  	if (uid) {
+  	  delete collected[uid];
+		  delete registry[uid];
+    }
+  };
+
+  if (window[attachEvent]) {
+    add(window, 'unload', function(){
+  	  for (k in collected) {
+  	    if (collected.hasOwnProperty(k)) {
+  	      clean(collected[k]);
+  	    }
+  	  }
+  	  if (window.CollectGarbage) {
+  	    CollectGarbage();
+  	  }
+  	});
+  }
 
   var oldEvnt = context.evnt;
   evnt.noConflict = function () {

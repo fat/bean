@@ -7,3 +7,6 @@
 [submodule "support/syn"]
 	path = support/syn
 	url = https://github.com/jupiterjs/syn.git
+[submodule "support/qwery"]
+	path = support/qwery
+	url = git@github.com:ded/qwery.git
