@@ -57,7 +57,7 @@
 
   function customHandler(element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type) {
+      if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type || !event) {
         fn.apply(element, [event].concat(args));
       }
       return true;
