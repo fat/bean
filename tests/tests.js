@@ -209,7 +209,7 @@ sink('add', function (test, ok) {
     Syn.click(el);
   });
 
-  test('remove: should be able to remove all events of a specific type', 1, function () {
+  test('remove: should be able to remove all events of a specific type', 2, function () {
     var el = document.getElementById('input');
     evnt.remove(el);
     var handler1 = function () {
