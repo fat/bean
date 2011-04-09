@@ -237,8 +237,10 @@
   }
 
   function fixEvent(e) {
+    if (!e) {
+      return {};
+    }
     var type = e.type;
-    e = e || {};
     e.preventDefault = e.preventDefault || fixEvent.preventDefault;
     e.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
     e.target = e.target || e.srcElement;
