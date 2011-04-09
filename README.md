@@ -121,7 +121,7 @@ Browser Support
 ---------------
 Bean has been hand tested in these browsers... and we can personally vouch for them passing all tests. If you've found bugs in these browsers or others please let us know!!
 
-  - IE6, IE7, IE8, IE9
+  - IE8
   - Chrome 10
   - Safari 5
   - Firefox 3, 4
