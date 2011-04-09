@@ -1,3 +1,8 @@
+//stub this for ie crap
+if (!window.console) {
+  window.console = { log: function () {}}
+}
+
 sink('add', function (test, ok) {
 
   test('add: should return the element passed in', 1, function () {
