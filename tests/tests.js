@@ -1,14 +1,18 @@
 sink('add', function (test, ok) {
 
   test('add: should return the element passed in', 1, function () {
-    var el = document.createElement('input');
-    var returned = evnt.add(el, 'click', function () { });
-    ok(el == returned, 'element equals returned value')
+    var el = document.getElementById('input');
+    var returned = evnt.add(el, 'click', function () {});
+    ok(el == returned, 'element equals returned value');
+    evnt.remove(el);
   });
 
   test('add: should be able to add single events to elements', 1, function () {
-    var el = document.createElement('input');
-    evnt.add(el, 'click', function () {ok(true, 'event was called')});
+    var el = document.getElementById('input');
+    evnt.add(el, 'click', function () {
+      evnt.remove(el);
+      ok(true, 'event was called');
+    });
     Syn.click(el);
   });
 
@@ -23,30 +27,32 @@ sink('add', function (test, ok) {
   });
 
   test('add: scope should be equal to element', 1, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
     evnt.add(el, 'click', function (e) {
+      evnt.remove(el);
       ok(this == el, 'listener was called with event')
     });
     Syn.click(el);
   });
 
   test('add: should recieve an event method', 1, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
     evnt.add(el, 'click', function (e) {
+      evnt.remove(el);
       ok(e != null, 'listener was called with event')
     });
     Syn.click(el);
   });
 
   test('add: should be able to pass x amount of additional arguments', 4, function () {
-    var el = document.createElement('div'),
+    var el = document.getElementById('input');
         handler = function (e, foo, bar, baz) {
+          evnt.remove(el);
           ok(e != null, 'listener was called with event');
           ok(foo === 1, 'listener was called with correct argument');
           ok(bar === 2, 'listener was called with correct argument');
           ok(baz === 3, 'listener was called with correct argument');
         };
-
     evnt.add(el, 'click', handler, 1, 2, 3);
     Syn.click(el);
   });
@@ -61,7 +67,8 @@ sink('add', function (test, ok) {
 
 
   test('add: should add same event only one time', 1, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
+    evnt.remove(el);
     var handler = function () {ok(true, 'event was called one time')};
     evnt.add(el, 'click', handler);
     evnt.add(el, 'click', handler);
@@ -70,7 +77,8 @@ sink('add', function (test, ok) {
   });
 
   test('add: should be able to add multiple events of the same type', 3, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
+    evnt.remove(el);
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
@@ -100,20 +108,23 @@ sink('add', function (test, ok) {
   });
 
   test('fire: should be able to fire an event', 1, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
+    evnt.remove(el);
     evnt.add(el, 'click', function () {ok(true, 'event was called')});
     evnt.fire(el, 'click');
   });
 
   test('fire: should be able to fire multiple events by space seperation', 2, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
+    evnt.remove(el);
     evnt.add(el, 'mousedown', function () {ok(true, 'event was called')});
     evnt.add(el, 'mouseup', function () {ok(true, 'event was called')});
     evnt.fire(el, 'mousedown mouseup');
   });
 
   test('custom: should be able to add single custom events', 1, function () {
-    var el = document.createElement('input');
+    var el = document.getElementById('input');
+    evnt.remove(el);
     evnt.add(el, 'partytime', function () {ok(true, 'event was called')});
     evnt.fire(el, 'partytime');
   });
@@ -134,13 +145,15 @@ sink('add', function (test, ok) {
   });
 
   test('event: should have stop propagation method', 1, function () {
-    var el = document.createElement('div');
+    var el = document.getElementById('foo');
+    evnt.remove(el);
     evnt.add(el, 'click', function (e) {ok(e.stopPropagation != null, 'has stop propagation')});
     Syn.click(el);
   });
 
   test('event: should have preventDefault method', 1, function () {
-    var el = document.createElement('div');
+    var el = document.getElementById('foo');
+    evnt.remove(el);
     evnt.add(el, 'click', function (e) {ok(e.preventDefault != null, 'has stop propagation')});
     Syn.click(el);
   });
@@ -155,20 +168,22 @@ sink('add', function (test, ok) {
   });
 
   test('remove: should return the element passed in', 1, function () {
-    var el = document.createElement('input'),
-        handler = function () {};
+    var el = document.getElementById('foo');
+    evnt.remove(el);
+    var handler = function () {};
     evnt.add(el, 'click', handler);
     var returned = evnt.remove(el, 'click', handler);
     ok(el == returned, 'element equals returned value');
   });
 
   test('remove: should be able to remove a single event', 1, function () {
-    var el = document.createElement('input'),
-        handler = function () {
-          ok(true, 'element has a class');
-          evnt.remove(el, 'click', handler);
-          Syn.click(el);
-        }
+    var el = document.getElementById('foo');
+    evnt.remove(el);
+    var handler = function () {
+      ok(true, 'element has a class');
+      evnt.remove(el, 'click', handler);
+      Syn.click(el);
+    }
     evnt.add(el, 'click', handler);
     Syn.click(el)
   });
@@ -192,8 +207,9 @@ sink('add', function (test, ok) {
   });
 
   test('remove: should be able to remove all events of a specific type', 1, function () {
-    var el = document.createElement('input'),
-      handler1 = function () {
+    var el = document.getElementById('input');
+    evnt.remove(el);
+    var handler1 = function () {
         ok(true, 'element has a class');
         evnt.remove(el, 'click');
         Syn.click(el);
@@ -207,8 +223,9 @@ sink('add', function (test, ok) {
   });
 
   test('remove: should be able to remove all events of a specific type', 2, function () {
-    var el = document.createElement('input'),
-      handler1 = function () {
+    var el = document.getElementById('input');
+    evnt.remove(el);
+    var handler1 = function () {
         ok(true, 'element has a class');
       },
       handler2 = function () {
@@ -237,8 +254,10 @@ sink('add', function (test, ok) {
   });
 
   test('clone: should be able to clone events of a specific type from one element to another', 2, function () {
-    var el1 = document.createElement('input');
+    var el1 = document.getElementById('input2');
     var el2 = document.getElementById('input');
+    evnt.remove(el1);
+    evnt.remove(el2);
     evnt.add(el1, 'click', function () {ok(true, 'event was called')});
     evnt.add(el1, 'click', function () {
       ok(true, 'event was called');
@@ -253,8 +272,9 @@ sink('add', function (test, ok) {
   });
 
   test('clone: should be able to clone all events from one element to another', 3, function () {
-    var el1 = document.createElement('input');
+    var el1 = document.getElementById('input2');
     var el2 = document.getElementById('input');
+    evnt.remove(el1);
     evnt.remove(el2);
     evnt.add(el1, 'keypress', function () {ok(true, 'event was called');});
     evnt.add(el1, 'click', function () {ok(true, 'event was called');});
