@@ -95,7 +95,7 @@
       fn = nativeHandler(element, fn, args);
       if (type == 'unload') { //unload only once
         var org = fn;
-        fn = function() {
+        fn = function () {
           removeListener(element, 'unload', fn);
           org();
         };
@@ -127,16 +127,16 @@
   }
 
   function processDelegates(selector, fn, $) {
-    return function(e) {
+    return function (e) {
       var array = typeof selector == 'string' ? $(selector, this) : selector;
-  		for (var target = e.target; target && target != this; target = target.parentNode){
+      for (var target = e.target; target && target != this; target = target.parentNode) {
         for (var i = array.length; i--;) {
           if (array[i] == target) {
             return fn.apply(target, arguments);
           }
         }
       }
-    }
+    };
   }
 
   function add(element, events, fn, delegatefn, $) {
@@ -164,8 +164,8 @@
   function remove(element, events, fn) {
     var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
     if (isString && /\s/.test(events)) {
-      var events = events.split(' ');
-      for (var i = events.length; i--;){
+      events = events.split(' ');
+      for (var i = events.length; i--;) {
         remove(element, events[i]);
       }
       return element;
@@ -312,26 +312,26 @@
     fire: fire
   };
 
-  var clean = function(el){
-  	var uid = el._uid;
-  	remove(el); //remove all events
-  	if (uid) {
-  	  delete collected[uid];
-		  delete registry[uid];
+  var clean = function (el) {
+    var uid = el._uid;
+    remove(el); //remove all events
+    if (uid) {
+      delete collected[uid];
+      delete registry[uid];
     }
   };
 
   if (window[attachEvent]) {
-    add(window, 'unload', function(){
-  	  for (k in collected) {
-  	    if (collected.hasOwnProperty(k)) {
-  	      clean(collected[k]);
-  	    }
-  	  }
-  	  if (window.CollectGarbage) {
-  	    CollectGarbage();
-  	  }
-  	});
+    add(window, 'unload', function () {
+      for (var k in collected) {
+        if (collected.hasOwnProperty(k)) {
+          clean(collected[k]);
+        }
+      }
+      if (window.CollectGarbage) {
+        CollectGarbage();
+      }
+    });
   }
 
   var oldEvnt = context.evnt;

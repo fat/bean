@@ -38,7 +38,7 @@
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
     if (custom) {
-      element['_on' + custom] = element['_' + custom] || 0;
+      element['_on' + custom] = element['_on' + custom] || 0;
     }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   }
@@ -57,7 +57,7 @@
 
   function customHandler(element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.call(this, event) : (event && event.propertyName == '_' + type) || 1) {
+      if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type) {
         fn.apply(element, [event].concat(args));
       }
       return true;
@@ -88,7 +88,7 @@
       fn = nativeHandler(element, fn, args);
       if (type == 'unload') { //unload only once
         var org = fn;
-        fn = function() {
+        fn = function () {
           removeListener(element, 'unload', fn);
           org();
         };
@@ -96,7 +96,7 @@
       listener(element, type, fn, true);
     } else {
       fn = customHandler(element, fn, type, false, args);
-      listener(element, 'onpropertychange', fn, true, type);
+      listener(element, 'propertychange', fn, true, type);
     }
     handlers[uid] = fn;
     fn._uid = uid;
@@ -114,22 +114,22 @@
     if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
       listener(element, type, handler, false);
     } else {
-      listener(element, 'onpropertychange', handler, false, type);
+      listener(element, 'propertychange', handler, false, type);
     }
     return element;
   }
 
   function processDelegates(selector, fn, $) {
-    return function(e) {
+    return function (e) {
       var array = typeof selector == 'string' ? $(selector, this) : selector;
-  		for (var target = e.target; target && target != this; target = target.parentNode){
+      for (var target = e.target; target && target != this; target = target.parentNode) {
         for (var i = array.length; i--;) {
           if (array[i] == target) {
             return fn.apply(target, arguments);
           }
         }
       }
-    }
+    };
   }
 
   function add(element, events, fn, delegatefn, $) {
@@ -157,8 +157,8 @@
   function remove(element, events, fn) {
     var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
     if (isString && /\s/.test(events)) {
-      var events = events.split(' ');
-      for (var i = events.length; i--;){
+      events = events.split(' ');
+      for (var i = events.length; i--;) {
         remove(element, events[i]);
       }
       return element;
@@ -305,26 +305,26 @@
     fire: fire
   };
 
-  var clean = function(el){
-  	var uid = el._uid;
-  	remove(el); //remove all events
-  	if (uid) {
-  	  delete collected[uid];
-		  delete registry[uid];
+  var clean = function (el) {
+    var uid = el._uid;
+    remove(el); //remove all events
+    if (uid) {
+      delete collected[uid];
+      delete registry[uid];
     }
   };
 
   if (window[attachEvent]) {
-    add(window, 'unload', function(){
-  	  for (k in collected) {
-  	    if (collected.hasOwnProperty(k)) {
-  	      clean(collected[k]);
-  	    }
-  	  }
-  	  if (window.CollectGarbage) {
-  	    CollectGarbage();
-  	  }
-  	});
+    add(window, 'unload', function () {
+      for (var k in collected) {
+        if (collected.hasOwnProperty(k)) {
+          clean(collected[k]);
+        }
+      }
+      if (window.CollectGarbage) {
+        CollectGarbage();
+      }
+    });
   }
 
   var oldEvnt = context.evnt;
