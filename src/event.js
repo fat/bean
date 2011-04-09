@@ -1,6 +1,4 @@
-//cheers to the entire mootools team, dean edwards, and dperini
 !function (context) {
-
   var _uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
       addEvent = 'addEventListener',
@@ -191,7 +189,6 @@
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i];
-      console.log(type);
       if (!isElement(element)) {
         var handlers = retrieveEvents(element)[type];
         for (k in handlers) {
@@ -336,5 +333,4 @@
     return this;
   };
   context.evnt = evnt;
-
 }(this);
