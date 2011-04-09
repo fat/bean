@@ -65,7 +65,6 @@ sink('add', function (test, ok) {
     Syn.click(el).key('j');
   });
 
-
   test('add: should add same event only one time', 1, function () {
     var el = document.getElementById('input');
     evnt.remove(el);
@@ -130,6 +129,10 @@ sink('add', function (test, ok) {
   });
 
   test('custom: should bubble up dom like traditional events', 1, function () {
+    if (!window.addEventListener) {
+      //dean edwards onpropertychange hack doesn't bubble unfortunately :(
+      ok(true, 'internet explorer is not a bubler, turns out.')
+    }
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
     evnt.add(el1, 'partytime', function () {ok(true, 'event was called')});

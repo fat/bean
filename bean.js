@@ -45,7 +45,7 @@
       return element[add ? addEvent : removeEvent](type, fn, false);
     }
     if (custom) {
-      element['_on' + custom] = element['_' + custom] || 0;
+      element['_on' + custom] = element['_on' + custom] || 0;
     }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   }
@@ -64,7 +64,7 @@
 
   function customHandler(element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.call(this, event) : (event && event.propertyName == '_' + type) || 1) {
+      if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type) {
         fn.apply(element, [event].concat(args));
       }
       return true;
@@ -103,7 +103,7 @@
       listener(element, type, fn, true);
     } else {
       fn = customHandler(element, fn, type, false, args);
-      listener(element, 'onpropertychange', fn, true, type);
+      listener(element, 'propertychange', fn, true, type);
     }
     handlers[uid] = fn;
     fn._uid = uid;
@@ -121,7 +121,7 @@
     if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
       listener(element, type, handler, false);
     } else {
-      listener(element, 'onpropertychange', handler, false, type);
+      listener(element, 'propertychange', handler, false, type);
     }
     return element;
   }
