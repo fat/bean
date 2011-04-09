@@ -1,23 +1,24 @@
 sink('add', function (test, ok) {
 
-  test('add: should return the element passed in', 1, function () {
-    var el = document.getElementById('input');
-    var returned = evnt.add(el, 'click', function () {});
-    ok(el == returned, 'element equals returned value');
-    evnt.remove(el);
-  });
-
-  test('add: should be able to add single events to elements', 1, function () {
-    var el = document.getElementById('input');
-    evnt.add(el, 'click', function () {
-      evnt.remove(el);
-      ok(true, 'event was called');
-    });
-    Syn.click(el);
-  });
+  // test('add: should return the element passed in', 1, function () {
+  //   var el = document.getElementById('input');
+  //   var returned = evnt.add(el, 'click', function () {});
+  //   ok(el == returned, 'element equals returned value');
+  //   evnt.remove(el);
+  // });
+  //
+  // test('add: should be able to add single events to elements', 1, function () {
+  //   var el = document.getElementById('input');
+  //   evnt.add(el, 'click', function () {
+  //     evnt.remove(el);
+  //     ok(true, 'event was called');
+  //   });
+  //   Syn.click(el);
+  // });
 
   test('add: should be able to add single events to objects', 1, function () {
     var obj = {};
+    debugger;
     evnt.add(obj, 'complete', function () {
       ok(true, 'event was called');
     });

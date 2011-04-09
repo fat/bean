@@ -84,7 +84,7 @@
       }
       type = custom.base || type;
     }
-    if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
+    if (window[addEvent] || nativeEvents.indexOf(type) > -1) {
       fn = nativeHandler(element, fn, args);
       if (type == 'unload') { //unload only once
         var org = fn;
@@ -263,6 +263,7 @@
         e.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element'];
       }
     }
+    return e;
   }
   fixEvent.preventDefault = function () {
     this.returnValue = false;

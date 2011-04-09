@@ -91,7 +91,7 @@
       }
       type = custom.base || type;
     }
-    if (element[addEvent] || nativeEvents.indexOf(type) > -1) {
+    if (window[addEvent] || nativeEvents.indexOf(type) > -1) {
       fn = nativeHandler(element, fn, args);
       if (type == 'unload') { //unload only once
         var org = fn;
@@ -246,8 +246,8 @@
   function fixEvent(e) {
     var type = e.type;
     e = e || {};
-    e.preventDefault = fixEvent.preventDefault;
-    e.stopPropagation = fixEvent.stopPropagation;
+    e.preventDefault = e.preventDefault || fixEvent.preventDefault;
+    e.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
     e.target = e.target || e.srcElement;
     if (e.target.nodeType == 3) {
       e.target = e.target.parentNode;
@@ -270,6 +270,7 @@
         e.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element'];
       }
     }
+    return e;
   }
   fixEvent.preventDefault = function () {
     this.returnValue = false;
