@@ -219,11 +219,11 @@ sink('add', function (test, ok) {
     evnt.remove(el);
     var handler1 = function () {
         ok(true, 'removes all events of a specific type 1');
-        evnt.remove(el, 'click');
-        Syn.click(el);
       },
       handler2 = function () {
         ok(true, 'removes all events of a specific type 2');
+        evnt.remove(el, 'click');
+        Syn.click(el);
       };
     evnt.add(el, 'click', handler1);
     evnt.add(el, 'click', handler2);
