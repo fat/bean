@@ -45,7 +45,7 @@
 
   function nativeHandler(element, fn, args) {
     return function (event) {
-      event = event || fixEvent(((this.ownerDocument || this.document || this).parentWindow || window).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || window).event);
       if (fn.apply(element, [event].concat(args)) === false) {
         if (event) {
           event.preventDefault();
