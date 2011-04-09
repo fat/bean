@@ -157,7 +157,7 @@ sink('add', function (test, ok) {
   test('event: should have preventDefault method', 1, function () {
     var el = document.getElementById('foo');
     evnt.remove(el);
-    evnt.add(el, 'click', function (e) {ok(e.preventDefault != null, 'has stop propagation')});
+    evnt.add(el, 'click', function (e) {ok(e.preventDefault != null, 'has prevent default method')});
     Syn.click(el);
   });
 
@@ -165,7 +165,7 @@ sink('add', function (test, ok) {
     var el = document.getElementById('input');
     evnt.add(el, 'keypress', function (e) {
       evnt.remove(el);
-      ok(e.keyCode != null, 'has stop propagation');
+      ok(e.keyCode != null, 'has keycode');
     });
     Syn.key(el, 'f');
   });
