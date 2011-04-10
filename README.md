@@ -1,96 +1,112 @@
 Bean
 ----
-Dustin will write words here... and they'll be REALLY GOOD. and when he does, we can open source beannn.
+Bean is a small, slick, cross-platform, framework-agnostic event utility designed for desktop, mobile, and touch-based browsers. In its simplest form - it works like this:
 
-add
+    bean.add(element, 'click', function (e) {
+      console.log('hello');
+    });
+
+API
 ---
-Bean uses a method called add to attach event listeners to elements and objects.
+Bean has four methods, each packing quite a punch.
 
-Let's start with the simplest example, adding a click event to an element:
+  * bean.<code>add()</code>
+  * bean.<code>remove</code>
+  * bean.<code>clone</code>
+  * bean.<code>fire</code>
 
+add()
+---
+<code>bean.add()</code> lets you attach event listeners to both elements and objects.
+
+<h3>Signature</h3>
+
+  * {1} element {DOM Element} an HTML DOM element
+  * {2} event type(s) {String} an event (or multiple events) to listen to
+  * {3} handler {Function} the callback function
+
+  * {2,3} handlers {Object} a list of event keys with callback functions as the values
+
+  * {4,n} optional args
+
+<h3>Examples</h3>
+
+    // simple
     bean.add(element, 'click', handler);
 
-If you'd like, you can also include additional arguments which will be passed back to your handlers at event execution:
-
-    bean.add(element, 'click', function(e, foo, bar) {
-      //codez
+    // optional arguments passed to handler
+    bean.add(element, 'click', function(e, o1, o2) {
+      console.log(o1, o2);
     }, 'fat', 'ded');
 
-Also (like with jquery), you can specify multiple event types in one declaration:
-
+    // multiple events
     bean.add(element, 'keydown keyup', handler);
 
-You might also want to pass an object with a handful of event types and handlers:
-
+    // multiple handlers
     bean.add(element, {
       click: function (e) {},
       mouseover: function (e) {},
       'focus blur': function (e) {}
     });
 
-Or maybe you're into using event delegation:
+    // event delegated events
+    bean.add(element, '.content p', 'click', handler, queryEngine);
 
-    bean.add(element, '.myClass', 'click', handler, $);
+*(note: to use event delegation with a selector, you must pass bean.add a reference to a selector engine like qwery or sizzle)*
+Developers working on Mobile Webkit applications like iPhone or Android, you may wish to simply provide the following query selector with Bean:
 
-*(note: to use event delegation with a selector, you must pass bean.Add a reference to a selector engine like qwery or sizzle)*
+    bean.add(element, '.content p', 'click', fn, function (selector) {
+      return document.querySelectorAll(selector);
+    });
 
-Or alternatively, you can pass an array of elements (this actually cuts down on selector engine work, and is more performant means of delegation if you know your DOM won't be changing.
+Or alternatively, you can pass an array of elements (this actually cuts down on selector engine work, and is a more performant means of delegation if you know your DOM won't be changing:
 
     bean.add(element, [el, el2, el3], 'click', handler);
-
     //or
-
     bean.add(element, $('.myClass'), 'click', handler);
 
-*(note: We haven't yet implemented focus, blur, submit delegation... if this is a deal breaker for you, pls let us know!)*
+*(note: the focus, blur, and submit events will not delegate)*
 
-remove
+remove()
 ------
-Remove is how you get rid of listeners once you know longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things.)
+<code>bean.remove()</code> is how you get rid of listeners once you know longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)
 
-To remove single event handlers, do something like this:
-
+    // remove a single event handlers
     bean.remove(element, 'click', handler);
 
-Or, you can also remove all click handlers for a particular element:
-
+    // remove all click handlers
     bean.remove(element, 'click');
 
-Or remove multiple event types at once like this:
-
+    // remove multiple events
     bean.remove(element, 'mousedown mouseup');
 
-Or remove all events for the element at once like this:
-
+    // remove all events
     bean.remove(element);
 
-clone
+clone()
 -----
-Clone is beans method for cloning events from one element to another.
+<code>bean.clone()</code> is a method for cloning events from one element to another.
 
-You can clone all events at once by doing this:
-
+    // clone all events at once by doing this:
     bean.clone(toElement, fromElement);
 
-Or, if you prefer, you can clone events of a specific type by doing something like this:
-
+    // clone events of a specific type
     bean.clone(toElement, fromElement, 'click');
 
-fire
+fire()
 ----
-Use fire to trigger events.
+<code>bean.fire</code> gives you the ability to trigger events.
 
-You can fire events at anytime by doing this:
-
+    // fire a single event on an element
     bean.fire(element, 'click');
 
-Also, you can specify multiple types at once like this:
-
+    // fire multiple types
     bean.fire(element, 'mousedown mouseup');
+
 
 custom events
 -------------
-Bean uses methods similar to Dean Edward's event model outlined (here)[http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/] to ensure custom events behave like real events, rather than just callbacks.
+Bean uses methods similar to [Dean Edward's event model](http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/) to ensure custom events behave like real events, rather than just callbacks.
 
 For all intents and purposes, you can just think of them as native events, which will bubble up, and everything else you would expect...
 
@@ -101,7 +117,7 @@ use them like this:
 
 mouseenter, mouseleave
 ----------------------
-Bean provides you with two special events, mouseenter and mouseleave. They are essentially just helpers for making your mouseover/mouseout lives a bit easier.
+Bean provides you with two custom DOM events, <code>mouseenter</code> and <code>mouseleave</code>. They are essentially just helpers for making your mouseover/mouseout lives a bit easier.
 
 use them like regular events:
 
@@ -111,30 +127,32 @@ object support
 --------------
 Good news, everything you can do in bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
 
-    var klass = new Klass();
+    var inst = new Klass();
     bean.add(klass, 'complete', handler);
+
     //later on...
-    bean.fire(klass, 'complete');
+    bean.fire(inst, 'complete');
 
 Browser Support
 ---------------
-Bean has been hand tested in these browsers... and we can personally vouch for them passing all tests. If you've found bugs in these browsers or others please let us know!!
+Bean passes our tests in all the following browsers. If you've found bugs in these browsers or others please let us know!
 
   - IE6, IE7, IE8, IE9
-  - Chrome 10
-  - Safari 5
+  - Chrome 1-10
+  - Safari 4-5
   - Firefox 3, 4
 
-Build
------
+Building Bean
+-------------
 Bean uses [JSHint](http://www.jshint.com/) to keep some house rules as well as [UglifyJS](https://github.com/mishoo/UglifyJS) for its compression. For those interested in building Bean yourself. Run *make* in the root of the project.
 
 Tests
 -----
-point your browser at _bean/tests/index.html_ ... We use syn for firing events in our unit tests.
+point your browser at <code>bean/tests/index.html</code>
 
 Contributors
 -------
+
   * [Dustin Diaz](https://github.com/ded/qwery/commits/master?author=ded)
   * [Jacob Thornton](https://github.com/ded/qwery/commits/master?author=fat)
   * Follow our software [@dedfat](http://twitter.com/dedfat)
