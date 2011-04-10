@@ -155,7 +155,7 @@
   function fire(element, type) {
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
-      type = types[i].replace(/\..*/, '');
+      type = types[i].replace(stripName, '');
       var isNative = nativeEvents.indexOf(type) > -1,
           isNamespace = types[i].replace(namespace, ''),
           handlers = retrieveEvents(element)[type];
