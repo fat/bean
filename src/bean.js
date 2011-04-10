@@ -37,7 +37,7 @@
 
   function nativeHandler(element, fn, args) {
     return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || window).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
       return fn.apply(element, [event].concat(args));
     };
   }
@@ -60,13 +60,15 @@
     var custom = customEvents[type];
     fn = custom && custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
     type = custom && custom.base || type;
-    var isNative = window[addEvent] || nativeEvents.indexOf(type) > -1;
-    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args)
+    var isNative = context[addEvent] || nativeEvents.indexOf(type) > -1;
+    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
     if (type == 'unload') {
       var org = fn;
-      fn = function () { removeListener(element, type, fn) && org(); };
+      fn = function () {
+        removeListener(element, type, fn) && org();
+      };
     }
-    listener(element, isNative ? type : 'propertychange', fn, true, !isNative && true)
+    listener(element, isNative ? type : 'propertychange', fn, true, !isNative && true);
     handlers[uid] = fn;
     fn._uid = uid;
     return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
@@ -118,7 +120,7 @@
     if (isString && /\s/.test(events)) {
       events = events.split(' ');
       var i = events.length - 1;
-      while (remove(element, events[i]), i--);
+      while (remove(element, events[i]) && i--) {}
       return element;
     }
     if (!attached || (isString && !attached[events])) {
@@ -145,7 +147,7 @@
       var isNative = nativeEvents.indexOf(type) > -1, orgType = type[i], isNamespace = orgType.test(/./);
       if (element[addEvent] && !isNamespace) {
         evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, window, 1);
+        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
         element.dispatchEvent(evt);
       } else if (element[attachEvent] && !isNamespace){
         isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
@@ -234,12 +236,12 @@
     }
   };
 
- if (window[attachEvent]) {
-    add(window, 'unload', function () {
+  if (context[attachEvent]) {
+    add(context, 'unload', function () {
       for (var k in collected) {
         collected.hasOwnProperty(k) && clean(collected[k]);
       }
-      window.CollectGarbage && CollectGarbage();
+      context.CollectGarbage && CollectGarbage();
     });
   }
 
