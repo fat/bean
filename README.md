@@ -67,6 +67,7 @@ Or alternatively, you can pass an array of elements (this actually cuts down on 
 
 *(note: the focus, blur, and submit events will not delegate)*
 
+<h3>Namespacing</h3>
 Bean also now supports namespacing your events! This makes it much easier to target them down the line with things like remove or fire. To name space an event just add a dot followed by your unique name identifier:
 
     bean.add(element, 'click.fat', fn);
