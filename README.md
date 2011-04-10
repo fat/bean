@@ -178,6 +178,6 @@ point your browser at <code>bean/tests/index.html</code>
 Contributors
 -------
 
-  * [Dustin Diaz](https://github.com/ded/qwery/commits/master?author=ded)
-  * [Jacob Thornton](https://github.com/ded/qwery/commits/master?author=fat)
+  * [Dustin Diaz](https://github.com/fat/bean/commits/master?author=ded)
+  * [Jacob Thornton](https://github.com/fat/bean/commits/master?author=fat)
   * Follow our software [@dedfat](http://twitter.com/dedfat)
