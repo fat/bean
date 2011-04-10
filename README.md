@@ -11,9 +11,9 @@ API
 Bean has four methods, each packing quite a punch.
 
   * bean.<code>add()</code>
-  * bean.<code>remove</code>
-  * bean.<code>clone</code>
-  * bean.<code>fire</code>
+  * bean.<code>remove()</code>
+  * bean.<code>clone()</code>
+  * bean.<code>fire()</code>
 
 add()
 ---
@@ -69,7 +69,7 @@ Or alternatively, you can pass an array of elements (this actually cuts down on 
 
 remove()
 ------
-<code>bean.remove()</code> is how you get rid of listeners once you know longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)
+<code>bean.remove()</code> is how you get rid of listeners once you no longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)
 
     // remove a single event handlers
     bean.remove(element, 'click', handler);
