@@ -1,6 +1,6 @@
 !function () {
   var b = bean.noConflict(),
-      integrate = function (method, type) {
+      integrate = function (method, type, method2) {
         var args = type ? [type] : [];
         return function () {
           for (var i = 0, l = this.elements.length; i < l; i++) {
@@ -23,6 +23,13 @@
     undelegate: remove,
     trigger: integrate('fire'),
     cloneEvents: integrate('clone'),
+    hover: function (enter, leave) {
+      for (var i = 0, l = this.elements.length; i < l; i++) {
+        b.add.call(this, this.elements[i], 'mouseenter', enter);
+        b.add.call(this, this.elements[i], 'mouseleave', leave);
+      }
+      return this;
+    }
   };
 
   var shortcuts = [
