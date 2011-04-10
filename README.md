@@ -78,7 +78,7 @@ Bean also now supports namespacing your events! This makes it much easier to tar
     bean.fire(element, 'click.ded');
     bean.remove(element, 'click.fat');
 
-    //alternatively you can specify mutliple remove handlers at once
+    //alternatively you can specify mutliple remove or fire handlers at once
     bean.fire(element, 'click.ded.fat');
     bean.remove(element, 'click.fat.ded');
 
