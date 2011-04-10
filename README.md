@@ -95,7 +95,7 @@ clone()
 
 fire()
 ----
-<code>bean.fire</code> gives you the ability to trigger events.
+<code>bean.fire()</code> gives you the ability to trigger events.
 
     // fire a single event on an element
     bean.fire(element, 'click');
@@ -141,6 +141,31 @@ Bean passes our tests in all the following browsers. If you've found bugs in the
   - Chrome 1-10
   - Safari 4-5
   - Firefox 3, 4
+
+Other important browser notes
+--------------
+One of the great things about Bean is that it fixes a number of distinguishable browser differences and also provides proper cross-platform support for certain special events.
+
+    // normalized browser event model for default behavior and propagation
+    bean.add(el, 'click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    });
+
+    // DOMContentLoaded
+    bean.add(document, 'DOMContentLoaded', fn);
+
+    // mousewheel
+    bean.add(el, 'mousewheel', fn);
+
+    // mobile
+    bean.add(window, 'orientationchange', fn);
+
+    // touch events
+    bean.add(el, 'touchstart touchmove touchend touchcancel', fn);
+
+    // gestures
+    bean.add(el, 'gesturestart gesturechange gestureend', fn);
 
 Building Bean
 -------------
