@@ -340,19 +340,33 @@ sink('add', function (test, ok) {
     bean.fire(el1, 'click.fat');
   });
 
-  // test('namespace: should be able to remove handlers based on name', 1, function () {
-  //   var el1 = document.getElementById('foo');
-  //   var el2 = document.getElementById('bar');
-  //   bean.add(el1, 'click.ded', function () {ok(true, 'bubbles up dom')});
-  //   Syn.click(el2);
-  // });
-  //
-  // test('namespace: should be able to remove multiple handlers based on name', 1, function () {
-  //   var el1 = document.getElementById('foo');
-  //   var el2 = document.getElementById('bar');
-  //   bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
-  //   Syn.click(el2);
-  // });
+  test('namespace: should be able to target multiple namespaced event handlers with fire', 2, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat', function () {ok(true, 'target multiple namespaced event handlers with fire')});
+    bean.add(el1, 'click.ded', function () {ok(true, 'targets multiple namespaced event handlers with fire')});
+    bean.add(el1, 'click', function () {ok(true, 'targets multiple namespaced event handlers with fire')});
+    bean.fire(el1, 'click.fat.ded');
+  });
+
+  test('namespace: should be able to remove handlers based on name', 1, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.ded', function () {ok(true, 'removes handlers based on name')});
+    bean.add(el1, 'click', function () {ok(true, 'removes handlers based on name')});
+    bean.remove(el1, 'click.ded');
+    Syn.click(el1);
+  });
+
+  test('namespace: should be able to remove multiple handlers based on name', 1, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat', function () {ok(true, 'removes multiple handlers based on name')});
+    bean.add(el1, 'click.ded', function () {ok(true, 'removes multiple handlers based on name')});
+    bean.add(el1, 'click', function () {ok(true, 'removes multiple handlers based on name')});
+    bean.remove(el1, 'click.ded.fat');
+    Syn.click(el1);
+  });
 
 });
 

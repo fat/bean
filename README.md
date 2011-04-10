@@ -67,6 +67,20 @@ Or alternatively, you can pass an array of elements (this actually cuts down on 
 
 *(note: the focus, blur, and submit events will not delegate)*
 
+Bean also now supports namespacing your events! This makes it much easier to target them down the line with things like remove or fire. To name space an event just add a dot followed by your unique name identifier:
+
+    bean.add(element, 'click.fat', fn);
+    bean.add(element, 'click.ded', fn);
+    bean.add(element, 'click', fn);
+
+    //later...
+    bean.fire(element, 'click.ded');
+    bean.remove(element, 'click.fat');
+
+    //alternatively you can specify mutliple remove handlers at once
+    bean.fire(element, 'click.ded.fat');
+    bean.remove(element, 'click.fat.ded');
+
 remove()
 ------
 <code>bean.remove()</code> is how you get rid of listeners once you no longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)

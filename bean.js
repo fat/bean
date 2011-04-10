@@ -33,7 +33,7 @@
   }
 
   function retrieveUid(obj, uid) {
-    return (obj._uid = obj._uid || uid || _uid++);
+    return (obj._uid = uid || obj._uid || _uid++);
   }
 
   function listener(element, type, fn, add, custom) {
@@ -60,8 +60,10 @@
     };
   }
 
-  function addListener(element, type, fn, args) {
-    var events = retrieveEvents(element), handlers = events[type] || (events[type] = {}), uid = retrieveUid(fn, type.replace(namespace, ''));
+  function addListener(element, orgType, fn, args) {
+    var type = orgType.replace(/\..*/, ''), events = retrieveEvents(element),
+        handlers = events[type] || (events[type] = {}),
+        uid = retrieveUid(fn, orgType.replace(namespace, ''));
     if (handlers[uid]) {
       return element;
     }
@@ -150,16 +152,19 @@
   function fire(element, type) {
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
-      type = types[i];
-      var isNative = nativeEvents.indexOf(type) > -1;
-      if (element[addEvent]) {
+      type = types[i].replace(/\..*/, '');
+      var isNative = nativeEvents.indexOf(type) > -1,
+          namespace = types[i].replace(namespace, ''),
+          handlers = retrieveEvents(element)[type];
+      if (namespace) {
+        handlers[namespace] && handlers[namespace]();
+      } else if (element[addEvent]) {
         evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
         element.dispatchEvent(evt);
       } else if (element[attachEvent]) {
         isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
       } else {
-        var handlers = retrieveEvents(element)[type];
         for (k in handlers) {
           handlers.hasOwnProperty(k) && handlers[k]();
         }
