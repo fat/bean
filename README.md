@@ -1,6 +1,6 @@
 Bean - Just events.
 -------------------
-Bean is a simple, new module which aims to give you all the power you've come to expect from larger libraries event systems, but in the tiniest package evar... only 2k gzipped! *(needs to be 1.5k)*
+Bean is a simple, new module which aims to give you all the power you've come to expect from larger libraries event systems, but in the tiniest package evar... only 2k gzipped!
 
 add
 ---
