@@ -11,6 +11,7 @@
 !function (context) {
   var _uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
+      namespace = /.*(?=\..*)\.|.*/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -31,8 +32,8 @@
     return (registry[uid] = registry[uid] || {});
   }
 
-  function retrieveUid(obj) {
-    return (obj._uid = obj._uid || _uid++);
+  function retrieveUid(obj, uid) {
+    return (obj._uid = obj._uid || uid || _uid++);
   }
 
   function listener(element, type, fn, add, custom) {
@@ -60,7 +61,7 @@
   }
 
   function addListener(element, type, fn, args) {
-    var events = retrieveEvents(element), handlers = events[type] || (events[type] = {}), uid = retrieveUid(fn);
+    var events = retrieveEvents(element), handlers = events[type] || (events[type] = {}), uid = retrieveUid(fn, type.replace(namespace, ''));
     if (handlers[uid]) {
       return element;
     }

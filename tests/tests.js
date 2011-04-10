@@ -325,6 +325,35 @@ sink('add', function (test, ok) {
     Syn.click(el4);
   });
 
+  test('namespace: should be able to name handlers', 1, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
+    Syn.click(el1);
+  });
+
+  test('namespace: should be able to target namespaced event handlers with fire', 1, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat', function () {ok(true, 'targets namespaced event handlers with fire')});
+    bean.add(el1, 'click', function () {ok(true, 'targets namespaced event handlers with fire')});
+    bean.fire(el1, 'click.fat');
+  });
+
+  // test('namespace: should be able to remove handlers based on name', 1, function () {
+  //   var el1 = document.getElementById('foo');
+  //   var el2 = document.getElementById('bar');
+  //   bean.add(el1, 'click.ded', function () {ok(true, 'bubbles up dom')});
+  //   Syn.click(el2);
+  // });
+  //
+  // test('namespace: should be able to remove multiple handlers based on name', 1, function () {
+  //   var el1 = document.getElementById('foo');
+  //   var el2 = document.getElementById('bar');
+  //   bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
+  //   Syn.click(el2);
+  // });
+
 });
 
 window.onload = start;

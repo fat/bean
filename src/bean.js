@@ -1,6 +1,7 @@
 !function (context) {
   var _uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
+      namespace = /.*(?=\..*)\.|.*/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -21,8 +22,8 @@
     return (registry[uid] = registry[uid] || {});
   }
 
-  function retrieveUid(obj) {
-    return (obj._uid = obj._uid || _uid++);
+  function retrieveUid(obj, uid) {
+    return (obj._uid = uid || obj._uid || _uid++);
   }
 
   function listener(element, type, fn, add, custom) {
@@ -49,8 +50,10 @@
     };
   }
 
-  function addListener(element, type, fn, args) {
-    var events = retrieveEvents(element), handlers = events[type] || (events[type] = {}), uid = retrieveUid(fn);
+  function addListener(element, orgType, fn, args) {
+    var type = orgType.replace(/\..*/, ''), events = retrieveEvents(element),
+        handlers = events[type] || (events[type] = {}),
+        uid = retrieveUid(fn, orgType.replace(namespace, ''));
     if (handlers[uid]) {
       return element;
     }
@@ -135,15 +138,16 @@
   }
 
   function fire(element, type) {
+
+    //todo make fire work!!
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
-      type = types[i];
-      var isNative = nativeEvents.indexOf(type) > -1;
-      if (element[addEvent]) {
+      var isNative = nativeEvents.indexOf(type) > -1, orgType = type[i], isNamespace = orgType.test(/./);
+      if (element[addEvent] && !isNamespace) {
         evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, window, 1);
         element.dispatchEvent(evt);
-      } else if (element[attachEvent]){
+      } else if (element[attachEvent] && !isNamespace){
         isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
       } else {
         var handlers = retrieveEvents(element)[type];
