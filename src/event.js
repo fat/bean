@@ -198,14 +198,13 @@
         }
       }
       if (nativeEvents.indexOf(type) > -1) {
-        if (document.createEventObject) {
-          evt = document.createEventObject();
-          element.fireEvent('on' + type, evt);
-        }
-        else {
+        if (element[addEvent]) {
           evt = document.createEvent("HTMLEvents");
           evt.initEvent(type, true, true);
           element.dispatchEvent(evt);
+        } else {
+          evt = document.createEventObject();
+          element.fireEvent('on' + type, evt);
         }
       } else {
         if (element[addEvent]) {

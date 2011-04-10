@@ -132,7 +132,7 @@ Bean uses [JSHint](http://www.jshint.com/) to keep some house rules as well as [
 
 Tests
 -----
-point your browser at _bean/tests/index.html_
+point your browser at _bean/tests/index.html_ ... We use syn for firing events in our unit tests.
 
 Contributors
 -------
