@@ -227,7 +227,7 @@
   var customEvents = {
     mouseenter: { base: 'mouseover', condition: check },
     mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: (Browser.firefox) ? 'DOMMouseScroll' : 'mousewheel' }
+    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
   };
 
   var bean = { add: add, remove: remove, clone: clone, fire: fire };
