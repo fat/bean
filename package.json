@@ -1,0 +1,13 @@
+{
+  "name": "bean",
+  "description": "an events api for javascript",
+  "version": "0.0.1",
+  "homepage": "https://github.com/fat/bean",
+  "authors": ["Jacob Thornton <@fat>"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fat/bean.git"
+  },
+  "main": "./bean.js",
+  "ender": "./src/ender.js"
+}

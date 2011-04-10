@@ -334,5 +334,9 @@
     context.evnt = oldEvnt;
     return this;
   };
-  context.evnt = evnt;
+
+  (typeof module !== 'undefined' && module.exports) ?
+    (module.exports = evnt) :
+    (context.evnt = evnt);
+
 }(this);
