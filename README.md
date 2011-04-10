@@ -11,9 +11,9 @@ API
 Bean has four methods, each packing quite a punch.
 
   * bean.<code>add()</code>
-  * bean.<code>remove</code>
-  * bean.<code>clone</code>
-  * bean.<code>fire</code>
+  * bean.<code>remove()</code>
+  * bean.<code>clone()</code>
+  * bean.<code>fire()</code>
 
 add()
 ---
