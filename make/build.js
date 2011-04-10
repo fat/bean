@@ -3,7 +3,7 @@ require('../support/smoosh').config({
     "DIST_DIR": "./",
     "bean": [
       "./src/copyright.js",
-      "./src/event.js"
+      "./src/bean.js"
     ]
   },
   "JSHINT_OPTS": {

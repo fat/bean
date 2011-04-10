@@ -1,9 +1,12 @@
 /*!
-  * event.js - copyright @dedfat
+  * bean.js - copyright @dedfat
   * https://github.com/fat/bean
   * Follow our software http://twitter.com/dedfat
   * MIT License
-  * cheers to the entire mootools team, dean edwards, and dperini
+  * special thanks to:
+  * dean edwards: http://dean.edwards.name/
+  * dperini: https://github.com/dperini/nwevents
+  * the entire mootools team: github.com/mootools/mootools-core
   */
 !function (context) {
   var _uid = 1, registry = {}, collected = {},
@@ -226,7 +229,7 @@
     mouseleave: { base: 'mouseout', condition: check }
   };
 
-  var evnt = { add: add, remove: remove, clone: clone, fire: fire };
+  var bean = { add: add, remove: remove, clone: clone, fire: fire };
 
   var clean = function (el) {
     var uid = remove(el)._uid;
@@ -245,14 +248,14 @@
     });
   }
 
-  var oldEvnt = context.evnt;
-  evnt.noConflict = function () {
-    context.evnt = oldEvnt;
+  var oldBean = context.bean;
+  bean.noConflict = function () {
+    context.bean = oldBean;
     return this;
   };
 
   (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = evnt) :
-    (context.evnt = evnt);
+    (module.exports = bean) :
+    (context.bean = bean);
 
 }(this);

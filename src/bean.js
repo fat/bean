@@ -219,7 +219,7 @@
     mouseleave: { base: 'mouseout', condition: check }
   };
 
-  var evnt = { add: add, remove: remove, clone: clone, fire: fire };
+  var bean = { add: add, remove: remove, clone: clone, fire: fire };
 
   var clean = function (el) {
     var uid = remove(el)._uid;
@@ -238,14 +238,14 @@
     });
   }
 
-  var oldEvnt = context.evnt;
-  evnt.noConflict = function () {
-    context.evnt = oldEvnt;
+  var oldBean = context.bean;
+  bean.noConflict = function () {
+    context.bean = oldBean;
     return this;
   };
 
   (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = evnt) :
-    (context.evnt = evnt);
+    (module.exports = bean) :
+    (context.bean = bean);
 
 }(this);

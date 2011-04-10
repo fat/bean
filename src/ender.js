@@ -1,1 +1,1 @@
-$.ender(evnt);
+$.ender(bean);
