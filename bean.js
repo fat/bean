@@ -53,7 +53,6 @@
       if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type || !event) {
         fn.apply(element, [event].concat(args));
       }
-      return true;
     };
   }
 
@@ -109,8 +108,7 @@
         events.hasOwnProperty(type) && add(element, type, events[type]);
       }
     } else {
-      var isDel = typeof fn == 'string',
-        types = (isDel ? fn : events).split(' ');
+      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
       fn = isDel ? del(events, delfn, $) : fn;
       for (var i = types.length; i--;) {
         addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
@@ -166,9 +164,6 @@
 
   function clone(element, from, type) {
     var events = retrieveEvents(from), obj, k;
-    if (!events) {
-      return element;
-    }
     obj = type ? events[type] : events;
     for (k in obj) {
       obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k] : k);
@@ -183,7 +178,7 @@
     var type = e.type, target = e.target || e.srcElement;
     e.preventDefault = e.preventDefault || fixEvent.preventDefault;
     e.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
-    e.target = target.nodeType == 3 ? target.parentNode : target;
+    e.target = target && target.nodeType == 3 ? target.parentNode : target;
     if (type.indexOf('key') != -1) {
       e.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
