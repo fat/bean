@@ -1,14 +1,14 @@
 !function () {
   var b = bean.noConflict(),
       integrate = function (method, type, method2) {
-        var args = type ? [type] : [];
+        var _args = type ? [type] : [];
         return function () {
           for (var i = 0, l = this.elements.length; i < l; i++) {
-            args.unshift(this.elements[i]);
+            var args = [this.elements[i]].concat(_args);
             b[method].apply(this, args.concat(Array.prototype.slice.call(arguments, 0)));
           }
           return this;
-        }
+        };
       };
 
   var add = integrate('add'),

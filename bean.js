@@ -9,9 +9,10 @@
   * the entire mootools team: github.com/mootools/mootools-core
   */
 !function (context) {
-  var _uid = 1, registry = {}, collected = {},
+  var __uid = 1, registry = {}, collected = {},
       overOut = /over|out/,
-      namespace = /.*(?=\..*)\.|.*/,
+      namespace = /[^\.]*(?=\..*)\.|.*/,
+      stripName = /\..*/,
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -33,7 +34,7 @@
   }
 
   function retrieveUid(obj, uid) {
-    return (obj._uid = uid || obj._uid || _uid++);
+    return (obj.__uid = uid || obj.__uid || __uid++);
   }
 
   function listener(element, type, fn, add, custom) {
@@ -61,7 +62,7 @@
   }
 
   function addListener(element, orgType, fn, args) {
-    var type = orgType.replace(/\..*/, ''), events = retrieveEvents(element),
+    var type = orgType.replace(stripName, ''), events = retrieveEvents(element),
         handlers = events[type] || (events[type] = {}),
         uid = retrieveUid(fn, orgType.replace(namespace, ''));
     if (handlers[uid]) {
@@ -80,20 +81,25 @@
     }
     listener(element, isNative ? type : 'propertychange', fn, true, !isNative && true);
     handlers[uid] = fn;
-    fn._uid = uid;
+    fn.__uid = uid;
     return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
   }
 
-  function removeListener(element, type, handler) {
-    var events = retrieveEvents(element);
+  function removeListener(element, orgType, handler) {
+    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
     if (!events || !events[type]) {
       return element;
     }
-    handler = events[type][handler._uid];
-    delete events[type][handler._uid];
-    type = customEvents[type] ? customEvents[type].base : type;
-    var isNative = element[addEvent] || nativeEvents.indexOf(type) > -1;
-    listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+    names = orgType.replace(namespace, '');
+    uids = names ? names.split('.') : [handler.__uid];
+    for (i = uids.length; i--;) {
+      uid = uids[i];
+      handler = events[type][uid];
+      delete events[type][uid];
+      type = customEvents[type] ? customEvents[type].base : type;
+      var isNative = element[addEvent] || nativeEvents.indexOf(type) > -1;
+      listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+    }
     return element;
   }
 
@@ -125,19 +131,26 @@
     return element;
   }
 
-  function remove(element, events, fn) {
-    var k, type, isString = typeof(events) == 'string', rm = removeListener, attached = retrieveEvents(element);
-    if (isString && /\s/.test(events)) {
-      events = events.split(' ');
-      var i = events.length - 1;
-      while (remove(element, events[i]) && i--) {}
+  function remove(element, orgEvents, fn) {
+    var k, type, events,
+        isString = typeof(orgEvents) == 'string',
+        names = isString && orgEvents.replace(namespace, ''),
+        rm = removeListener,
+        attached = retrieveEvents(element);
+    if (isString && /\s/.test(orgEvents)) {
+      orgEvents = orgEvents.split(' ');
+      var i = orgEvents.length - 1;
+      while (remove(element, orgEvents[i]) && i--) {}
       return element;
     }
+    events = isString ? orgEvents.replace(stripName, '') : orgEvents;
     if (!attached || (isString && !attached[events])) {
       return element;
     }
     if (typeof fn == 'function') {
       rm(element, events, fn);
+    } else if (names) {
+      rm(element, orgEvents);
     } else {
       rm = events ? rm : remove;
       type = isString && events;
@@ -152,12 +165,15 @@
   function fire(element, type) {
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
-      type = types[i].replace(/\..*/, '');
+      type = types[i].replace(stripName, '');
       var isNative = nativeEvents.indexOf(type) > -1,
-          namespace = types[i].replace(namespace, ''),
+          isNamespace = types[i].replace(namespace, ''),
           handlers = retrieveEvents(element)[type];
-      if (namespace) {
-        handlers[namespace] && handlers[namespace]();
+      if (isNamespace) {
+        isNamespace = isNamespace.split('.');
+        for (k = isNamespace.length; k--;) {
+          handlers[isNamespace[k]] && handlers[isNamespace[k]]();
+        }
       } else if (element[addEvent]) {
         evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
@@ -241,7 +257,7 @@
   var bean = { add: add, remove: remove, clone: clone, fire: fire };
 
   var clean = function (el) {
-    var uid = remove(el)._uid;
+    var uid = remove(el).__uid;
     if (uid) {
       delete collected[uid];
       delete registry[uid];
