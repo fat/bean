@@ -17,10 +17,8 @@
   var methods = {
     bind: add,
     listen: add,
-    delegate: add,
     unbind: remove,
     unlisten: remove,
-    undelegate: remove,
     trigger: integrate('fire'),
     cloneEvents: integrate('clone'),
     hover: function (enter, leave) {
@@ -45,4 +43,23 @@
   }
 
   $.ender(methods, true);
+  $.ender({
+    delegate: function (selector, type, fn) {
+      var args = [].slice.call(arguments, 0), i, _args;
+      args.push($);
+      for (i = 0, l = this.length; i < l; i++) {
+        _args = [this[i]].concat(args);
+        b.add.apply(this, _args);
+      }
+      return this;
+    },
+    undelegate: function (selector, type, fn) {
+      var args = [].slice.call(arguments, 0), i, _args;
+      for (i = 0, l = this.length; i < l; i++) {
+        _args = [this[i]].concat(args);
+        b.remove.apply(this, _args);
+      }
+      return this;
+    }
+  }, true);
 }();
