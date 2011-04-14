@@ -3,9 +3,10 @@
       integrate = function (method, type, method2) {
         var _args = type ? [type] : [];
         return function () {
-          for (var i = 0, l = this.elements.length; i < l; i++) {
-            var args = [this.elements[i]].concat(_args);
-            b[method].apply(this, args.concat(Array.prototype.slice.call(arguments, 0)));
+          for (var args, i = 0, l = this.elements.length; i < l; i++) {
+            args = [this.elements[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
+            args.length == 4 && args.push($);
+            b[method].apply(this, args);
           }
           return this;
         };
@@ -17,6 +18,8 @@
   var methods = {
     bind: add,
     listen: add,
+    delegate: add,
+    undelegate: remove,
     unbind: remove,
     unlisten: remove,
     trigger: integrate('fire'),
@@ -43,23 +46,4 @@
   }
 
   $.ender(methods, true);
-  $.ender({
-    delegate: function (selector, type, fn) {
-      var args = [].slice.call(arguments, 0), i, _args;
-      args.push($);
-      for (i = 0, l = this.length; i < l; i++) {
-        _args = [this[i]].concat(args);
-        b.add.apply(this, _args);
-      }
-      return this;
-    },
-    undelegate: function (selector, type, fn) {
-      var args = [].slice.call(arguments, 0), i, _args;
-      for (i = 0, l = this.length; i < l; i++) {
-        _args = [this[i]].concat(args);
-        b.remove.apply(this, _args);
-      }
-      return this;
-    }
-  }, true);
 }();
