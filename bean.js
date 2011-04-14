@@ -199,28 +199,34 @@
   }
 
   function fixEvent(e) {
+    var result = {};
     if (!e) {
-      return {};
+      return result;
     }
     var type = e.type, target = e.target || e.srcElement;
-    e.preventDefault = e.preventDefault || fixEvent.preventDefault;
-    e.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
-    e.target = target && target.nodeType == 3 ? target.parentNode : target;
+    result.preventDefault = e.preventDefault || fixEvent.preventDefault;
+    result.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
+    result.target = target && target.nodeType == 3 ? target.parentNode : target;
     if (type.indexOf('key') != -1) {
-      e.keyCode = e.which || e.keyCode;
+      result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
-      e.rightClick = e.which == 3 || e.button == 2;
-      e.pos = { x: 0, y: 0 };
+      result.rightClick = e.which == 3 || e.button == 2;
+      result.pos = { x: 0, y: 0 };
       if (e.pageX || e.pageY) {
-        e.pos.x = e.pageX;
-        e.pos.y = e.pageY;
+        result.pos.x = e.pageX;
+        result.pos.y = e.pageY;
       } else if (e.clientX || e.clientY) {
-        e.pos.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        e.pos.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        result.pos.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        result.pos.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
       }
-      overOut.test(type) && (e.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
+      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
-    return e;
+    for (var k in e) {
+      if (!(k in result)) {
+        result[k] = e[k];
+      }
+    }
+    return result;
   }
   fixEvent.preventDefault = function () {
     this.returnValue = false;
