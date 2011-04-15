@@ -13,17 +13,27 @@
       };
 
   var add = integrate('add'),
-      remove = integrate('remove');
+      remove = integrate('remove'),
+      fire = integrate('fire');
 
   var methods = {
+
+    on: add,
+    addListener: add,
     bind: add,
     listen: add,
     delegate: add,
-    undelegate: remove,
+
     unbind: remove,
     unlisten: remove,
-    trigger: integrate('fire'),
+    removeListener: remove,
+    undelegate: remove,
+
+    emit: fire,
+    trigger: fire,
+
     cloneEvents: integrate('clone'),
+
     hover: function (enter, leave) {
       for (var i = 0, l = this.elements.length; i < l; i++) {
         b.add.call(this, this.elements[i], 'mouseenter', enter);
