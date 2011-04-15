@@ -203,11 +203,11 @@
       result.rightClick = e.which == 3 || e.button == 2;
       result.pos = { x: 0, y: 0 };
       if (e.pageX || e.pageY) {
-        result.pos.x = e.pageX;
-        result.pos.y = e.pageY;
+        result.clientX = e.pageX;
+        result.clientY = e.pageY;
       } else if (e.clientX || e.clientY) {
-        result.pos.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        result.pos.y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
       }
       overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
