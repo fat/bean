@@ -206,7 +206,9 @@
     var type = e.type, target = e.target || e.srcElement;
     result.preventDefault = e.preventDefault || fixEvent.preventDefault;
     result.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
-    result.target = target && target.nodeType == 3 ? target.parentNode : target;
+    if (result.target !== target) {
+      result.target = target && target.nodeType == 3 ? target.parentNode : target;
+    }
     if (type.indexOf('key') != -1) {
       result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
