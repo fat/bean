@@ -204,8 +204,8 @@
       return result;
     }
     var type = e.type, target = e.target || e.srcElement;
-    result.preventDefault = e.preventDefault || fixEvent.preventDefault;
-    result.stopPropagation = e.stopPropagation || fixEvent.stopPropagation;
+    result.preventDefault = fixEvent.preventDefault(e);
+    result.stopPropagation = fixEvent.stopPropagation(e);
     result.target = target && target.nodeType == 3 ? target.parentNode : target;
     if (type.indexOf('key') != -1) {
       result.keyCode = e.which || e.keyCode;
@@ -228,11 +228,25 @@
     }
     return result;
   }
-  fixEvent.preventDefault = function () {
-    this.returnValue = false;
+
+  fixEvent.preventDefault = function (e) {
+    return function () {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      else {
+        e.returnValue = false;
+      }
+    };
   };
-  fixEvent.stopPropagation = function () {
-    this.cancelBubble = true;
+  fixEvent.stopPropagation = function (e) {
+    return function () {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      } else {
+        e.cancelBubble = true;
+      }
+    };
   };
 
   var nativeEvents = 'click,dblclick,mouseup,mousedown,contextmenu,' + //mouse buttons
