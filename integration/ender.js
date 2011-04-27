@@ -1,19 +1,20 @@
 /*!
-  * Ender.js: next-level JavaScript
+  * Ender: open module JavaScript framework
   * copyright Dustin Diaz & Jacob Thornton 2011 (@ded @fat)
-  * https://github.com/ded/Ender.js
+  * https://github.com/ender-js/ender
   * License MIT
+  * Build: ender -j domready bean qwery
   */
 !function (context) {
 
   function aug(o, o2) {
     for (var k in o2) {
-      o[k] = o2[k];
+      k != 'noConflict' && (o[k] = o2[k]);
     }
   }
 
   function _$(s, r) {
-    this.elements = $._select(s, r);
+    this.elements = typeof s !== 'string' && !s.nodeType && typeof s.length !== 'undefined' ? s : $._select(s, r);
     this.length = this.elements.length;
     for (var i = 0; i < this.length; i++) {
       this[i] = this.elements[i];
@@ -43,322 +44,439 @@
     (module.exports = $) :
     (context.$ = $);
 
-}(this);/*!
-  * bonzo.js - copyright @dedfat 2011
-  * https://github.com/ded/bonzo
-  * Follow our software http://twitter.com/dedfat
-  * MIT License
-  */
-!function (context) {
+}(this);
+!function () { var module = { exports: {} }; !function (doc) {
+  var loaded = 0, fns = [], ol, f = false,
+      testEl = doc.createElement('a'),
+      domContentLoaded = 'DOMContentLoaded',
+      addEventListener = 'addEventListener',
+      onreadystatechange = 'onreadystatechange';
 
-  var doc = document,
-      html = (doc.compatMode == 'CSS1Compat') ?
-        doc.documentElement :
-        doc.body,
-      specialAttributes = /^checked|value|selected$/,
-      stateAttributes = /^checked|selected$/,
-      ie = /msie/.test(navigator.userAgent);
+  /^loade|c/.test(doc.readyState) && (loaded = 1);
 
-  function classReg(c) {
-    return new RegExp("(^|\\s+)" + c + "(\\s+|$)");
-  }
-
-  function each(ar, fn) {
-    for (i = 0, len = ar.length; i < len; i++) {
-      fn(ar[i]);
+  function flush() {
+    loaded = 1;
+    for (var i = 0, l = fns.length; i < l; i++) {
+      fns[i]();
     }
   }
+  doc[addEventListener] && doc[addEventListener](domContentLoaded, function fn() {
+    doc.removeEventListener(domContentLoaded, fn, f);
+    flush();
+  }, f);
 
-  function trim(s) {
-    return s.replace(/(^\s*|\s*$)/g, '');
+
+  testEl.doScroll && doc.attachEvent(onreadystatechange, (ol = function ol() {
+    if (/^c/.test(doc.readyState)) {
+      doc.detachEvent(onreadystatechange, ol);
+      flush();
+    }
+  }));
+
+  var domReady = testEl.doScroll ?
+    function (fn) {
+      self != top ?
+        !loaded ?
+          fns.push(fn) :
+          fn() :
+        !function () {
+          try {
+            testEl.doScroll('left');
+          } catch (e) {
+            return setTimeout(function() {
+              domReady(fn);
+            }, 50);
+          }
+          fn();
+        }();
+    } :
+    function (fn) {
+      loaded ? fn() : fns.push(fn);
+    };
+
+    (typeof module !== 'undefined') && module.exports ?
+      (module.exports = {domReady: domReady}) :
+      (window.domReady = domReady);
+
+}(document); $.ender(module.exports); }();
+/*!
+  * bean.js - copyright @dedfat
+  * https://github.com/fat/bean
+  * Follow our software http://twitter.com/dedfat
+  * MIT License
+  * special thanks to:
+  * dean edwards: http://dean.edwards.name/
+  * dperini: https://github.com/dperini/nwevents
+  * the entire mootools team: github.com/mootools/mootools-core
+  */
+!function (context) {
+  var __uid = 1, registry = {}, collected = {},
+      overOut = /over|out/,
+      namespace = /[^\.]*(?=\..*)\.|.*/,
+      stripName = /\..*/,
+      addEvent = 'addEventListener',
+      attachEvent = 'attachEvent',
+      removeEvent = 'removeEventListener',
+      detachEvent = 'detachEvent',
+      doc = context.document || {},
+      root = doc.documentElement || {},
+      W3C_MODEL = root[addEvent],
+      eventSupport = W3C_MODEL ? addEvent : attachEvent,
+
+  isDescendant = function (parent, child) {
+    var node = child.parentNode;
+    while (node != null) {
+      if (node == parent) {
+        return true;
+      }
+      node = node.parentNode;
+    }
+  },
+
+  retrieveUid = function (obj, uid) {
+    return (obj.__uid = uid || obj.__uid || __uid++);
+  },
+
+  retrieveEvents = function (element) {
+    var uid = retrieveUid(element);
+    return (registry[uid] = registry[uid] || {});
+  },
+
+  listener = W3C_MODEL ? function (element, type, fn, add) {
+    element[add ? addEvent : removeEvent](type, fn, false);
+  } : function (element, type, fn, add, custom) {
+    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    element[add ? attachEvent : detachEvent]('on' + type, fn);
+  },
+
+  nativeHandler = function (element, fn, args) {
+    return function (event) {
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
+      return fn.apply(element, [event].concat(args));
+    };
+  },
+
+  customHandler = function (element, fn, type, condition, args) {
+    return function (event) {
+      if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type || !event) {
+        fn.apply(element, [event].concat(args));
+      }
+    };
+  },
+
+  addListener = function (element, orgType, fn, args) {
+    var type = orgType.replace(stripName, ''),
+        events = retrieveEvents(element),
+        handlers = events[type] || (events[type] = {}),
+        uid = retrieveUid(fn, orgType.replace(namespace, ''));
+    if (handlers[uid]) {
+      return element;
+    }
+    var custom = customEvents[type];
+    if (custom) {
+      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
+      type = custom.base || type;
+    }
+    var isNative = W3C_MODEL || nativeEvents.indexOf(type) > -1;
+    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
+    if (type == 'unload') {
+      var org = fn;
+      fn = function () {
+        removeListener(element, type, fn) && org();
+      };
+    }
+    element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
+    handlers[uid] = fn;
+    fn.__uid = uid;
+    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
+  },
+
+  removeListener = function (element, orgType, handler) {
+    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+    if (!events || !events[type]) {
+      return element;
+    }
+    names = orgType.replace(namespace, '');
+    uids = names ? names.split('.') : [handler.__uid];
+    for (i = uids.length; i--;) {
+      uid = uids[i];
+      handler = events[type][uid];
+      delete events[type][uid];
+      if (element[eventSupport]) {
+        type = customEvents[type] ? customEvents[type].base : type;
+        var isNative = element[addEvent] || nativeEvents.indexOf(type) > -1;
+        listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+      }
+    }
+    return element;
+  },
+
+  del = function (selector, fn, $) {
+    return function (e) {
+      var array = typeof selector == 'string' ? $(selector, this) : selector;
+      for (var target = e.target; target && target != this; target = target.parentNode) {
+        for (var i = array.length; i--;) {
+          if (array[i] == target) {
+            return fn.apply(target, arguments);
+          }
+        }
+      }
+    };
+  },
+
+  add = function (element, events, fn, delfn, $) {
+    if (typeof events == 'object' && !fn) {
+      for (var type in events) {
+        events.hasOwnProperty(type) && add(element, type, events[type]);
+      }
+    } else {
+      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
+      fn = isDel ? del(events, delfn, $) : fn;
+      for (var i = types.length; i--;) {
+        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
+      }
+    }
+    return element;
+  },
+
+  remove = function (element, orgEvents, fn) {
+    var k, type, events,
+        isString = typeof(orgEvents) == 'string',
+        names = isString && orgEvents.replace(namespace, ''),
+        rm = removeListener,
+        attached = retrieveEvents(element);
+    if (isString && /\s/.test(orgEvents)) {
+      orgEvents = orgEvents.split(' ');
+      var i = orgEvents.length - 1;
+      while (remove(element, orgEvents[i]) && i--) {}
+      return element;
+    }
+    events = isString ? orgEvents.replace(stripName, '') : orgEvents;
+    if (!attached || (isString && !attached[events])) {
+      return element;
+    }
+    if (typeof fn == 'function') {
+      rm(element, events, fn);
+    } else if (names) {
+      rm(element, orgEvents);
+    } else {
+      rm = events ? rm : remove;
+      type = isString && events;
+      events = events ? (fn || attached[events] || events) : attached;
+      for (k in events) {
+        events.hasOwnProperty(k) && rm(element, type || k, events[k]);
+      }
+    }
+    return element;
+  },
+
+  fire = function (element, type) {
+    var evt, k, i, types = type.split(' ');
+    for (i = types.length; i--;) {
+      type = types[i].replace(stripName, '');
+      var isNative = nativeEvents.indexOf(type) > -1,
+          isNamespace = types[i].replace(namespace, ''),
+          handlers = retrieveEvents(element)[type];
+      if (isNamespace) {
+        isNamespace = isNamespace.split('.');
+        for (k = isNamespace.length; k--;) {
+          handlers[isNamespace[k]] && handlers[isNamespace[k]]();
+        }
+      } else if (element[eventSupport]) {
+        fireListener(isNative, type, element);
+      } else {
+        for (k in handlers) {
+          handlers.hasOwnProperty(k) && handlers[k]();
+        }
+      }
+    }
+    return element;
+  },
+
+  fireListener = W3C_MODEL ? function (isNative, type, element) {
+    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
+    element.dispatchEvent(evt);
+  } : function (isNative, type, element) {
+    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
+  },
+
+  clone = function (element, from, type) {
+    var events = retrieveEvents(from), obj, k;
+    obj = type ? events[type] : events;
+    for (k in obj) {
+      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k] : k);
+    }
+    return element;
+  },
+
+  fixEvent = function (e) {
+    var result = {};
+    if (!e) {
+      return result;
+    }
+    var type = e.type, target = e.target || e.srcElement;
+    result.preventDefault = fixEvent.preventDefault(e);
+    result.stopPropagation = fixEvent.stopPropagation(e);
+    result.target = target && target.nodeType == 3 ? target.parentNode : target;
+    if (type.indexOf('key') != -1) {
+      result.keyCode = e.which || e.keyCode;
+    } else if ((/click|mouse|menu/i).test(type)) {
+      result.rightClick = e.which == 3 || e.button == 2;
+      result.pos = { x: 0, y: 0 };
+      if (e.pageX || e.pageY) {
+        result.clientX = e.pageX;
+        result.clientY = e.pageY;
+      } else if (e.clientX || e.clientY) {
+        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+      }
+      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
+    }
+    for (var k in e) {
+      if (!(k in result)) {
+        result[k] = e[k];
+      }
+    }
+    return result;
+  };
+
+  fixEvent.preventDefault = function (e) {
+    return function () {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      else {
+        e.returnValue = false;
+      }
+    };
+  };
+
+  fixEvent.stopPropagation = function (e) {
+    return function () {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      } else {
+        e.cancelBubble = true;
+      }
+    };
+  };
+
+  var nativeEvents = 'click,dblclick,mouseup,mousedown,contextmenu,' + //mouse buttons
+    'mousewheel,DOMMouseScroll,' + //mouse wheel
+    'mouseover,mouseout,mousemove,selectstart,selectend,' + //mouse movement
+    'keydown,keypress,keyup,' + //keyboard
+    'orientationchange,' + // mobile
+    'touchstart,touchmove,touchend,touchcancel,' + // touch
+    'gesturestart,gesturechange,gestureend,' + // gesture
+    'focus,blur,change,reset,select,submit,' + //form elements
+    'load,unload,beforeunload,resize,move,DOMContentLoaded,readystatechange,' + //window
+    'error,abort,scroll'.split(','); //misc
+
+  function check(event) {
+    var related = event.relatedTarget;
+    if (!related) {
+      return related == null;
+    }
+    return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
   }
 
-  function camelize(s) {
-    return s.replace(/-(.)/g, function (m, m1) {
-      return m1.toUpperCase();
+  var customEvents = {
+    mouseenter: { base: 'mouseover', condition: check },
+    mouseleave: { base: 'mouseout', condition: check },
+    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
+  };
+
+  var bean = { add: add, remove: remove, clone: clone, fire: fire };
+
+  var clean = function (el) {
+    var uid = remove(el).__uid;
+    if (uid) {
+      delete collected[uid];
+      delete registry[uid];
+    }
+  };
+
+  if (context[attachEvent]) {
+    add(context, 'unload', function () {
+      for (var k in collected) {
+        collected.hasOwnProperty(k) && clean(collected[k]);
+      }
+      context.CollectGarbage && CollectGarbage();
     });
   }
 
-  function is(node) {
-    return node && node.nodeName && node.nodeType == 1;
-  }
+  var oldBean = context.bean;
+  bean.noConflict = function () {
+    context.bean = oldBean;
+    return this;
+  };
 
-  function some(ar, fn, scope) {
-    for (var i = 0, j = ar.length; i < j; ++i) {
-      if (fn.call(scope, ar[i], i, ar)) {
-        return true;
-      }
-    }
-    return false;
-  }
+  (typeof module !== 'undefined' && module.exports) ?
+    (module.exports = bean) :
+    (context.bean = bean);
 
-  function _bonzo(elements) {
-    this.elements = elements && Object.prototype.hasOwnProperty.call(elements, 'length') ? elements : [elements];
-  }
+}(this);!function () {
+  var b = bean.noConflict(),
+      integrate = function (method, type, method2) {
+        var _args = type ? [type] : [];
+        return function () {
+          for (var args, i = 0, l = this.elements.length; i < l; i++) {
+            args = [this.elements[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
+            args.length == 4 && args.push($);
+            !arguments.length && method == 'add' && type && (method = 'fire');
+            b[method].apply(this, args);
+          }
+          return this;
+        };
+      };
 
-  _bonzo.prototype = {
+  var add = integrate('add'),
+      remove = integrate('remove'),
+      fire = integrate('fire');
 
-    each: function (fn) {
-      for (var i = 0; i  < this.elements.length; i++) {
-        fn.call(this, this.elements[i]);
+  var methods = {
+
+    on: add,
+    addListener: add,
+    bind: add,
+    listen: add,
+    delegate: add,
+
+    unbind: remove,
+    unlisten: remove,
+    removeListener: remove,
+    undelegate: remove,
+
+    emit: fire,
+    trigger: fire,
+
+    cloneEvents: integrate('clone'),
+
+    hover: function (enter, leave) {
+      for (var i = 0, l = this.elements.length; i < l; i++) {
+        b.add.call(this, this.elements[i], 'mouseenter', enter);
+        b.add.call(this, this.elements[i], 'mouseleave', leave);
       }
       return this;
-    },
-
-    map: function (fn) {
-      var m = [];
-      for (var i = 0; i  < this.elements.length; i++) {
-        m.push(fn.call(this, this.elements[i]));
-      }
-      return m;
-    },
-
-    first: function () {
-      return this.elements[0];
-    },
-
-    last: function () {
-      return this.elements[this.elements.length - 1];
-    },
-
-    html: function (html) {
-      return typeof html == 'string' ?
-        this.each(function (el) {
-          el.innerHTML = html;
-        }) :
-        this.elements[0].innerHTML;
-    },
-
-    addClass: function (c) {
-      return this.each(function (el) {
-        this.hasClass(el, c) || (el.className = trim(el.className + ' ' + c));
-      });
-    },
-
-    removeClass: function (c) {
-      return this.each(function (el) {
-        this.hasClass(el, c) && (el.className = trim(el.className.replace(classReg(c), ' ')));
-      });
-    },
-
-    hasClass: function (el, c) {
-      return typeof c == 'undefined' ?
-        some(this.elements, function (i) {
-          return classReg(el).test(i.className);
-        }) :
-        classReg(c).test(el.className);
-    },
-
-    show: function (elements) {
-      return this.each(function (el) {
-        el.style.display = '';
-      });
-    },
-
-    hide: function (elements) {
-      return this.each(function (el) {
-        el.style.display = 'none';
-      });
-    },
-
-    create: function (node) {
-      return typeof node == 'string' ?
-        function () {
-          var el = doc.createElement('div'), els = [];
-          el.innerHTML = node;
-          var nodes = el.childNodes;
-          el = el.firstChild;
-          els.push(el);
-          while (el = el.nextSibling) {
-            (el.nodeType == 1) && els.push(el);
-          }
-          return els;
-
-        }() : is(node) ? [node.cloneNode(true)] : [];
-    },
-
-    append: function (node) {
-      return this.each(function (el) {
-        each(this.create(node), function (i) {
-          el.appendChild(i);
-        });
-      });
-    },
-
-    prepend: function (node) {
-      return this.each(function (el) {
-        var first = el.firstChild;
-        each(this.create(node), function (i) {
-          el.insertBefore(i, first);
-        });
-      });
-    },
-
-    before: function (node) {
-      return this.each(function (el) {
-        each(this.create(node), function (i) {
-          el.parentNode.insertBefore(i, el);
-        });
-      });
-    },
-
-    after: function (node) {
-      return this.each(function (el) {
-        each(this.create(node), function (i) {
-          el.parentNode.insertBefore(i, el.nextSibling);
-        });
-      });
-    },
-
-    css: function (o, v) {
-      var fn = typeof o == 'string' ?
-        function (el) {
-          el.style[camelize(o)] = v;
-        } :
-        function (el) {
-          for (var k in o) {
-            o.hasOwnProperty(k) && (el.style[camelize(k)] = o[k]);
-          }
-        };
-      return this.each(fn);
-    },
-
-    offset: function () {
-      var el = this.first();
-      var width = el.offsetWidth;
-      var height = el.offsetHeight;
-      var top = el.offsetTop;
-      var left = el.offsetLeft;
-      while (el = el.offsetParent) {
-        top = top + el.offsetTop;
-        left = left + el.offsetLeft;
-      }
-
-      return {
-        top: top,
-        left: left,
-        height: height,
-        width: width
-      };
-    },
-
-    attr: function (k, v) {
-      var el = this.first();
-      return typeof v == 'undefined' ?
-        specialAttributes.test(k) ?
-          stateAttributes.test(k) && typeof el[k] == 'string' ?
-            true : el[k] : el.getAttribute(k) :
-        this.each(function (el) {
-          el.setAttribute(k, v);
-        });
-    },
-
-    remove: function () {
-      return this.each(function (el) {
-        el.parentNode.removeChild(el);
-      });
-    },
-
-    empty: function () {
-      return this.each(function (el) {
-        while (el.firstChild) {
-          el.removeChild(el.firstChild);
-        }
-      });
-    },
-
-    detach: function () {
-      return this.map(function (el) {
-        return el.parentNode.removeChild(el);
-      });
-    },
-
-    scrollTop: function (y) {
-      return scroll.call(this, null, y, 'y');
-    },
-
-    scrollLeft: function (x) {
-      return scroll.call(this, x, null, 'x');
-    }
-
-  };
-
-  function scroll(x, y, type) {
-    var el = this.first();
-    if (x == null && y == null) {
-      return (isBody(el) ? getWindowScroll() : { x: el.scrollLeft, y: el.scrollTop })[type];
-    }
-    if (isBody(el)) {
-      window.scrollTo(x, y);
-    } else {
-      x != null && (el.scrollLeft = x);
-      y != null && (el.scrollTop = y);
-    }
-    return this;
-  }
-
-  function isBody(element) {
-    return element === window || (/^(?:body|html)$/i).test(element.tagName);
-  }
-
-  function getWindowScroll() {
-    return { x: window.pageXOffset || html.scrollLeft, y: window.pageYOffset || html.scrollTop };
-  }
-
-  function bonzo(els) {
-    return new _bonzo(els);
-  }
-
-  bonzo.aug = function (o, target) {
-    for (var k in o) {
-      o.hasOwnProperty(k) && ((target || _bonzo.prototype)[k] = o[k]);
     }
   };
 
-  bonzo.doc = function () {
-    var w = html.scrollWidth,
-        h = html.scrollHeight,
-        vp = this.viewport();
-    return {
-      width: Math.max(w, vp.width),
-      height: Math.max(h, vp.height)
-    };
-  };
+  var shortcuts = [
+    'blur', 'change', 'click', 'dbltclick', 'error', 'focus', 'focusin',
+    'focusout', 'keydown', 'keypress', 'keyup', 'load', 'mousedown',
+    'mouseenter', 'mouseleave', 'mouseout', 'mouseover', 'mouseup',
+    'resize', 'scroll', 'select', 'submit', 'unload'
+  ];
 
-  bonzo.viewport = function () {
-    var h = self.innerHeight,
-        w = self.innerWidth;
-    ie && (h = html.clientHeight) && (w = html.clientWidth);
-    return {
-      width: w,
-      height: h
-    };
-  };
+  for (var i = shortcuts.length; i--;) {
+    var shortcut = shortcuts[i];
+    methods[shortcut] = integrate('add', shortcut);
+  }
 
-  bonzo.contains = 'compareDocumentPosition' in html ?
-    function (container, element) {
-      return (container.compareDocumentPosition(element) & 16) == 16;
-    } : 'contains' in html ?
-    function (container, element) {
-      return container !== element && container.contains(element);
-    } :
-    function (container, element) {
-      while (element = element.parentNode) {
-        if (element === container) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-  var old = context.bonzo;
-  bonzo.noConflict = function () {
-    context.bonzo = old;
-    return this;
-  };
-  context.bonzo = bonzo;
-
-}(this);/*!
+  $.ender(methods, true);
+}();
+/*!
   * qwery.js - copyright @dedfat
   * https://github.com/ded/qwery
   * Follow our software http://twitter.com/dedfat
@@ -523,7 +641,14 @@
       return 0;
     };
 
-  function boilerPlate(selector, root) {
+  function boilerPlate(selector, _root, fn) {
+    var root = (typeof _root == 'string') ? fn(_root)[0] : (_root || doc);
+    if (isNode(selector)) {
+      return !_root || (isNode(root) && isAncestor(selector, root)) ? [selector] : [];
+    }
+    if (selector && typeof selector === 'object' && selector.length && isFinite(selector.length)) {
+      return array(selector);
+    }
     if (m = selector.match(idOnly)) {
       return (el = doc.getElementById(m[1])) ? [el] : [];
     }
@@ -539,13 +664,10 @@
 
   function qsa(selector, _root) {
     var root = (typeof _root == 'string') ? qsa(_root)[0] : (_root || doc);
-    if (isNode(selector)) {
-      return !_root || isAncestor(selector, root) ? [selector] : [];
-    }
     if (!root) {
       return [];
     }
-    if (m = boilerPlate(selector, root)) {
+    if (m = boilerPlate(selector, _root, qsa)) {
       return m;
     }
     if (doc.getElementsByClassName && (m = selector.match(classOnly))) {
@@ -575,14 +697,11 @@
     }
     return function (selector, _root) {
       var root = (typeof _root == 'string') ? qwery(_root)[0] : (_root || doc);
-      if (isNode(selector)) {
-        return !_root || isAncestor(selector, root) ? [selector] : [];
-      }
       if (!root) {
         return [];
       }
       var i, l, result = [], collections = [], element;
-      if (m = boilerPlate(selector, root)) {
+      if (m = boilerPlate(selector, _root, qwery)) {
         return m;
       }
       if (m = selector.match(tagAndOrClass)) {
@@ -611,7 +730,7 @@
     };
   }();
 
-  // being nice
+  qwery.uniq = uniq;
   var oldQwery = context.qwery;
   qwery.noConflict = function () {
     context.qwery = oldQwery;
@@ -620,163 +739,19 @@
   context.qwery = qwery;
 
 }(this, document);
-/*!
-  * $script.js v1.3
-  * https://github.com/ded/script.js
-  * Copyright: @ded & @fat - Dustin Diaz, Jacob Thornton 2011
-  * Follow our software http://twitter.com/dedfat
-  * License: MIT
-  */
-
-/*!
-  * $script.js v1.3
-  * https://github.com/ded/script.js
-  * Copyright: @ded & @fat - Dustin Diaz, Jacob Thornton 2011
-  * Follow our software http://twitter.com/dedfat
-  * License: MIT
-  */
-
-!function(win, doc, timeout) {
-  var script = doc.getElementsByTagName("script")[0],
-      list = {}, ids = {}, delay = {}, re = /^i|c/, loaded = 0, fns = [], ol,
-      scripts = {}, s = 'string', f = false, i, testEl = doc.createElement('a'),
-      push = 'push', domContentLoaded = 'DOMContentLoaded', readyState = 'readyState',
-      addEventListener = 'addEventListener', onreadystatechange = 'onreadystatechange',
-      every = function(ar, fn) {
-        for (i = 0, j = ar.length; i < j; ++i) {
-          if (!fn(ar[i])) {
-            return 0;
-          }
-        }
-        return 1;
-      };
-      function each(ar, fn) {
-        every(ar, function(el) {
-          return !fn(el);
-        });
-      }
-
-  if (!doc[readyState] && doc[addEventListener]) {
-    doc[addEventListener](domContentLoaded, function fn() {
-      doc.removeEventListener(domContentLoaded, fn, f);
-      doc[readyState] = "complete";
-    }, f);
-    doc[readyState] = "loading";
-  }
-
-  var $script = function(paths, idOrDone, optDone) {
-    paths = paths[push] ? paths : [paths];
-    var idOrDoneIsDone = idOrDone && idOrDone.call,
-        done = idOrDoneIsDone ? idOrDone : optDone,
-        id = idOrDoneIsDone ? paths.join('') : idOrDone,
-        queue = paths.length;
-        function loopFn(item) {
-          return item.call ? item() : list[item];
-        }
-        function callback() {
-          if (!--queue) {
-            list[id] = 1;
-            done && done();
-            for (var dset in delay) {
-              every(dset.split('|'), loopFn) && !each(delay[dset], loopFn) && (delay[dset] = []);
-            }
-          }
-        }
-    if (id && ids[id]) {
-      return;
-    }
-    timeout(function() {
-      each(paths, function(path) {
-        if (scripts[path]) {
-          return;
-        }
-        scripts[path] = 1;
-        id && (ids[id] = 1);
-        var el = doc.createElement("script"),
-            loaded = 0;
-        el.onload = el[onreadystatechange] = function () {
-          if ((el[readyState] && !(!re.test(el[readyState]))) || loaded) {
-            return;
-          }
-          el.onload = el[onreadystatechange] = null;
-          loaded = 1;
-          callback();
-        };
-        el.async = 1;
-        el.src = path;
-        script.parentNode.insertBefore(el, script);
-      });
-    }, 0);
-    return $script;
-  };
-
-  $script.ready = function(deps, ready, req) {
-    deps = deps[push] ? deps : [deps];
-    var missing = [];
-    !each(deps, function(dep) {
-      list[dep] || missing[push](dep);
-    }) && every(deps, function(dep) {
-      return list[dep];
-    }) ? ready() : !function(key) {
-      delay[key] = delay[key] || [];
-      delay[key][push](ready);
-      req && req(missing);
-    }(deps.join('|'));
-    return $script;
-  };
-
-  function again(fn) {
-    timeout(function() {
-      domReady(fn);
-    }, 50);
-  }
-
-  testEl.doScroll && doc.attachEvent(onreadystatechange, (ol = function ol() {
-    /^c/.test(doc[readyState]) &&
-    (loaded = 1) &&
-    !doc.detachEvent(onreadystatechange, ol) &&
-    each(fns, function (f) {
-      f();
-    });
-  }));
-
-  var domReady = testEl.doScroll ?
-    function (fn) {
-      self != top ?
-        !loaded ?
-          fns[push](fn) :
-          fn() :
-        !function () {
-          try {
-            testEl.doScroll('left');
-          } catch (e) {
-            return again(fn);
-          }
-          fn();
-        }();
-    } :
-    function (fn) {
-      re.test(doc[readyState]) ? fn() : again(fn);
-    };
-
-  $script.domReady = domReady;
-
-  var old = win.$script;
-  $script.noConflict = function () {
-    win.$script = old;
-    return this;
-  };
-
-  (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = $script) :
-    (win.$script = $script);
-
-}(this, document, setTimeout);$.ender(bonzo);
-$.ender(bonzo(), true);
-bonzo.noConflict();$._select = qwery.noConflict();!function () {
-  var s = $script.noConflict();
+!function () {
+  var q = qwery.noConflict();
+  $._select = q;
   $.ender({
-    script: s,
-    domReady: s.domReady
-  });
+    find: function (s) {
+      var r = [], i, l, j, k, els;
+      for (i = 0, l = this.length; i < l; i++) {
+        els = q(s, this[i]);
+        for (j = 0, k = els.length; j < k; j++) {
+          r.push(els[j]);
+        }
+      }
+      return $(q.uniq(r));
+    }
+  }, true);
 }();

@@ -6,6 +6,7 @@
           for (var args, i = 0, l = this.elements.length; i < l; i++) {
             args = [this.elements[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
             args.length == 4 && args.push($);
+            !arguments.length && method == 'add' && type && (method = 'fire');
             b[method].apply(this, args);
           }
           return this;

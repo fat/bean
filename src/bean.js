@@ -6,9 +6,13 @@
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
-      detachEvent = 'detachEvent';
+      detachEvent = 'detachEvent',
+      doc = context.document || {},
+      root = doc.documentElement || {},
+      W3C_MODEL = root[addEvent],
+      eventSupport = W3C_MODEL ? addEvent : attachEvent,
 
-  function isDescendant(parent, child) {
+  isDescendant = function (parent, child) {
     var node = child.parentNode;
     while (node != null) {
       if (node == parent) {
@@ -16,52 +20,53 @@
       }
       node = node.parentNode;
     }
-  }
+  },
 
-  function retrieveEvents(element) {
+  retrieveUid = function (obj, uid) {
+    return (obj.__uid = uid || obj.__uid || __uid++);
+  },
+
+  retrieveEvents = function (element) {
     var uid = retrieveUid(element);
     return (registry[uid] = registry[uid] || {});
-  }
+  },
 
-  function retrieveUid(obj, uid) {
-    return (obj.__uid = uid || obj.__uid || __uid++);
-  }
+  listener = W3C_MODEL ? function (element, type, fn, add) {
+    element[add ? addEvent : removeEvent](type, fn, false);
+  } : function (element, type, fn, add, custom) {
+    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    element[add ? attachEvent : detachEvent]('on' + type, fn);
+  },
 
-  function listener(element, type, fn, add, custom) {
-    if (element[addEvent]) {
-      element[add ? addEvent : removeEvent](type, fn, false);
-    } else if (element[attachEvent]) {
-      custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
-      element[add ? attachEvent : detachEvent]('on' + type, fn);
-    }
-  }
-
-  function nativeHandler(element, fn, args) {
+  nativeHandler = function (element, fn, args) {
     return function (event) {
       event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
       return fn.apply(element, [event].concat(args));
     };
-  }
+  },
 
-  function customHandler(element, fn, type, condition, args) {
+  customHandler = function (element, fn, type, condition, args) {
     return function (event) {
       if (condition ? condition.call(this, event) : event && event.propertyName == '_on' + type || !event) {
         fn.apply(element, [event].concat(args));
       }
     };
-  }
+  },
 
-  function addListener(element, orgType, fn, args) {
-    var type = orgType.replace(stripName, ''), events = retrieveEvents(element),
+  addListener = function (element, orgType, fn, args) {
+    var type = orgType.replace(stripName, ''),
+        events = retrieveEvents(element),
         handlers = events[type] || (events[type] = {}),
         uid = retrieveUid(fn, orgType.replace(namespace, ''));
     if (handlers[uid]) {
       return element;
     }
     var custom = customEvents[type];
-    fn = custom && custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-    type = custom && custom.base || type;
-    var isNative = context[addEvent] || nativeEvents.indexOf(type) > -1;
+    if (custom) {
+      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
+      type = custom.base || type;
+    }
+    var isNative = W3C_MODEL || nativeEvents.indexOf(type) > -1;
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
     if (type == 'unload') {
       var org = fn;
@@ -69,13 +74,13 @@
         removeListener(element, type, fn) && org();
       };
     }
-    listener(element, isNative ? type : 'propertychange', fn, true, !isNative && true);
+    element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
     handlers[uid] = fn;
     fn.__uid = uid;
     return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
-  }
+  },
 
-  function removeListener(element, orgType, handler) {
+  removeListener = function (element, orgType, handler) {
     var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
     if (!events || !events[type]) {
       return element;
@@ -86,14 +91,16 @@
       uid = uids[i];
       handler = events[type][uid];
       delete events[type][uid];
-      type = customEvents[type] ? customEvents[type].base : type;
-      var isNative = element[addEvent] || nativeEvents.indexOf(type) > -1;
-      listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+      if (element[eventSupport]) {
+        type = customEvents[type] ? customEvents[type].base : type;
+        var isNative = element[addEvent] || nativeEvents.indexOf(type) > -1;
+        listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+      }
     }
     return element;
-  }
+  },
 
-  function del(selector, fn, $) {
+  del = function (selector, fn, $) {
     return function (e) {
       var array = typeof selector == 'string' ? $(selector, this) : selector;
       for (var target = e.target; target && target != this; target = target.parentNode) {
@@ -104,9 +111,9 @@
         }
       }
     };
-  }
+  },
 
-  function add(element, events, fn, delfn, $) {
+  add = function (element, events, fn, delfn, $) {
     if (typeof events == 'object' && !fn) {
       for (var type in events) {
         events.hasOwnProperty(type) && add(element, type, events[type]);
@@ -119,9 +126,9 @@
       }
     }
     return element;
-  }
+  },
 
-  function remove(element, orgEvents, fn) {
+  remove = function (element, orgEvents, fn) {
     var k, type, events,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
@@ -150,9 +157,9 @@
       }
     }
     return element;
-  }
+  },
 
-  function fire(element, type) {
+  fire = function (element, type) {
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
@@ -164,12 +171,8 @@
         for (k = isNamespace.length; k--;) {
           handlers[isNamespace[k]] && handlers[isNamespace[k]]();
         }
-      } else if (element[addEvent]) {
-        evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
-        element.dispatchEvent(evt);
-      } else if (element[attachEvent]) {
-        isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
+      } else if (element[eventSupport]) {
+        fireListener(isNative, type, element);
       } else {
         for (k in handlers) {
           handlers.hasOwnProperty(k) && handlers[k]();
@@ -177,18 +180,26 @@
       }
     }
     return element;
-  }
+  },
 
-  function clone(element, from, type) {
+  fireListener = W3C_MODEL ? function (isNative, type, element) {
+    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
+    element.dispatchEvent(evt);
+  } : function (isNative, type, element) {
+    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
+  },
+
+  clone = function (element, from, type) {
     var events = retrieveEvents(from), obj, k;
     obj = type ? events[type] : events;
     for (k in obj) {
       obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k] : k);
     }
     return element;
-  }
+  },
 
-  function fixEvent(e) {
+  fixEvent = function (e) {
     var result = {};
     if (!e) {
       return result;
@@ -217,7 +228,7 @@
       }
     }
     return result;
-  }
+  };
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -229,6 +240,7 @@
       }
     };
   };
+
   fixEvent.stopPropagation = function (e) {
     return function () {
       if (e.stopPropagation) {
