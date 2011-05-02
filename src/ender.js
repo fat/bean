@@ -45,7 +45,7 @@
   };
 
   var shortcuts = [
-    'blur', 'change', 'click', 'dbltclick', 'error', 'focus', 'focusin',
+    'blur', 'change', 'click', 'dblclick', 'error', 'focus', 'focusin',
     'focusout', 'keydown', 'keypress', 'keyup', 'load', 'mousedown',
     'mouseenter', 'mouseleave', 'mouseout', 'mouseover', 'mouseup',
     'resize', 'scroll', 'select', 'submit', 'unload'
