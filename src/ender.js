@@ -3,8 +3,8 @@
       integrate = function (method, type, method2) {
         var _args = type ? [type] : [];
         return function () {
-          for (var args, i = 0, l = this.elements.length; i < l; i++) {
-            args = [this.elements[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
+          for (var args, i = 0, l = this.length; i < l; i++) {
+            args = [this[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
             args.length == 4 && args.push($);
             !arguments.length && method == 'add' && type && (method = 'fire');
             b[method].apply(this, args);
@@ -36,9 +36,9 @@
     cloneEvents: integrate('clone'),
 
     hover: function (enter, leave) {
-      for (var i = 0, l = this.elements.length; i < l; i++) {
-        b.add.call(this, this.elements[i], 'mouseenter', enter);
-        b.add.call(this, this.elements[i], 'mouseleave', leave);
+      for (var i = 0, l = this.length; i < l; i++) {
+        b.add.call(this, this[i], 'mouseenter', enter);
+        b.add.call(this, this[i], 'mouseleave', leave);
       }
       return this;
     }
