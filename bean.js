@@ -76,7 +76,7 @@
       fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
       type = custom.base || type;
     }
-    var isNative = W3C_MODEL || ~nativeEvents.indexOf('|' + type + '|');
+    var isNative = W3C_MODEL || nativeEvents[type];
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
     if (type == 'unload') {
       var org = fn;
@@ -103,7 +103,7 @@
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
-        var isNative = W3C_MODEL || ~nativeEvents.indexOf('|' + type + '|');
+        var isNative = W3C_MODEL || nativeEvents[type];
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
@@ -173,7 +173,7 @@
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
-      var isNative = ~nativeEvents.indexOf('|' + type + '|'),
+      var isNative = nativeEvents[type],
           isNamespace = types[i].replace(namespace, ''),
           handlers = retrieveEvents(element)[type];
       if (isNamespace) {
@@ -261,16 +261,16 @@
     };
   };
 
-  var nativeEvents = '|click|dblclick|mouseup|mousedown|contextmenu|' + //mouse buttons
-    'mousewheel|DOMMouseScroll|' + //mouse wheel
-    'mouseover|mouseout|mousemove|selectstart|selectend|' + //mouse movement
-    'keydown|keypress|keyup|' + //keyboard
-    'orientationchange|' + // mobile
-    'touchstart|touchmove|touchend|touchcancel|' + // touch
-    'gesturestart|gesturechange|gestureend|' + // gesture
-    'focus|blur|change|reset|select|submit|' + //form elements
-    'load|unload|beforeunload|resize|move|DOMContentLoaded|readystatechange|' + //window
-    'error|abort|scroll|'; //misc
+  var nativeEvents = { click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1, //mouse buttons
+    mousewheel: 1, DOMMouseScroll: 1, //mouse wheel
+    mouseover: 1, mouseout: 1, mousemove: 1, selectstart: 1, selectend: 1, //mouse movement
+    keydown: 1, keypress: 1, keyup: 1, //keyboard
+    orientationchange: 1, // mobile
+    touchstart: 1, touchmove: 1, touchend: 1, touchcancel: 1, // touch
+    gesturestart: 1, gesturechange: 1, gestureend: 1, // gesture
+    focus: 1, blur: 1, change: 1, reset: 1, select: 1, submit: 1, //form elements
+    load: 1, unload: 1, beforeunload: 1, resize: 1, move: 1, DOMContentLoaded: 1, readystatechange: 1, //window
+    error: 1, abort: 1, scroll: 1 }; //misc
 
   function check(event) {
     var related = event.relatedTarget;
