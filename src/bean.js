@@ -66,7 +66,7 @@
       fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
       type = custom.base || type;
     }
-    var isNative = W3C_MODEL || !~nativeEvents.indexOf('|' + type + '|');
+    var isNative = W3C_MODEL || ~nativeEvents.indexOf('|' + type + '|');
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
     if (type == 'unload') {
       var org = fn;
@@ -93,7 +93,7 @@
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
-        var isNative = W3C_MODEL || !~nativeEvents.indexOf('|' + type + '|');
+        var isNative = W3C_MODEL || ~nativeEvents.indexOf('|' + type + '|');
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
@@ -163,7 +163,7 @@
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
-      var isNative = !~nativeEvents.indexOf('|' + type + '|'),
+      var isNative = ~nativeEvents.indexOf('|' + type + '|'),
           isNamespace = types[i].replace(namespace, ''),
           handlers = retrieveEvents(element)[type];
       if (isNamespace) {
@@ -208,7 +208,7 @@
     result.preventDefault = fixEvent.preventDefault(e);
     result.stopPropagation = fixEvent.stopPropagation(e);
     result.target = target && target.nodeType == 3 ? target.parentNode : target;
-    if (!~type.indexOf('key')) {
+    if (~type.indexOf('key')) {
       result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
       result.rightClick = e.which == 3 || e.button == 2;
