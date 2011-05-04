@@ -76,8 +76,9 @@
       fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
       type = custom.base || type;
     }
-    var isNative = W3C_MODEL || nativeEvents[type];
+    var isNative = nativeEvents[type];
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
+    isNaive = W3C_MODEL || isNative;
     if (type == 'unload') {
       var org = fn;
       fn = function () {
@@ -179,13 +180,13 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(this, args);
+          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
         }
-      } else if (element[eventSupport]) {
-        fireListener(isNative, type, element);
+      } else if (!args && element[eventSupport]) {
+        fireListener(isNative, type, element, args);
       } else {
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(this, args);
+          handlers.hasOwnProperty(k) && handlers[k].apply(element, args);
         }
       }
     }
