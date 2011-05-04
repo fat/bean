@@ -169,7 +169,7 @@
     return element;
   },
 
-  fire = function (element, type) {
+  fire = function (element, type, args) {
     var evt, k, i, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
@@ -179,13 +179,13 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers[isNamespace[k]] && handlers[isNamespace[k]]();
+          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(this, args);
         }
       } else if (element[eventSupport]) {
         fireListener(isNative, type, element);
       } else {
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k]();
+          handlers.hasOwnProperty(k) && handlers[k].apply(this, args);
         }
       }
     }
