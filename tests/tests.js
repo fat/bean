@@ -129,10 +129,12 @@ sink('add', function (test, ok) {
   test('custom: should be able to add single custom events', 1, function () {
     var el = document.getElementById('input');
     bean.remove(el);
-    bean.add(el, 'partytime', function () {ok(true, 'add single custom events')});
+    bean.add(el, 'partytime', function () {
+      ok(true, 'add single custom events');
+    });
     bean.fire(el, 'partytime');
   });
-
+  
   test('custom: should bubble up dom like traditional events', 1, function () {
     if (!window.addEventListener) {
       //dean edwards onpropertychange hack doesn't bubble unfortunately :(
@@ -143,7 +145,7 @@ sink('add', function (test, ok) {
     bean.add(el1, 'partytime', function () {ok(true, 'bubbles up dom like traditional events')});
     bean.fire(el2, 'partytime');
   });
-
+  
   test('event: should have correct target', 1, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
@@ -151,21 +153,21 @@ sink('add', function (test, ok) {
     bean.add(el1, 'click', function (e) {ok(e.target == el2, 'has correct target')});
     Syn.click(el2);
   });
-
+  
   test('event: should have stop propagation method', 1, function () {
     var el = document.getElementById('foo');
     bean.remove(el);
     bean.add(el, 'click', function (e) {ok(e.stopPropagation != null, 'has stop propagation')});
     Syn.click(el);
   });
-
+  
   test('event: should have preventDefault method', 1, function () {
     var el = document.getElementById('foo');
     bean.remove(el);
     bean.add(el, 'click', function (e) {ok(e.preventDefault != null, 'has prevent default method')});
     Syn.click(el);
   });
-
+  
   test('event: should have keyCode', 1, function () {
     var el = document.getElementById('input');
     bean.add(el, 'keypress', function (e) {
@@ -174,7 +176,7 @@ sink('add', function (test, ok) {
     });
     Syn.key(el, 'f');
   });
-
+  
   test('remove: should return the element passed in', 1, function () {
     var el = document.getElementById('foo');
     bean.remove(el);
@@ -183,7 +185,7 @@ sink('add', function (test, ok) {
     var returned = bean.remove(el, 'click', handler);
     ok(el == returned, 'returns the element passed in');
   });
-
+  
   test('remove: should be able to remove a single event', 1, function () {
     var el = document.getElementById('foo');
     bean.remove(el);
@@ -195,7 +197,7 @@ sink('add', function (test, ok) {
     bean.add(el, 'click', handler);
     Syn.click(el)
   });
-
+  
   test('remove: should be able to remove mulitple events with an object literal', 1, function () {
     var el = document.getElementById('input'),
         handler1 = function () {
@@ -213,7 +215,7 @@ sink('add', function (test, ok) {
     bean.add(el, 'keydown', handler2);
     Syn.click(el);
   });
-
+  
   test('remove: should be able to remove all events of a specific type', 2, function () {
     var el = document.getElementById('input');
     bean.remove(el);
@@ -229,7 +231,7 @@ sink('add', function (test, ok) {
     bean.add(el, 'click', handler2);
     Syn.click(el);
   });
-
+  
   test('remove: should be able to remove all events of a specific type', 2, function () {
     var el = document.getElementById('input');
     bean.remove(el);
@@ -245,7 +247,7 @@ sink('add', function (test, ok) {
     bean.add(el, 'mouseup', handler2);
     Syn.click(el);
   });
-
+  
   test('remove: should be able to remove all events', 1, function () {
     var el = document.getElementById('input'),
         handler1 = function () {
@@ -260,7 +262,7 @@ sink('add', function (test, ok) {
     bean.add(el, 'keydown', handler2);
     Syn.click(el);
   });
-
+  
   test('clone: should be able to clone events of a specific type from one element to another', 2, function () {
     var el1 = document.getElementById('input2');
     var el2 = document.getElementById('input');
@@ -278,7 +280,7 @@ sink('add', function (test, ok) {
     bean.clone(el2, el1, 'click');
     Syn.click(el2).key('j');
   });
-
+  
   test('clone: should be able to clone all events from one element to another', 3, function () {
     var el1 = document.getElementById('input2');
     var el2 = document.getElementById('input');
@@ -290,7 +292,7 @@ sink('add', function (test, ok) {
     bean.clone(el2, el1);
     Syn.click(el2).key('j');
   });
-
+  
   test('delegate: should be able to delegate on selectors', 4, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
@@ -307,7 +309,7 @@ sink('add', function (test, ok) {
     Syn.click(el3);
     Syn.click(el4);
   });
-
+  
   test('delegate: should be able to delegate on arary', 4, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
@@ -324,14 +326,14 @@ sink('add', function (test, ok) {
     Syn.click(el3);
     Syn.click(el4);
   });
-
+  
   test('namespace: should be able to name handlers', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
     bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
     Syn.click(el1);
   });
-
+  
   test('namespace: should be able to target namespaced event handlers with fire', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
@@ -339,7 +341,7 @@ sink('add', function (test, ok) {
     bean.add(el1, 'click', function () {ok(true, 'targets namespaced event handlers with fire')});
     bean.fire(el1, 'click.fat');
   });
-
+  
   test('namespace: should be able to target multiple namespaced event handlers with fire', 2, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
@@ -348,7 +350,7 @@ sink('add', function (test, ok) {
     bean.add(el1, 'click', function () {ok(true, 'targets multiple namespaced event handlers with fire')});
     bean.fire(el1, 'click.fat.ded');
   });
-
+  
   test('namespace: should be able to remove handlers based on name', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
@@ -357,7 +359,7 @@ sink('add', function (test, ok) {
     bean.remove(el1, 'click.ded');
     Syn.click(el1);
   });
-
+  
   test('namespace: should be able to remove multiple handlers based on name', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
