@@ -69,7 +69,7 @@
       return element;
     }
     if (one) fn = oneHandler(element, type, fn);
-    if (data) fn = dataEvent(data, fn);
+    if (data != null) fn = dataEvent(data, fn);
     var custom = customEvents[type];
     if (custom) {
       fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
@@ -264,14 +264,19 @@
 
   function bind(t) {
     return function (element, events, fn, delfn, $) {
-      if (typeof events == 'string' && !fn) return element;
+      if (typeof events == 'string' && fn == null) return element;
       if (typeof events == 'object') {
         for (var type in events) {
           events.hasOwnProperty(type) && arguments.callee(element, type, fn || events[type], fn && events[type]);
         }
       } else {
         var data, isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-        fn = isDel ? del(events, delfn, $) : delfn ? (data = fn) && delfn : fn;
+        if (isDel) {
+          fn = del(events, delfn, $);
+        } else if (delfn) {
+          data = fn;
+          fn = delfn;
+        }
         for (var i = types.length; i--;) {
           addListener(element, types[i], fn, data, t, Array.prototype.slice.call(arguments, delfn ? 4 : 3));
         }

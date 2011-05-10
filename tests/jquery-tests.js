@@ -360,19 +360,21 @@ sink('add', function (test, ok, before, after) {
 //  }).click().unbind("click");
 // });
 //
-// test("bind(), trigger change on select", function() {
-//  expect(5);
-//  var counter = 0;
-//  function selectOnChange(event) {
-//    equals( event.data, counter++, "Event.data is not a global event object" );
-//  };
-//  jQuery("#form select").each(function(i){
-//    jQuery(this).bind("change", i, selectOnChange);
-//  }).trigger("change");
-// });
-//
+  test("bind(), trigger change on select", 5, function() {
+   var counter = 0;
+   function selectOnChange(event) {
+     ok( event.data == counter++, "Event.data is not a global event object" );
+   };
+
+   var selects = $("#form select");
+   for (var i = 0, l = selects.length; i < l; i++) {
+     $(selects[i]).bind("change", i, selectOnChange);
+   }
+   selects.trigger("change");
+  });
+
 // test("bind(), namespaced events, cloned events", 18, function() {
-//  var firstp = jQuery( "#firstp" );
+//  var firstp = $( "#firstp" );
 //
 //  firstp.bind("custom.test",function(e){
 //    ok(false, "Custom event triggered");
@@ -380,7 +382,7 @@ sink('add', function (test, ok, before, after) {
 //
 //  firstp.bind("click",function(e){
 //    ok(true, "Normal click triggered");
-//    equal( e.type + e.namespace, "click", "Check that only click events trigger this fn" );
+//    ok( e.type + e.namespace == "click", "Check that only click events trigger this fn" );
 //  });
 //
 //  firstp.bind("click.test",function(e){
@@ -389,7 +391,7 @@ sink('add', function (test, ok, before, after) {
 //    if ( e.namespace ) {
 //      check += "test";
 //    }
-//    equal( e.type + e.namespace, check, "Check that only click/click.test events trigger this fn" );
+//    ok( e.type + e.namespace == check, "Check that only click/click.test events trigger this fn" );
 //  });
 //
 //  //clone(true) element to verify events are cloned correctly
