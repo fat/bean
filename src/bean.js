@@ -41,7 +41,7 @@
   nativeHandler = function (element, fn, args) {
     return function (event) {
       event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
-      return fn.apply(element, [event].concat(args));
+      return fn.apply(element, Array.prototype.slice.apply(arguments).concat(args));
     };
   },
 
@@ -53,7 +53,14 @@
     };
   },
 
-  addListener = function (element, orgType, fn, args) {
+  oneHandler = function (element, type, fn) {
+    return function (event) {
+  		remove(element, type, fn);
+  		return fn.apply(this, arguments);
+    };
+  },
+
+  addListener = function (element, orgType, fn, data, one, args) {
     var type = orgType.replace(stripName, ''),
         events = retrieveEvents(element),
         handlers = events[type] || (events[type] = {}),
@@ -61,6 +68,8 @@
     if (handlers[uid]) {
       return element;
     }
+    if (one) fn = oneHandler(element, type, fn);
+    if (data) fn = dataEvent(data, fn);
     var custom = customEvents[type];
     if (custom) {
       fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
@@ -114,19 +123,11 @@
     };
   },
 
-  add = function (element, events, fn, delfn, $) {
-    if (typeof events == 'object' && !fn) {
-      for (var type in events) {
-        events.hasOwnProperty(type) && add(element, type, events[type]);
-      }
-    } else {
-      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-      fn = isDel ? del(events, delfn, $) : fn;
-      for (var i = types.length; i--;) {
-        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
-      }
+  dataEvent = function (data, fn) {
+    return function (e) {
+      e.data = data;
+      fn.apply(this, arguments);
     }
-    return element;
   },
 
   remove = function (element, orgEvents, fn) {
@@ -166,15 +167,17 @@
       type = types[i].replace(stripName, '');
       var isNative = nativeEvents[type],
           isNamespace = types[i].replace(namespace, ''),
-          handlers = retrieveEvents(element)[type];
+          handlers = retrieveEvents(element)[type],
+          evt = fixEvent(getEventObj(isNative), type);
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
+          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [evt].concat(args));
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
       } else {
+        args = [evt].concat(args);
         for (k in handlers) {
           handlers.hasOwnProperty(k) && handlers[k].apply(element, args);
         }
@@ -183,12 +186,18 @@
     return element;
   },
 
+  getEventObj = W3C_MODEL ? function (isNative) {
+    return document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+  } : function () {
+    return document.createEventObject();
+  }
+
   fireListener = W3C_MODEL ? function (isNative, type, element) {
-    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+    evt = getEventObj(isNative);
     evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
-    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
+    isNative ? element.fireEvent('on' + type, getEventObj()) : element['_on' + type]++;
   },
 
   clone = function (element, from, type) {
@@ -200,12 +209,13 @@
     return element;
   },
 
-  fixEvent = function (e) {
+  fixEvent = function (e, type) {
     var result = {};
     if (!e) {
       return result;
     }
-    var type = e.type, target = e.target || e.srcElement;
+    var type = type || e.type, target = e.target || e.srcElement;
+    result.type = type;
     result.preventDefault = fixEvent.preventDefault(e);
     result.stopPropagation = fixEvent.stopPropagation(e);
     result.target = target && target.nodeType == 3 ? target.parentNode : target;
@@ -252,6 +262,26 @@
     };
   };
 
+  function bind(t) {
+    return function (element, events, fn, delfn, $) {
+      if (typeof events == 'string' && !fn) return element;
+      if (typeof events == 'object') {
+        for (var type in events) {
+          events.hasOwnProperty(type) && arguments.callee(element, type, fn || events[type], fn && events[type]);
+        }
+      } else {
+        var data, isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
+        fn = isDel ? del(events, delfn, $) : delfn ? (data = fn) && delfn : fn;
+        for (var i = types.length; i--;) {
+          addListener(element, types[i], fn, data, t, Array.prototype.slice.call(arguments, delfn ? 4 : 3));
+        }
+      }
+      return element;
+    }
+  }
+
+  var add = bind(false), one = bind(true);
+
   var nativeEvents = { click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1, //mouse buttons
     mousewheel: 1, DOMMouseScroll: 1, //mouse wheel
     mouseover: 1, mouseout: 1, mousemove: 1, selectstart: 1, selectend: 1, //mouse movement
@@ -277,7 +307,7 @@
     mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
   };
 
-  var bean = { add: add, remove: remove, clone: clone, fire: fire };
+  var bean = { add: add, remove: remove, one: one, clone: clone, fire: fire, event: { special: customEvents } };
 
   var clean = function (el) {
     var uid = remove(el).__uid;

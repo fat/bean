@@ -5,9 +5,8 @@
         return function () {
           for (var args, i = 0, l = this.length; i < l; i++) {
             args = [this[i]].concat(_args, Array.prototype.slice.call(arguments, 0));
-            args.length == 4 && args.push($);
-            !arguments.length && method == 'add' && type && (method = 'fire');
-            b[method].apply(this, args);
+            args.length == 4 && typeof args[3] == 'string' && args.push($);
+            b[!arguments.length && method == 'add' && type ? 'fire' : method].apply(this, args);
           }
           return this;
         };
@@ -19,6 +18,8 @@
 
   var methods = {
 
+    one: integrate('one'),
+
     on: add,
     addListener: add,
     bind: add,
@@ -28,6 +29,7 @@
     unbind: remove,
     unlisten: remove,
     removeListener: remove,
+    remove: remove,
     undelegate: remove,
 
     emit: fire,
@@ -55,6 +57,8 @@
     var shortcut = shortcuts[i];
     methods[shortcut] = integrate('add', shortcut);
   }
-
+  $.ender({
+    event: b.event
+  });
   $.ender(methods, true);
 }();
