@@ -1,4 +1,4 @@
-require('../support/smoosh').config({
+require('smoosh').config({
   "JAVASCRIPT": {
     "DIST_DIR": "./",
     "bean": [
@@ -8,14 +8,14 @@ require('../support/smoosh').config({
   },
   "JSHINT_OPTS": {
     "boss": true,
-    "forin": true,
+    "forin": false,
     "curly": true,
     "debug": false,
     "devel": false,
     "evil": false,
     "regexp": false,
     "undef": false,
-    "sub": false,
+    "sub": true,
     "white": true,
     "indent": 2,
     "whitespace": true,

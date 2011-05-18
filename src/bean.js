@@ -304,6 +304,6 @@
 
   (typeof module !== 'undefined' && module.exports) ?
     (module.exports = bean) :
-    (context.bean = bean);
+    (context['bean'] = bean);
 
 }(this);

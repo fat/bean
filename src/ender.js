@@ -1,4 +1,4 @@
-!function () {
+!function ($) {
   var b = bean.noConflict(),
       integrate = function (method, type, method2) {
         var _args = type ? [type] : [];
@@ -57,4 +57,4 @@
   }
 
   $.ender(methods, true);
-}();
+}(ender);

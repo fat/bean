@@ -1,7 +1,6 @@
 /*!
-  * bean.js - copyright @dedfat
+  * bean.js - copyright Jacob Thornton 2011
   * https://github.com/fat/bean
-  * Follow our software http://twitter.com/dedfat
   * MIT License
   * special thanks to:
   * dean edwards: http://dean.edwards.name/
@@ -314,6 +313,6 @@
 
   (typeof module !== 'undefined' && module.exports) ?
     (module.exports = bean) :
-    (context.bean = bean);
+    (context['bean'] = bean);
 
 }(this);
