@@ -12,6 +12,11 @@
         $('#test').delegate('#clickme', 'click', function (e) {
           alert('delegated');
         });
+
+        //testing custom events
+        var b = function() {};
+        $.add(b, "test", function() { console.log("test event triggered", arguments); });
+        $.fire(b, "test", [123]);
       });
     </script>
   </head>

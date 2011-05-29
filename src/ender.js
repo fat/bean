@@ -57,4 +57,8 @@
   }
 
   $.ender(methods, true);
+  $.ender({
+    add: b.add,
+    fire: b.fire
+  });
 }(ender);
