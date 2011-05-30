@@ -58,7 +58,8 @@
 
   $.ender(methods, true);
   $.ender({
-    add: b.add,
-    fire: b.fire
+    addListener: b.add,
+    fireListener: b.fire,
+    removeListener: b.remove
   });
 }(ender);
