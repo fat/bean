@@ -47,7 +47,7 @@
   var shortcuts = [
     'blur', 'change', 'click', 'dblclick', 'error', 'focus', 'focusin',
     'focusout', 'keydown', 'keypress', 'keyup', 'load', 'mousedown',
-    'mouseenter', 'mouseleave', 'mouseout', 'mouseover', 'mouseup',
+    'mouseenter', 'mouseleave', 'mouseout', 'mouseover', 'mouseup', 'mousemove',
     'resize', 'scroll', 'select', 'submit', 'unload'
   ];
 
