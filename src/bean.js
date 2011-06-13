@@ -57,6 +57,7 @@
     var type = orgType.replace(stripName, ''),
         events = retrieveEvents(element),
         handlers = events[type] || (events[type] = {}),
+        originalFn = fn,
         uid = retrieveUid(fn, orgType.replace(namespace, ''));
     if (handlers[uid]) {
       return element;
@@ -78,6 +79,7 @@
     element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
     handlers[uid] = fn;
     fn.__uid = uid;
+    fn.__originalFn = originalFn;
     return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
   },
 
@@ -154,7 +156,7 @@
       type = isString && events;
       events = events ? (fn || attached[events] || events) : attached;
       for (k in events) {
-        events.hasOwnProperty(k) && rm(element, type || k, events[k]);
+        if (events.hasOwnProperty(k)) { rm(element, type || k, events[k]); delete events[k]; } // remove unused leaf keys
       }
     }
     return element;
@@ -193,9 +195,10 @@
 
   clone = function (element, from, type) {
     var events = retrieveEvents(from), obj, k;
+    var uid = retrieveUid(element);
     obj = type ? events[type] : events;
     for (k in obj) {
-      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k] : k);
+      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k].__originalFn : k);
     }
     return element;
   },
