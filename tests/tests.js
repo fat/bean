@@ -282,6 +282,7 @@ sink('remove', function (test, ok) {
 })
 
 sink('clone', function (test, ok, before) {
+
   var el1 = document.getElementById('input');
   var el2 = document.getElementById('input2');
 
