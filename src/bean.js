@@ -14,7 +14,7 @@
 
   isDescendant = function (parent, child) {
     var node = child.parentNode;
-    while (node != null) {
+    while (node !== null) {
       if (node == parent) {
         return true;
       }
@@ -156,7 +156,10 @@
       type = isString && events;
       events = events ? (fn || attached[events] || events) : attached;
       for (k in events) {
-        if (events.hasOwnProperty(k)) { rm(element, type || k, events[k]); delete events[k]; } // remove unused leaf keys
+        if (events.hasOwnProperty(k)) {
+          rm(element, type || k, events[k]);
+          delete events[k]; // remove unused leaf keys
+        }
       }
     }
     return element;
@@ -269,7 +272,7 @@
   function check(event) {
     var related = event.relatedTarget;
     if (!related) {
-      return related == null;
+      return related === null;
     }
     return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
   }
