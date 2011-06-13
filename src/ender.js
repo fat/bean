@@ -35,8 +35,8 @@
 
     cloneEvents: integrate('clone'),
 
-    hover: function (enter, leave) {
-      for (var i = 0, l = this.length; i < l; i++) {
+    hover: function (enter, leave, i) { // i for internal
+      for (i = this.length; i--;) {
         b.add.call(this, this[i], 'mouseenter', enter);
         b.add.call(this, this[i], 'mouseleave', leave);
       }
@@ -44,16 +44,15 @@
     }
   };
 
-  var shortcuts = [
+  var i, shortcuts = [
     'blur', 'change', 'click', 'dblclick', 'error', 'focus', 'focusin',
     'focusout', 'keydown', 'keypress', 'keyup', 'load', 'mousedown',
     'mouseenter', 'mouseleave', 'mouseout', 'mouseover', 'mouseup', 'mousemove',
     'resize', 'scroll', 'select', 'submit', 'unload'
   ];
 
-  for (var i = shortcuts.length; i--;) {
-    var shortcut = shortcuts[i];
-    methods[shortcut] = integrate('add', shortcut);
+  for (i = shortcuts.length; i--;) {
+    methods[shortcuts[i]] = integrate('add', shortcuts[i]);
   }
 
   $.ender(methods, true);

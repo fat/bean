@@ -130,14 +130,14 @@
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, type, events,
+    var k, type, events, i,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
         rm = removeListener,
         attached = retrieveEvents(element);
     if (isString && /\s/.test(orgEvents)) {
       orgEvents = orgEvents.split(' ');
-      var i = orgEvents.length - 1;
+      i = orgEvents.length - 1;
       while (remove(element, orgEvents[i]) && i--) {}
       return element;
     }
