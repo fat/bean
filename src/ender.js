@@ -1,5 +1,5 @@
 !function ($) {
-  var b = bean.noConflict(),
+  var b = require('bean'),
       integrate = function (method, type, method2) {
         var _args = type ? [type] : [];
         return function () {
