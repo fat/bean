@@ -369,6 +369,18 @@ sink('namespaces', function (test, ok) {
     Syn.click(el1);
   });
 
+  test('namespace: should be able to fire an event without handlers', 1, function () {
+    var el1 = document.getElementById('foo'), succ;
+    bean.remove(el1);
+    try {
+      bean.fire(el1, 'click.fat');
+      succ = true;
+    } catch (exc) {
+      succ = false;
+    }
+    ok(succ, 'fire namespaced event with no handlers');
+  });
+
   test('namespace: should be able to target namespaced event handlers with fire', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
