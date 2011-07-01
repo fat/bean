@@ -175,7 +175,7 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
+          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
