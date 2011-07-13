@@ -12,6 +12,14 @@
         $('#test').delegate('#clickme', 'click', function (e) {
           alert('delegated');
         });
+
+        //testing custom events
+        var b = function() {};
+        var f = function() { console.log("test event triggered", arguments); };
+        $.addListener(b, "test", f);
+        $.fireListener(b, "test", [123]);
+        $.removeListener(b, "test", f);
+        $.fireListener(b, "test", [123]);
       });
     </script>
   </head>

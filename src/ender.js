@@ -56,4 +56,9 @@
   }
 
   $.ender(methods, true);
+  $.ender({
+    addListener: b.add,
+    fireListener: b.fire,
+    removeListener: b.remove
+  });
 }(ender);
