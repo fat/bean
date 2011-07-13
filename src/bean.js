@@ -145,6 +145,15 @@
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
     if (!attached || (isString && !attached[events])) {
+      if (attached && names) {
+        for (k in attached) {
+          if (attached.hasOwnProperty(k)) {
+            for (i in attached[k]) {
+              attached[k].hasOwnProperty(i) && i === names && rm(element, [k, names].join('.'));
+            }
+          }
+        }
+      }
       return element;
     }
     if (typeof fn == 'function') {

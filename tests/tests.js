@@ -130,7 +130,7 @@ sink('fire', function (test, ok) {
     bean.fire(el, 'mousedown mouseup');
   });
 
-  test('fire: should be able to pass multiple arguments to fired event', 4, function () {
+  test('fire: should be able to pass multiple arguments to custom event', 4, function () {
     // jquery like array syntax
     var el = document.getElementById('input');
     bean.remove(el);
@@ -289,6 +289,22 @@ sink('remove', function (test, ok) {
         };
     bean.add(el, 'click', handler1);
     bean.add(el, 'keydown', handler2);
+    Syn.click(el);
+  });
+
+  test('remove: should be able to remove all events of a certain namespace', 1, function () {
+    var el = document.getElementById('input'),
+        handler1 = function () {
+          ok(true, 'remove all events 1');
+          bean.remove(el, '.foo');
+          Syn.click(el).key('j');
+        },
+        handler2 = function () {
+          ok(true, 'remove all events 2');
+        };
+    bean.add(el, 'click.foo', handler1);
+    bean.add(el, 'click.foo', handler1);
+    bean.add(el, 'keydown.foo', handler2);
     Syn.click(el);
   });
 
