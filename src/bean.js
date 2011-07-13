@@ -184,13 +184,13 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
+          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args || []);
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
       } else {
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, args);
+          handlers.hasOwnProperty(k) && handlers[k].apply(element, args || []);
         }
       }
     }
