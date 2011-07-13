@@ -130,6 +130,19 @@ sink('fire', function (test, ok) {
     bean.fire(el, 'mousedown mouseup');
   });
 
+  test('fire: should be able to pass multiple arguments to fired event', 4, function () {
+    // jquery like array syntax
+    var el = document.getElementById('input');
+    bean.remove(el);
+    bean.add(el, 'foo', function (one, two, three) {
+      ok(arguments.length == 3, 'fires an event with 3 arguments')
+      ok(one == 1, 'value should equal 1')
+      ok(two == 2, 'value should equal 2')
+      ok(three == 3, 'value should equal 3')
+    });
+    bean.fire(el, 'foo', [1, 2, 3]);
+  });
+
 })
 
 sink('custom', function (test, ok) {

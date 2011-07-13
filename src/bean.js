@@ -48,7 +48,7 @@
   customHandler = function (element, fn, type, condition, args) {
     return function (event) {
       if (condition ? condition.call(this, event) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        fn.apply(element, [event].concat(args));
+        fn.apply(element, Array.prototype.slice.apply(arguments).concat(args));
       }
     };
   },
