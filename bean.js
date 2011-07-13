@@ -55,9 +55,9 @@
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (event) {
-      if (condition ? condition.call(this, event) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        fn.apply(element, [event].concat(args));
+    return function (e) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
+        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
       }
     };
   },
@@ -154,6 +154,15 @@
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
     if (!attached || (isString && !attached[events])) {
+      if (attached && names) {
+        for (k in attached) {
+          if (attached.hasOwnProperty(k)) {
+            for (i in attached[k]) {
+              attached[k].hasOwnProperty(i) && i === names && rm(element, [k, names].join('.'));
+            }
+          }
+        }
+      }
       return element;
     }
     if (typeof fn == 'function') {
@@ -184,13 +193,13 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
+          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [false].concat(args));
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
       } else {
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, args);
+          handlers.hasOwnProperty(k) && handlers[k].apply(element, [false].concat(args));
         }
       }
     }
