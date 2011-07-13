@@ -342,7 +342,7 @@ sink('clone', function (test, ok, before) {
     Syn.click(el1).key('j');
   });
 
-  test('clone: should fire cloned event in scope of new element', 1, function () {
+  test('clone: should firere cloned event in scope of new element', 1, function () {
     bean.add(el1, 'click', function () {
       ok(this == el2, 'scope of "this" is the element that cloned the event')
     })

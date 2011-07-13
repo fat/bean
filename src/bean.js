@@ -46,9 +46,9 @@
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (event) {
-      if (condition ? condition.call(this, event) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        fn.apply(element, Array.prototype.slice.apply(arguments).concat(args));
+    return function (e) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
+        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
       }
     };
   },
@@ -184,13 +184,13 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, args);
+          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [false].concat(args));
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);
       } else {
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, args);
+          handlers.hasOwnProperty(k) && handlers[k].apply(element, [false].concat(args));
         }
       }
     }
