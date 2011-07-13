@@ -190,6 +190,64 @@ Tests
 -----
 point your browser at <code>bean/tests/index.html</code>
 
+Ender Integration API
+---------------------
+
+If you use bean with ender it's API is greatly extended through it's Bridge file. This extension aims to give bean the look and feel of jQuery, but at the tiny size of bean.
+
+Here's the run down of the method alias's added...
+
+**ADD EVENTS**
+
+ + on - <code>$(element).on('click', fn);</code>
+ + addListener - <code>$(element).addListener('click', fn);</code>
+ + bind - <code>$(element).bind('click', fn);</code>
+ + listen - <code>$(element).listen('click', fn);</code>
+
+
+**REMOVE EVENTS**
+
+ + unbind - <code>$(element).unbind('click');</code>
+ + unlisten - <code>$(element).unbind('click');</code>
+ + removeListener - <code>$(element).unbind('click');</code>
+
+
+**DELEGATE EVENTS**
+
+ + delegate - <code>$(element).delegate('.foo', fn);</code>
+ + undelegate - <code>$(element).delegate('.foo');</code>
+
+
+**CLONE EVENTS**
+
+ + cloneEvents - <code>$(element).delegate('.cloneEvents', fn);</code>
+
+
+**SPECIAL EVENTS**
+
+ + hover - <code>$(element).hover(enterfn, leavefn);</code>
+ + blur - <code>$(element).blur(fn);</code>
+ + change - <code>$(element).change(fn);</code>
+ + click - <code>$(element).click(fn);</code>
+ + dblclick - <code>$(element).dblclick(fn);</code>
+ + focusin - <code>$(element).focusin(fn);</code>
+ + focusout - <code>$(element).focusout(fn);</code>
+ + keydown - <code>$(element).keydown(fn);</code>
+ + keypress - <code>$(element).keypress(fn);</code>
+ + keyup - <code>$(element).keyup(fn);</code>
+ + mousedown - <code>$(element).mousedown(fn);</code>
+ + mouseenter - <code>$(element).mouseenter(fn);</code>
+ + mouseleave - <code>$(element).mouseleave(fn);</code>
+ + mouseout - <code>$(element).mouseout(fn);</code>
+ + mouseover - <code>$(element).mouseover(fn);</code>
+ + mouseup - <code>$(element).mouseup(fn);</code>
+ + mousemove - <code>$(element).mousemove(fn);</code>
+ + resize - <code>$(element).resize(fn);</code>
+ + scroll - <code>$(element).scroll(fn);</code>
+ + select - <code>$(element).select(fn);</code>
+ + submit - <code>$(element).submit(fn);</code>
+ + unload - <code>$(element).unload(fn);</code>
+
 Contributors
 -------
 
