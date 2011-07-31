@@ -208,19 +208,19 @@ Here's the run down of the method alias's added...
 **REMOVE EVENTS**
 
  + unbind - <code>$(element).unbind('click');</code>
- + unlisten - <code>$(element).unbind('click');</code>
- + removeListener - <code>$(element).unbind('click');</code>
+ + unlisten - <code>$(element).unlisten('click');</code>
+ + removeListener - <code>$(element).removeListener('click');</code>
 
 
 **DELEGATE EVENTS**
 
  + delegate - <code>$(element).delegate('.foo', fn);</code>
- + undelegate - <code>$(element).delegate('.foo');</code>
+ + undelegate - <code>$(element).undelegate('.foo');</code>
 
 
 **CLONE EVENTS**
 
- + cloneEvents - <code>$(element).delegate('.cloneEvents', fn);</code>
+ + cloneEvents - <code>$(element).cloneEvents('.foo', fn);</code>
 
 
 **SPECIAL EVENTS**
