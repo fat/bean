@@ -220,7 +220,7 @@ Here's the run down of the method alias's added...
 
 **CLONE EVENTS**
 
- + cloneEvents - <code>$(element). cloneEvents('.foo', fn);</code>
+ + cloneEvents - <code>$(element).cloneEvents('.foo', fn);</code>
 
 
 **SPECIAL EVENTS**
