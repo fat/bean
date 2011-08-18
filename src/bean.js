@@ -90,9 +90,10 @@
     }
     names = orgType.replace(namespace, '');
     uids = names ? names.split('.') : [handler.__uid];
-    for (i = uids.length; i--;) {
-      uid = uids[i];
+
+    function destroyHandler(uid) {
       handler = events[type][uid];
+      if (!handler) return;
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
@@ -100,6 +101,10 @@
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
+
+    destroyHandler(names) //get combos
+    for (i = uids.length; i--; destroyHandler(uids[i])); //get singles
+
     return element;
   },
 
@@ -149,7 +154,7 @@
         for (k in attached) {
           if (attached.hasOwnProperty(k)) {
             for (i in attached[k]) {
-              attached[k].hasOwnProperty(i) && i === names && rm(element, [k, names].join('.'));
+              attached[k].hasOwnProperty(i) && new RegExp('^' + names + '(\\..*)?$').test(i) && rm(element, [k, i].join('.'));
             }
           }
         }
