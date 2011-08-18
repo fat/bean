@@ -1,4 +1,4 @@
-require('smoosh').config({
+materequire('smoosh').config({
   "JAVASCRIPT": {
     "DIST_DIR": "./",
     "bean": [
