@@ -8,7 +8,9 @@
   * the entire mootools team: github.com/mootools/mootools-core
   */
 !function (context) {
-  var __uid = 1, registry = {}, collected = {},
+  var __uid = 1,
+      registry = {},
+      collected = {},
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
@@ -32,7 +34,7 @@
   },
 
   retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid || obj.__uid || __uid++);
+    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
   },
 
   retrieveEvents = function (element) {
@@ -102,7 +104,9 @@
 
     function destroyHandler(uid) {
       handler = events[type][uid];
-      if (!handler) return;
+      if (!handler) {
+        return;
+      }
       delete events[type][uid];
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
@@ -111,8 +115,8 @@
       }
     }
 
-    destroyHandler(names) //get combos
-    for (i = uids.length; i--; destroyHandler(uids[i])); //get singles
+    destroyHandler(names); //get combos
+    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
 
     return element;
   },
@@ -146,9 +150,10 @@
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, type, events, i,
+    var k, m, type, events, i,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
+        names = names && names.split('.'),
         rm = removeListener,
         attached = retrieveEvents(element);
     if (isString && /\s/.test(orgEvents)) {
@@ -158,12 +163,12 @@
       return element;
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || (isString && !attached[events])) {
-      if (attached && names) {
-        for (k in attached) {
-          if (attached.hasOwnProperty(k)) {
-            for (i in attached[k]) {
-              attached[k].hasOwnProperty(i) && new RegExp('^' + names + '(\\..*)?$').test(i) && rm(element, [k, i].join('.'));
+    if (!attached || names || (isString && !attached[events])) {
+      for (k in attached) {
+        if (attached.hasOwnProperty(k)) {
+          for (i in attached[k]) {
+            for (m = names.length; m--;) {
+              attached[k].hasOwnProperty(i) && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) && rm(element, [k, i].join('.'));
             }
           }
         }
@@ -189,7 +194,7 @@
   },
 
   fire = function (element, type, args) {
-    var evt, k, i, types = type.split(' ');
+    var evt, k, i, m, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
       var isNative = nativeEvents[type],
@@ -198,7 +203,9 @@
       if (isNamespace) {
         isNamespace = isNamespace.split('.');
         for (k = isNamespace.length; k--;) {
-          handlers && handlers[isNamespace[k]] && handlers[isNamespace[k]].apply(element, [false].concat(args));
+          for (m in handlers) {
+            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
+          }
         }
       } else if (!args && element[eventSupport]) {
         fireListener(isNative, type, element);

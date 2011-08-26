@@ -398,6 +398,14 @@ sink('namespaces', function (test, ok) {
     Syn.click(el1);
   });
 
+  test('namespace: should be able to add multiple handlers under the same namespace to the same element', 2, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
+    bean.add(el1, 'click.fat', function () {ok(true, 'bubbles up dom')});
+    Syn.click(el1);
+  });
+
   test('namespace: should be able to fire an event without handlers', 1, function () {
     var el1 = document.getElementById('foo'), succ;
     bean.remove(el1);
