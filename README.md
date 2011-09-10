@@ -143,7 +143,7 @@ object support
 Good news, everything you can do in bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
 
     var inst = new Klass();
-    bean.add(klass, 'complete', handler);
+    bean.add(inst, 'complete', handler);
 
     //later on...
     bean.fire(inst, 'complete');
