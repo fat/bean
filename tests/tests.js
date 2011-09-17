@@ -198,6 +198,20 @@ sink('event object', function (test, ok) {
     Syn.click(el);
   });
 
+  test('event: should have stop propagation method on custom event', 1, function () {
+    var el = document.getElementById('foo');
+    bean.remove(el);
+    bean.add(el, 'customEvent', function (e) {ok(e.stopPropagation != null, 'has stop propagation')});
+    bean.fire(el, 'customEvent');
+  });
+
+  test('event: should have preventDefault method on custom event', 1, function () {
+    var el = document.getElementById('foo');
+    bean.remove(el);
+    bean.add(el, 'customEvent', function (e) {ok(e.preventDefault != null, 'has prevent default method')});
+    bean.fire(el, 'customEvent');
+  });
+
   test('event: should have keyCode', 1, function () {
     var el = document.getElementById('input');
     bean.add(el, 'keypress', function (e) {

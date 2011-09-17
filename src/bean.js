@@ -50,9 +50,10 @@
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (e) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
-        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
+    return function (event) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
+        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event) : null;
+        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
   },
