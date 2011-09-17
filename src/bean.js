@@ -36,7 +36,9 @@
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
-    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    if (custom && add && element['_on' + custom] === null) {
+      element['_on' + custom] = 0;
+    }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   },
 
@@ -48,9 +50,10 @@
   },
 
   customHandler = function (element, fn, type, condition, args) {
-    return function (e) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : e && e.propertyName == '_on' + type || !e) {
-        fn.apply(element, Array.prototype.slice.call(arguments, e ? 0 : 1).concat(args));
+    return function (event) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
+        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event) : null;
+        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
   },
