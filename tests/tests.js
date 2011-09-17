@@ -1,4 +1,3 @@
-//stub this for ie crap
 if (!window.console) {
   window.console = { log: function () {}}
 }
@@ -111,6 +110,12 @@ sink('add', function (test, ok) {
     Syn.click(el2);
   });
 
+  test('add: shouldn\'t trigger event when adding additional custom event listeners', 0, function () {
+    var el = document.getElementById('input');
+    bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 1')});
+    bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
+  });
+
 })
 
 sink('fire', function (test, ok) {
@@ -191,6 +196,20 @@ sink('event object', function (test, ok) {
     bean.remove(el);
     bean.add(el, 'click', function (e) {ok(e.preventDefault != null, 'has prevent default method')});
     Syn.click(el);
+  });
+
+  test('event: should have stop propagation method on custom event', 1, function () {
+    var el = document.getElementById('foo');
+    bean.remove(el);
+    bean.add(el, 'customEvent', function (e) {ok(e.stopPropagation != null, 'has stop propagation')});
+    bean.fire(el, 'customEvent');
+  });
+
+  test('event: should have preventDefault method on custom event', 1, function () {
+    var el = document.getElementById('foo');
+    bean.remove(el);
+    bean.add(el, 'customEvent', function (e) {ok(e.preventDefault != null, 'has prevent default method')});
+    bean.fire(el, 'customEvent');
   });
 
   test('event: should have keyCode', 1, function () {
