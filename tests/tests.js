@@ -1,4 +1,3 @@
-//stub this for ie crap
 if (!window.console) {
   window.console = { log: function () {}}
 }
@@ -109,6 +108,12 @@ sink('add', function (test, ok) {
     var el2 = document.getElementById('bar');
     bean.add(el1, 'click', function () {ok(true, 'bubbles up dom')});
     Syn.click(el2);
+  });
+
+  test('add: shouldn\'t trigger event when adding additional custom event listeners', 0, function () {
+    var el = document.getElementById('input');
+    bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 1')});
+    bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
   });
 
 })

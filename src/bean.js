@@ -36,7 +36,9 @@
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
-    custom && add && (element['_on' + custom] = element['_on' + custom] || 0);
+    if (custom && add && element['_on' + custom] === null) {
+      element['_on' + custom] = 0;
+    }
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   },
 
