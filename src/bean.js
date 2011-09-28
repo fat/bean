@@ -1,5 +1,10 @@
-!function (context) {
-  var __uid = 1,
+!function (name, definition) {
+  if (typeof define == 'function') define(definition);
+  else if (typeof module != 'undefined') module.exports = definition();
+  else this[name] = definition();
+}('bean', function () {
+  var win = window,
+      __uid = 1,
       registry = {},
       collected = {},
       overOut = /over|out/,
@@ -9,7 +14,7 @@
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
       detachEvent = 'detachEvent',
-      doc = context.document || {},
+      doc = document || {},
       root = doc.documentElement || {},
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
@@ -44,7 +49,7 @@
 
   nativeHandler = function (element, fn, args) {
     return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
       return fn.apply(element, [event].concat(args));
     };
   },
@@ -52,7 +57,7 @@
   customHandler = function (element, fn, type, condition, args) {
     return function (event) {
       if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
-        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || context).event) : null;
+        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
         fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
@@ -147,9 +152,9 @@
     var k, m, type, events, i,
         isString = typeof(orgEvents) == 'string',
         names = isString && orgEvents.replace(namespace, ''),
-        names = names && names.split('.'),
         rm = removeListener,
         attached = retrieveEvents(element);
+    names = names && names.split('.');
     if (isString && /\s/.test(orgEvents)) {
       orgEvents = orgEvents.split(' ');
       i = orgEvents.length - 1;
@@ -214,7 +219,7 @@
 
   fireListener = W3C_MODEL ? function (isNative, type, element) {
     evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
-    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, context, 1);
+    evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
     isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
@@ -317,23 +322,19 @@
     }
   };
 
-  if (context[attachEvent]) {
-    add(context, 'unload', function () {
+  if (win[attachEvent]) {
+    add(win, 'unload', function () {
       for (var k in collected) {
         collected.hasOwnProperty(k) && clean(collected[k]);
       }
-      context.CollectGarbage && CollectGarbage();
+      win.CollectGarbage && CollectGarbage();
     });
   }
 
-  var oldBean = context.bean;
   bean.noConflict = function () {
-    context.bean = oldBean;
+    context.bean = old;
     return this;
   };
 
-  (typeof module !== 'undefined' && module.exports) ?
-    (module.exports = bean) :
-    (context['bean'] = bean);
-
-}(this);
+  return bean;
+});
