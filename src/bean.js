@@ -1,6 +1,6 @@
 !function (name, definition) {
-  if (typeof define == 'function') define(definition);
-  else if (typeof module != 'undefined') module.exports = definition();
+  if (typeof module != 'undefined') module.exports = definition();
+  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
   else this[name] = definition();
 }('bean', function () {
   var win = window,
