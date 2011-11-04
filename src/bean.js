@@ -94,10 +94,12 @@
   },
 
   removeListener = function (element, orgType, handler) {
-    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+
     if (!events || !events[type]) {
       return element;
     }
+
     handler && handler.__one && (handler = handler.__one)
     names = orgType.replace(namespace, '');
     uids = names ? names.split('.') : [handler.__uid];
@@ -117,6 +119,15 @@
 
     destroyHandler(names); //get combos
     for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
+
+    if (isEmpty(events[type])) {
+      delete events[type];
+    }
+
+    if (isEmpty(registry[uid])) {
+      delete registry[uid];
+      delete collected[uid];
+    }
 
     return element;
   },
@@ -183,7 +194,9 @@
         if (attached.hasOwnProperty(k)) {
           for (i in attached[k]) {
             for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i) && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) && rm(element, [k, i].join('.'));
+              attached[k].hasOwnProperty(i) &&
+                new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) &&
+                rm(element, [k, i].join('.'));
             }
           }
         }
@@ -280,7 +293,14 @@
       }
     }
     return result;
-  };
+  },
+
+  isEmpty = function (obj) {
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) return false;
+    }
+    return true;
+  }
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -353,4 +373,5 @@
   };
 
   return bean;
+
 });
