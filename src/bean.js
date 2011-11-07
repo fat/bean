@@ -334,18 +334,10 @@
 
   var bean = { add: add, remove: remove, clone: clone, fire: fire };
 
-  var clean = function (el) {
-    var uid = remove(el).__uid;
-    if (uid) {
-      delete collected[uid];
-      delete registry[uid];
-    }
-  };
-
   if (win[attachEvent]) {
     add(win, 'unload', function () {
       for (var k in collected) {
-        collected.hasOwnProperty(k) && clean(collected[k]);
+        collected.hasOwnProperty(k) && remove(collected[k]);
       }
       win.CollectGarbage && CollectGarbage();
     });
