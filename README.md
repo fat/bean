@@ -2,9 +2,11 @@ Bean
 ----
 Bean is a small, slick, cross-platform, framework-agnostic event utility designed for desktop, mobile, and touch-based browsers. In its simplest form - it works like this:
 
+```javascript
     bean.add(element, 'click', function (e) {
       console.log('hello');
     });
+```
 
 API
 ---
@@ -31,6 +33,7 @@ add()
 
 <h3>Examples</h3>
 
+```javascript
     // simple
     bean.add(element, 'click', handler);
 
@@ -51,6 +54,7 @@ add()
 
     // event delegated events
     bean.add(element, '.content p', 'click', handler, queryEngine);
+```
 
 *(note: to use event delegation with a selector, you must pass bean.add a reference to a selector engine like qwery or sizzle)*
 Developers working on Mobile Webkit applications like iPhone or Android, you may wish to simply provide the following query selector with Bean:
@@ -70,6 +74,7 @@ Or alternatively, you can pass an array of elements (this actually cuts down on 
 <h3>Namespacing</h3>
 Bean also now supports namespacing your events! This makes it much easier to target them down the line with things like remove or fire. To name space an event just add a dot followed by your unique name identifier:
 
+```javascript
     bean.add(element, 'click.fat', fn);
     bean.add(element, 'click.ded', fn);
     bean.add(element, 'click', fn);
@@ -81,11 +86,13 @@ Bean also now supports namespacing your events! This makes it much easier to tar
     //alternatively you can specify mutliple remove or fire handlers at once
     bean.fire(element, 'click.ded.fat');
     bean.remove(element, 'click.fat.ded');
+```
 
 remove()
 ------
 <code>bean.remove()</code> is how you get rid of listeners once you no longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)
 
+```javascript
     // remove a single event handlers
     bean.remove(element, 'click', handler);
 
@@ -97,16 +104,19 @@ remove()
 
     // remove all events
     bean.remove(element);
+```
 
 clone()
 -----
 <code>bean.clone()</code> is a method for cloning events from one element to another.
 
+```javascript
     // clone all events at once by doing this:
     bean.clone(toElement, fromElement);
 
     // clone events of a specific type
     bean.clone(toElement, fromElement, 'click');
+```
 
 fire()
 ----
@@ -127,8 +137,10 @@ For all intents and purposes, you can just think of them as native events, which
 
 use them like this:
 
+```javascript
     bean.add(element, 'partytime', handler);
     bean.fire(element, 'partytime');
+```
 
 mouseenter, mouseleave
 ----------------------
@@ -142,11 +154,13 @@ object support
 --------------
 Good news, everything you can do in bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
 
+```javascript
     var inst = new Klass();
     bean.add(inst, 'complete', handler);
 
     //later on...
     bean.fire(inst, 'complete');
+```
 
 Browser Support
 ---------------
@@ -161,6 +175,7 @@ Other important browser notes
 --------------
 One of the great things about Bean is that it fixes a number of distinguishable browser differences and also provides proper cross-platform support for certain special events.
 
+```javascript
     // normalized browser event model for default behavior and propagation
     bean.add(el, 'click', function (e) {
       e.preventDefault();
@@ -181,6 +196,7 @@ One of the great things about Bean is that it fixes a number of distinguishable 
 
     // gestures
     bean.add(el, 'gesturestart gesturechange gestureend', fn);
+```
 
 Building Bean
 -------------
