@@ -116,6 +116,23 @@ sink('add', function (test, ok) {
     bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
   });
 
+  test('one: should only trigger handler once', 1, function() {
+    var el = document.getElementById('input')
+    bean.one(el, 'click', function() { ok(true, 'handler called exactly one time') })
+    Syn.click(el)
+    Syn.click(el)
+    Syn.click(el)
+  });
+
+  test('one: should be removable', 0, function() {
+    var el = document.getElementById('input')
+      , handler = function() { ok(false, 'handler shouldn\'t have been called') }
+    bean.one(el, 'click', handler)
+    bean.remove(el, 'click', handler)
+    Syn.click(el)
+    Syn.click(el)
+  });
+
 })
 
 sink('fire', function (test, ok) {
@@ -170,6 +187,26 @@ sink('custom', function (test, ok) {
     var el2 = document.getElementById('bar');
     bean.add(el1, 'partytime', function () {ok(true, 'bubbles up dom like traditional events')});
     bean.fire(el2, 'partytime');
+  });
+
+  test('custom: should be able to add, fire and remove custom events to document', 1, function () {
+    bean.remove(document);
+    bean.add(document, 'justlookatthat', function () {
+      ok(true, 'add custom events to document');
+      bean.remove(document, 'justlookatthat')
+    });
+    bean.fire(document, 'justlookatthat');
+    bean.fire(document, 'justlookatthat');
+  });
+
+  test('custom: should be able to add, fire and remove custom events to window', 1, function () {
+    bean.remove(window);
+    bean.add(window, 'spiffy', function () {
+      ok(true, 'add custom events to window');
+      bean.remove(window, 'spiffy')
+    });
+    bean.fire(window, 'spiffy');
+    bean.fire(window, 'spiffy');
   });
 
 })
@@ -321,7 +358,6 @@ sink('remove', function (test, ok) {
         handler2 = function () {
           ok(true, 'remove all events 2');
         };
-    bean.add(el, 'click.foo', handler1);
     bean.add(el, 'click.foo', handler1);
     bean.add(el, 'keydown.foo', handler2);
     Syn.click(el);

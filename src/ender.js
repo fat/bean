@@ -25,6 +25,8 @@
     listen: add,
     delegate: add,
 
+    one: integrate('one'),
+
     unbind: remove,
     unlisten: remove,
     removeListener: remove,
