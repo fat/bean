@@ -116,6 +116,23 @@ sink('add', function (test, ok) {
     bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
   });
 
+  test('one: should only trigger handler once', 1, function() {
+    var el = document.getElementById('input')
+    bean.one(el, 'click', function() { ok(true, 'handler called exactly one time') })
+    Syn.click(el)
+    Syn.click(el)
+    Syn.click(el)
+  });
+
+  test('one: should be removable', 0, function() {
+    var el = document.getElementById('input')
+      , handler = function() { ok(false, 'handler shouldn\'t have been called') }
+    bean.one(el, 'click', handler)
+    bean.remove(el, 'click', handler)
+    Syn.click(el)
+    Syn.click(el)
+  });
+
 })
 
 sink('fire', function (test, ok) {
