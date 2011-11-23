@@ -250,6 +250,10 @@ Here's the run down of the method alias's added...
  + cloneEvents - <code>$(element).cloneEvents('.foo', fn);</code>
 
 
+**CUSTOM EVENTS**
+
+ + fire / emit / trigger - <code>$(element).trigger('click')
+
 **SPECIAL EVENTS**
 
  + hover - <code>$(element).hover(enterfn, leavefn);</code>
