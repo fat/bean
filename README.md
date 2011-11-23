@@ -10,9 +10,10 @@ bean.add(element, 'click', function (e) {
 
 API
 ---
-Bean has four methods, each packing quite a punch.
+Bean has five methods, each packing quite a punch.
 
   * bean.<code>add()</code>
+  * bean.<code>one()</code>
   * bean.<code>remove()</code>
   * bean.<code>clone()</code>
   * bean.<code>fire()</code>
@@ -91,6 +92,10 @@ bean.remove(element, 'click.fat');
 bean.fire(element, 'click.ded.fat');
 bean.remove(element, 'click.fat.ded');
 ```
+
+one()
+---
+<code>bean.one()</code> is an alias for <code>bean.add()</code> except that the handler will only be executed once and then removed for the event type(s).
 
 remove()
 ------
