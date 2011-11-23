@@ -172,6 +172,26 @@ sink('custom', function (test, ok) {
     bean.fire(el2, 'partytime');
   });
 
+  test('custom: should be able to add, fire and remove custom events to document', 1, function () {
+    bean.remove(document);
+    bean.add(document, 'justlookatthat', function () {
+      ok(true, 'add custom events to document');
+      bean.remove(document, 'justlookatthat')
+    });
+    bean.fire(document, 'justlookatthat');
+    bean.fire(document, 'justlookatthat');
+  });
+
+  test('custom: should be able to add, fire and remove custom events to window', 1, function () {
+    bean.remove(window);
+    bean.add(window, 'spiffy', function () {
+      ok(true, 'add custom events to window');
+      bean.remove(window, 'spiffy')
+    });
+    bean.fire(window, 'spiffy');
+    bean.fire(window, 'spiffy');
+  });
+
 })
 
 sink('event object', function (test, ok) {
@@ -321,7 +341,6 @@ sink('remove', function (test, ok) {
         handler2 = function () {
           ok(true, 'remove all events 2');
         };
-    bean.add(el, 'click.foo', handler1);
     bean.add(el, 'click.foo', handler1);
     bean.add(el, 'keydown.foo', handler2);
     Syn.click(el);

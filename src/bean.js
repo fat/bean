@@ -63,6 +63,10 @@
     };
   },
 
+  targetElement = function (element, isNative) {
+    return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element;
+  },
+
   addListener = function (element, orgType, fn, args) {
     var type = orgType.replace(stripName, ''),
         events = retrieveEvents(element),
@@ -86,6 +90,7 @@
         removeListener(element, type, fn) && org();
       };
     }
+    element = targetElement(element, isNative);
     element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
     handlers[uid] = fn;
     fn.__uid = uid;
@@ -112,6 +117,7 @@
       if (element[eventSupport]) {
         type = customEvents[type] ? customEvents[type].base : type;
         var isNative = W3C_MODEL || nativeEvents[type];
+        element = targetElement(element, isNative);
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
@@ -178,9 +184,9 @@
         if (attached.hasOwnProperty(k)) {
           for (i in attached[k]) {
             for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i)
-                && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i)
-                && rm(element, [k, i].join('.'));
+              attached[k].hasOwnProperty(i) &&
+                new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) &&
+                rm(element, [k, i].join('.'));
             }
           }
         }
@@ -235,6 +241,7 @@
     evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
+    element = targetElement(element, isNative);
     isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
   },
 
@@ -266,8 +273,8 @@
         result.clientX = e.pageX;
         result.clientY = e.pageY;
       } else if (e.clientX || e.clientY) {
-        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        result.clientX = e.clientX + doc.body.scrollLeft + root.scrollLeft;
+        result.clientY = e.clientY + doc.body.scrollTop + root.scrollTop;
       }
       overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
