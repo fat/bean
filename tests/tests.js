@@ -442,6 +442,20 @@ sink('delegation', function (test, ok) {
     Syn.click(el3);
     Syn.click(el4);
   });
+
+  test('delegate: should be able to remove delegated handler', 1, function() {
+    var el1 = document.getElementById('foo');
+    var el2 = document.getElementById('bar');
+    bean.remove(el1);
+    bean.remove(el2);
+    var fn = function() {
+      ok(true, 'degegated event triggered once');
+      bean.remove(el1, 'click', fn);
+    }
+    bean.add(el1, '.bar', 'click', fn, qwery);
+    Syn.click(el2);
+    Syn.click(el2);
+  });
 })
 
 sink('namespaces', function (test, ok) {

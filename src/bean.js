@@ -4,12 +4,10 @@
   else this[name] = definition();
 }('bean', function () {
   var win = window,
-      __uid = 1,
-      registry = {},
-      collected = {},
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
+      own = 'hasOwnProperty',
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -19,31 +17,92 @@
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
 
-  isDescendant = function (parent, child) {
-    var node = child.parentNode;
-    while (node !== null) {
-      if (node == parent) {
-        return true;
-      }
-      node = node.parentNode;
+  customEvents = {
+    mouseenter: { base: 'mouseover', condition: check },
+    mouseleave: { base: 'mouseout', condition: check },
+    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
+  },
+
+  RegEntry = function () {
+    function entry(element, type, handler, original, namespaces) {
+      this.element = element;
+      this.type = type;
+      this.handler = handler;
+      this.original = original;
+      this.namespaces = namespaces;
+      this.isNative = !!nativeEvents[type] && !!element[eventSupport];
+      this.custom = customEvents[type];
+      this.eventType = W3C_MODEL || this.isNative ? type : 'propertychange';
+      this.customType = !W3C_MODEL && !this.isNative && type;
+      this.targetElement = targetElement(element, this.isNative);
+      this.eventSupport = !!this.targetElement[eventSupport];
     }
-  },
+    entry.prototype.inNamespaces = function (namespaces) {
+      var i, j;
+      if (!namespaces) return true;
+      if (!this.namespaces) return false;
+      for (i = namespaces.length; i--;) {
+        for (j = this.namespaces.length; j--;) {
+          if (namespaces[i] === this.namespaces[j]) return true;
+        }
+      }
+      return false;
+    }
+    entry.prototype.matches = function (element, original, handler) {
+      return this.element === element &&
+        (!original || this.original === original) &&
+        (!handler || this.handler === handler);
+    }
+    return entry;
+  }(),
 
-  retrieveUid = function (obj, uid) {
-    return (obj.__uid = uid && (uid + '::' + __uid++) || obj.__uid || __uid++);
-  },
+  registry = function () {
+    var map = {},
+      forAll = function (element, type, original, handler, fn) {
+        if (!type) {
+          for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
+        } else {
+          var i, list = map[type];
+          for (i in list) {
+            if (list[own](i) && (element === '*' || list[i].matches(element, original, handler)))
+              if (!fn(list[i], list, i, type)) return;
+          }
+        }
+      },
+      get = function (element, type, original) {
+        var handlers = [];
+        forAll(element, type, original, null, function(handler) { return handlers.push(handler); });
+        return handlers;
+      },
+      put = function (entry) {
+        (map[entry.type] || (map[entry.type] = [])).push(entry);
+        return entry;
+      },
+      del = function (entry) {
+        forAll(entry.element, entry.type, null, entry.handler, function(handler, list, i) {
+          list.splice(i, 1);
+          return false;
+        });
+      },
+      entries = function () {
+        var t, entries = [];
+        for (t in map) map[own](t) && (entries = entries.concat(map[t]));
+        return entries;
+      }
+    return { forAll: forAll, get: get, put: put, del: del, entries: entries };
+  }(),
 
-  retrieveEvents = function (element) {
-    var uid = retrieveUid(element);
-    return (registry[uid] = registry[uid] || {});
+  isDescendant = function (parent, node) {
+    while ((node = node.parentNode) !== null) {
+      if (node === parent) return true;
+    }
+    return false;
   },
 
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
-    if (custom && add && element['_on' + custom] === null) {
-      element['_on' + custom] = 0;
-    }
+    if (custom && add && element['_on' + custom] === null) element['_on' + custom] = 0;
     element[add ? attachEvent : detachEvent]('on' + type, fn);
   },
 
@@ -67,82 +126,46 @@
     return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element;
   },
 
-  addListener = function (element, orgType, fn, args) {
-    var type = orgType.replace(stripName, ''),
-        events = retrieveEvents(element),
-        handlers = events[type] || (events[type] = {}),
-        originalFn = fn,
-        uid = retrieveUid(fn, orgType.replace(namespace, ''));
-    if (handlers[uid]) {
-      return element;
+  addListener = function (element, orgType, fn, originalFn, args) {
+    var entry, type = orgType.replace(stripName, ''),
+      namespaces = orgType.replace(namespace, '').split('.');
+
+    if (registry.get(element, type, fn).length) return element;
+    if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn);
+    if (customEvents[type]) {
+      fn = customEvents[type].condition ? customHandler(element, fn, type, customEvents[type].condition) : fn;
+      type = customEvents[type].base || type;
     }
-    var custom = customEvents[type];
-    if (custom) {
-      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-      type = custom.base || type;
-    }
-    var isNative = nativeEvents[type];
-    fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
-    isNative = W3C_MODEL || isNative;
-    if (type == 'unload') {
-      var org = fn;
-      fn = function () {
-        removeListener(element, type, fn) && org();
-      };
-    }
-    element = targetElement(element, isNative);
-    element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
-    handlers[uid] = fn;
-    fn.__uid = uid;
-    fn.__originalFn = originalFn;
-    return type == 'unload' ? element : (collected[retrieveUid(element)] = element);
+    entry = registry.put(new RegEntry(element, type, fn, originalFn, !!namespaces[0] && namespaces));
+    entry.handler = entry.isNative ?
+      nativeHandler(element, entry.handler, args) :
+      customHandler(element, entry.handler, type, false, args);
+    if (entry.eventSupport)
+      listener(entry.targetElement, entry.eventType, entry.handler, true, entry.customType);
+    return element
   },
 
-  removeListener = function (element, orgType, handler) {
-    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+  removeListener = function (element, orgType, handler, names) {
+    var i, entry, type = (orgType && orgType.replace(stripName, '')),
+      handlers = registry.get(element, type, handler);
 
-    if (!events || !events[type]) {
-      return element;
-    }
+    if (!handlers.length) return element;
 
-    handler && handler.__one && (handler = handler.__one)
-    names = orgType.replace(namespace, '');
-    uids = names ? names.split('.') : [handler.__uid];
-
-    function destroyHandler(uid) {
-      handler = events[type][uid];
-      if (!handler) {
-        return;
-      }
-      delete events[type][uid];
-      if (element[eventSupport]) {
-        type = customEvents[type] ? customEvents[type].base : type;
-        var isNative = W3C_MODEL || nativeEvents[type];
-        element = targetElement(element, isNative);
-        listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
+    for (i in handlers) {
+      if (handlers[own](i) && handlers[i].inNamespaces(names)) {
+        entry = handlers[i];
+        entry.eventSupport && listener(entry.targetElement, entry.eventType, entry.handler, false, entry.type);
+        registry.del(entry)
       }
     }
-
-    destroyHandler(names); //get combos
-    for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
-
-    if (isEmpty(events[type])) {
-      delete events[type];
-    }
-
-    if (isEmpty(registry[uid])) {
-      delete registry[uid];
-      delete collected[uid];
-    }
-
     return element;
   },
 
   del = function (selector, fn, $) {
     return function (e) {
-      var array = typeof selector == 'string' ? $(selector, this) : selector;
-      for (var target = e.target; target && target != this; target = target.parentNode) {
-        for (var i = array.length; i--;) {
+      var target, i, array = typeof selector == 'string' ? $(selector, this) : selector;
+      for (target = e.target; target && target != this; target = target.parentNode) {
+        for (i = array.length; i--;) {
           if (array[i] == target) {
             return fn.apply(target, arguments);
           }
@@ -152,25 +175,27 @@
   },
 
   _add = function (meth, element, events, fn, delfn, $) {
+    var type, types, i, isDel = typeof fn === 'string',  originalFn = fn,
+      args = Array.prototype.slice.call(arguments, 4);
+
     if (typeof events == 'object' && !fn) {
-      for (var type in events) {
-        events.hasOwnProperty(type) && _add(meth, element, type, events[type]);
+      for (type in events) {
+        events[own](type) && _add(meth, element, type, events[type]);
       }
     } else {
-      var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-      fn = isDel ? del(events, delfn, $) : meth == 'one' ? 
-        function(fn) {
-          var one = function() {
-            remove(element, events, one)
-            fn.apply(this, arguments)
-          }
-          return (fn.__one = one)
-        }(fn) : fn
-      for (var i = types.length; i--;) {
-        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 5 : 4));
+      types = (isDel ? fn : events).split(' ');
+      if (isDel) {
+       fn = del(events, (originalFn = delfn), $);
+       args = args.slice(1);
       }
+      if (meth === 'one') fn = once(remove, element, events, fn, originalFn);
+      for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args);
     }
     return element;
+  },
+
+  once = function (rm, element, type, fn, originalFn) {
+    return function () { rm(element, type, originalFn) && fn.apply(this, arguments); };
   },
 
   add = function () {
@@ -182,70 +207,37 @@
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, m, type, events, i,
+    var k, m, type, events, i, names,
         isString = typeof(orgEvents) == 'string',
-        names = isString && orgEvents.replace(namespace, ''),
-        rm = removeListener,
-        attached = retrieveEvents(element);
-    names = names && names.split('.');
+        rm = removeListener;
+
     if (isString && /\s/.test(orgEvents)) {
       orgEvents = orgEvents.split(' ');
-      i = orgEvents.length - 1;
-      while (remove(element, orgEvents[i]) && i--) {}
+      for (i = orgEvents.length; remove(element, orgEvents[i], fn) && i--;) {}
       return element;
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (!attached || names || (isString && !attached[events])) {
-      for (k in attached) {
-        if (attached.hasOwnProperty(k)) {
-          for (i in attached[k]) {
-            for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i) &&
-                new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) &&
-                rm(element, [k, i].join('.'));
-            }
-          }
-        }
-      }
-      return element;
-    }
     if (typeof fn == 'function') {
       rm(element, events, fn);
-    } else if (names) {
-      rm(element, orgEvents);
     } else {
-      rm = events ? rm : remove;
-      type = isString && events;
-      events = events ? (fn || attached[events] || events) : attached;
-      for (k in events) {
-        if (events.hasOwnProperty(k)) {
-          rm(element, type || k, events[k]);
-          delete events[k]; // remove unused leaf keys
-        }
-      }
+      if (names = isString && orgEvents.replace(namespace, '')) names = names.split('.');
+      rm(element, type, null, names)
     }
     return element;
   },
 
   fire = function (element, type, args) {
-    var evt, k, i, m, types = type.split(' ');
+    var evt, k, i, names, handlers, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
-      var isNative = nativeEvents[type],
-          isNamespace = types[i].replace(namespace, ''),
-          handlers = retrieveEvents(element)[type];
-      if (isNamespace) {
-        isNamespace = isNamespace.split('.');
-        for (k = isNamespace.length; k--;) {
-          for (m in handlers) {
-            handlers.hasOwnProperty(m) && new RegExp('^' + isNamespace[k] + '::\\d*(\\..*)?$').test(m) && handlers[m].apply(element, [false].concat(args));
-          }
-        }
-      } else if (!args && element[eventSupport]) {
-        fireListener(isNative, type, element);
+      if (names = types[i].replace(namespace, '')) names = names.split('.');
+      if (!names && !args && element[eventSupport]) {
+        fireListener(nativeEvents[type], type, element);
       } else {
+        handlers = registry.get(element, type);
         for (k in handlers) {
-          handlers.hasOwnProperty(k) && handlers[k].apply(element, [false].concat(args));
+          if (handlers[own](k) && handlers[k].inNamespaces(names))
+            handlers[k].handler.apply(element, [false].concat(args));
         }
       }
     }
@@ -253,20 +245,18 @@
   },
 
   fireListener = W3C_MODEL ? function (isNative, type, element) {
-    evt = document.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+    evt = doc.createEvent(isNative ? "HTMLEvents" : "UIEvents");
     evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
     element = targetElement(element, isNative);
-    isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
+    isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++;
   },
 
   clone = function (element, from, type) {
-    var events = retrieveEvents(from), obj, k;
-    var uid = retrieveUid(element);
-    obj = type ? events[type] : events;
-    for (k in obj) {
-      obj.hasOwnProperty(k) && (type ? add : clone)(element, type || from, type ? obj[k].__originalFn : k);
+    var i, handlers = registry.get(from, type)
+    for (i in handlers) {
+      handlers[own](i) && add(element, handlers[i].type, handlers[i].original)
     }
     return element;
   },
@@ -300,14 +290,7 @@
       }
     }
     return result;
-  },
-
-  isEmpty = function (obj) {
-    for (var prop in obj) {
-      if (obj.hasOwnProperty(prop)) return false;
-    }
-    return true;
-  }
+  };
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -349,29 +332,19 @@
     return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
   }
 
-  var customEvents = {
-    mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
-  };
-
   var bean = { add: add, one: one, remove: remove, clone: clone, fire: fire };
 
-  var clean = function (el) {
-    var uid = remove(el).__uid;
-    if (uid) {
-      delete collected[uid];
-      delete registry[uid];
-    }
-  };
-
   if (win[attachEvent]) {
-    add(win, 'unload', function () {
-      for (var k in collected) {
-        collected.hasOwnProperty(k) && clean(collected[k]);
+    var cleanup = function () {
+      var i, entries = registry.entries();
+      for (i in entries) {
+        if (entries[own](i) && entries[i].type !== 'unload')
+          remove(entries[i].element, entries[i].type);
       }
+      win[detachEvent]('onunload', cleanup);
       win.CollectGarbage && CollectGarbage();
-    });
+    };
+    win[attachEvent]('onunload', cleanup);
   }
 
   bean.noConflict = function () {
