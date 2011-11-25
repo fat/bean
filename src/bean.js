@@ -17,12 +17,6 @@
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
 
-  customEvents = {
-    mouseenter: { base: 'mouseover', condition: check },
-    mouseleave: { base: 'mouseout', condition: check },
-    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
-  },
-
   RegEntry = function () {
     function entry(element, type, handler, original, namespaces) {
       this.element = element;
@@ -331,6 +325,12 @@
     }
     return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
   }
+
+  var customEvents = {
+    mouseenter: { base: 'mouseover', condition: check },
+    mouseleave: { base: 'mouseout', condition: check },
+    mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
+  };
 
   var bean = { add: add, one: one, remove: remove, clone: clone, fire: fire };
 
