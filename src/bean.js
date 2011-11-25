@@ -3,8 +3,9 @@
   else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
   else this[name] = definition();
 }('bean', function () {
-  var win = window,
-      overOut = /over|out/,
+  var context = this,
+      old = this.bean,
+      win = window,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
       own = 'hasOwnProperty',
