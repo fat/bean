@@ -6,6 +6,7 @@
   var context = this,
       old = this.bean,
       win = window,
+      overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
       own = 'hasOwnProperty',
