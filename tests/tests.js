@@ -2,6 +2,14 @@ if (!window.console) {
   window.console = { log: function () {}}
 }
 
+sink('no conflict', function (test, ok) {
+  test('should return old bean back to context', 1, function () {
+    var b = bean.noConflict();
+    ok(bean() == 'success', 'old bean called');
+    window.bean = b;
+  });
+});
+
 sink('add', function (test, ok) {
 
   test('add: should return the element passed in', 1, function () {
