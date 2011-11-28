@@ -28,6 +28,10 @@
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
 
+  customNamespace = function(type) {
+    return ".__beanCustomNamespace_" + type.replace(/\./, "_");
+  },
+
   isDescendant = function (parent, child) {
     var node = child.parentNode;
     while (node !== null) {
@@ -72,6 +76,10 @@
     };
   },
 
+  targetElement = function (element, isNative) {
+    return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element;
+  },
+
   addListener = function (element, orgType, fn, args) {
     var type = orgType.replace(stripName, ''),
         events = retrieveEvents(element),
@@ -83,8 +91,15 @@
     }
     var custom = customEvents[type];
     if (custom) {
-      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-      type = custom.base || type;
+      // if custom event has a handler and a base, separately register the handler on the base action
+      // and continue registering a custom event, allowing the handler to determine when to fire/trigger
+      if (custom.handler && custom.base) {
+        addListener(element, custom.base + customNamespace(orgType), customHandler(element, custom.handler, custom.base, custom.condition))
+      } else {
+        // otherwise, this is a traditional custom event
+        fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
+        type = custom.base || type;
+      }
     }
     var isNative = nativeEvents[type];
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
@@ -95,6 +110,7 @@
         removeListener(element, type, fn) && org();
       };
     }
+    element = targetElement(element, isNative);
     element[eventSupport] && listener(element, isNative ? type : 'propertychange', fn, true, !isNative && type);
     handlers[uid] = fn;
     fn.__uid = uid;
@@ -103,10 +119,13 @@
   },
 
   removeListener = function (element, orgType, handler) {
-    var uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+    var uid = element.__uid, names, uids, i, events = retrieveEvents(element), type = orgType.replace(stripName, '');
+
     if (!events || !events[type]) {
       return element;
     }
+
+    handler && handler.__one && (handler = handler.__one)
     names = orgType.replace(namespace, '');
     uids = names ? names.split('.') : [handler.__uid];
 
@@ -117,14 +136,34 @@
       }
       delete events[type][uid];
       if (element[eventSupport]) {
-        type = customEvents[type] ? customEvents[type].base : type;
+        var custom = customEvents[type];
+        // if the custom event has a handler and a base
+        // separately remove the listener from the base event and 
+        // continue to remove the custom event listener as well
+        if(custom && custom.handler && custom.base) {
+          // this version or remove does the proper namespace lookup
+          remove(element, custom.base + customNamespace(orgType));
+        } else {
+          // otherwise we have a traditional custom event or none at all
+          type = custom ? custom.base : type;
+        }
         var isNative = W3C_MODEL || nativeEvents[type];
+        element = targetElement(element, isNative);
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
       }
     }
 
     destroyHandler(names); //get combos
     for (i = uids.length; i--; destroyHandler(uids[i])) {} //get singles
+
+    if (isEmpty(events[type])) {
+      delete events[type];
+    }
+
+    if (isEmpty(registry[uid])) {
+      delete registry[uid];
+      delete collected[uid];
+    }
 
     return element;
   },
@@ -142,19 +181,34 @@
     };
   },
 
-  add = function (element, events, fn, delfn, $) {
+  _add = function (meth, element, events, fn, delfn, $) {
     if (typeof events == 'object' && !fn) {
       for (var type in events) {
-        events.hasOwnProperty(type) && add(element, type, events[type]);
+        events.hasOwnProperty(type) && _add(meth, element, type, events[type]);
       }
     } else {
       var isDel = typeof fn == 'string', types = (isDel ? fn : events).split(' ');
-      fn = isDel ? del(events, delfn, $) : fn;
+      fn = isDel ? del(events, delfn, $) : meth == 'one' ? 
+        function(fn) {
+          var one = function() {
+            remove(element, events, one)
+            fn.apply(this, arguments)
+          }
+          return (fn.__one = one)
+        }(fn) : fn
       for (var i = types.length; i--;) {
-        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 4 : 3));
+        addListener(element, types[i], fn, Array.prototype.slice.call(arguments, isDel ? 5 : 4));
       }
     }
     return element;
+  },
+
+  add = function () {
+    return _add.apply(this, ['add'].concat(Array.prototype.slice.call(arguments, 0)))
+  },
+
+  one = function () {
+    return _add.apply(this, ['one'].concat(Array.prototype.slice.call(arguments, 0)))
   },
 
   remove = function (element, orgEvents, fn) {
@@ -176,7 +230,9 @@
         if (attached.hasOwnProperty(k)) {
           for (i in attached[k]) {
             for (m = names.length; m--;) {
-              attached[k].hasOwnProperty(i) && new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) && rm(element, [k, i].join('.'));
+              attached[k].hasOwnProperty(i) &&
+                new RegExp('^' + names[m] + '::\\d*(\\..*)?$').test(i) &&
+                rm(element, [k, i].join('.'));
             }
           }
         }
@@ -231,6 +287,7 @@
     evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
+    element = targetElement(element, isNative);
     isNative ? element.fireEvent('on' + type, document.createEventObject()) : element['_on' + type]++;
   },
 
@@ -262,8 +319,8 @@
         result.clientX = e.pageX;
         result.clientY = e.pageY;
       } else if (e.clientX || e.clientY) {
-        result.clientX = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-        result.clientY = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+        result.clientX = e.clientX + doc.body.scrollLeft + root.scrollLeft;
+        result.clientY = e.clientY + doc.body.scrollTop + root.scrollTop;
       }
       overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
@@ -273,7 +330,14 @@
       }
     }
     return result;
-  };
+  },
+
+  isEmpty = function (obj) {
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop)) return false;
+    }
+    return true;
+  }
 
   fixEvent.preventDefault = function (e) {
     return function () {
@@ -321,7 +385,7 @@
     mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
   };
 
-  var bean = { add: add, remove: remove, clone: clone, fire: fire };
+  var bean = { add: add, one: one, remove: remove, clone: clone, fire: fire };
 
   var clean = function (el) {
     var uid = remove(el).__uid;
@@ -340,10 +404,13 @@
     });
   }
 
+  bean.customEvents = customEvents;
+
   bean.noConflict = function () {
     context.bean = old;
     return this;
   };
 
   return bean;
+
 });
