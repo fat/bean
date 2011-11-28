@@ -12,7 +12,9 @@
   else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
   else this[name] = definition();
 }('bean', function () {
-  var win = window,
+  var context = this,
+      old = this.bean,
+      win = window,
       __uid = 1,
       registry = {},
       collected = {},
