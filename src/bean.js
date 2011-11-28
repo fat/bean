@@ -112,15 +112,16 @@
 
   nativeHandler = function (element, fn, args) {
     return function (event) {
-      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event);
+      event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true);
       return fn.apply(element, [event].concat(args));
     };
   },
 
-  customHandler = function (element, fn, type, condition, args) {
+  customHandler = function (element, fn, type, condition, args, isNative) {
     return function (event) {
       if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
-        event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
+        if (event)
+          event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative);
         fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
@@ -137,13 +138,13 @@
     if (registry.has(element, type, fn)) { return element; }
     if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn);
     if (customEvents[type]) {
-      fn = customEvents[type].condition ? customHandler(element, fn, type, customEvents[type].condition) : fn;
+      fn = customEvents[type].condition ? customHandler(element, fn, type, customEvents[type].condition, true) : fn;
       type = customEvents[type].base || type;
     }
     entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces));
     entry.handler = entry.isNative ?
       nativeHandler(element, entry.handler, args) :
-      customHandler(element, entry.handler, type, false, args);
+      customHandler(element, entry.handler, type, false, args, false);
     if (entry.eventSupport)
       listener(entry.targetElement, entry.eventType, entry.handler, true, entry.customType);
     return element
@@ -255,30 +256,33 @@
 
   copyProps = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode metaKey newValue offsetX offsetY pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' '), // thanks to jQuery for this basis of this list
 
-  fixEvent = function (e) {
+  fixEvent = function (event, isNative) {
     var result = {};
-    if (!e) return result;
-    var i, p, type = e.type, target = e.target || e.srcElement;
-    result.preventDefault = fixEvent.preventDefault(e);
-    result.stopPropagation = fixEvent.stopPropagation(e);
+    if (!event) return result;
+    var i, p, type = event.type, target = event.target || event.srcElement;
+    result.preventDefault = fixEvent.preventDefault(event);
+    result.stopPropagation = fixEvent.stopPropagation(event);
     result.target = target && target.nodeType === 3 ? target.parentNode : target;
-    if (~type.indexOf('key')) {
-      result.keyCode = e.which || e.keyCode;
-    } else if ((/click|mouse|menu/i).test(type)) {
-      result.rightClick = e.which === 3 || e.button === 2;
-      result.pos = { x: 0, y: 0 };
-      if (e.pageX || e.pageY) {
-        result.clientX = e.pageX;
-        result.clientY = e.pageY;
-      } else if (e.clientX || e.clientY) {
-        result.clientX = e.clientX + doc.body.scrollLeft + root.scrollLeft;
-        result.clientY = e.clientY + doc.body.scrollTop + root.scrollTop;
+    if (isNative) { // we only need basic augmentation on custom events
+      if (~type.indexOf('key')) {
+        result.keyCode = event.which || event.keyCode;
+      } else if ((/click|mouse|menu/i).test(type)) {
+        result.rightClick = event.which === 3 || event.button === 2;
+        result.pos = { x: 0, y: 0 };
+        if (event.pageX || event.pageY) {
+          result.clientX = event.pageX;
+          result.clientY = event.pageY;
+        } else if (event.clientX || event.clientY) {
+          result.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft;
+          result.clientY = event.clientY + doc.body.scrollTop + root.scrollTop;
+        }
+        if (overOut.test(type))
+          result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element'];
       }
-      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type === 'mouseover' ? 'from' : 'to') + 'Element']);
-    }
-    for (i = copyProps.length; i--;) {
-      p = copyProps[i];
-      if (!(p in result) && p in e) result[p] = e[p];
+      for (i = copyProps.length; i--;) {
+        p = copyProps[i];
+        if (!(p in result) && p in event) result[p] = event[p];
+      }
     }
     return result;
   };
