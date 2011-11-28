@@ -1,6 +1,6 @@
 !function (name, definition) {
   if (typeof module != 'undefined') module.exports = definition();
-  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
+  else if (typeof define == 'function' && typeof define.amd == 'object') define(definition);
   else this[name] = definition();
 }('bean', function () {
   var context = this,
@@ -18,6 +18,8 @@
       root = doc.documentElement || {},
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
+      slice = Array.prototype.slice,
+      ONE = {one:1}, // singleton for quick matching making add() do one()
 
   RegEntry = function () {
     function entry(element, type, handler, original, namespaces) {
@@ -26,12 +28,12 @@
       this.handler = handler;
       this.original = original;
       this.namespaces = namespaces;
-      this.isNative = !!nativeEvents[type] && !!element[eventSupport];
+      this.isNative = nativeEvents[type] && element[eventSupport];
       this.custom = customEvents[type];
       this.eventType = W3C_MODEL || this.isNative ? type : 'propertychange';
       this.customType = !W3C_MODEL && !this.isNative && type;
       this.targetElement = targetElement(element, this.isNative);
-      this.eventSupport = !!this.targetElement[eventSupport];
+      this.eventSupport = this.targetElement[eventSupport];
     }
     entry.prototype.inNamespaces = function (namespaces) {
       var i, j;
@@ -58,34 +60,40 @@
         if (!type) {
           for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
         } else {
-          var i, list = map[type];
-          for (i in list) {
-            if (list[own](i) && (element === '*' || list[i].matches(element, original, handler)))
+          var i = 0, l, list = map[type], all = element === '*';
+          if (!list) return
+          for (l = list.length; i < l; i++) {
+            if (all || list[i].matches(element, original, handler))
               if (!fn(list[i], list, i, type)) return;
           }
         }
       },
+      has = function (element, type, original) {
+        var b = false;
+        forAll(element, type, original, null, function(entry) { return !(b = true); });
+        return b;
+      },
       get = function (element, type, original) {
-        var handlers = [];
-        forAll(element, type, original, null, function(handler) { return handlers.push(handler); });
-        return handlers;
+        var entries = [];
+        forAll(element, type, original, null, function(entry) { return entries.push(entry); });
+        return entries;
       },
       put = function (entry) {
         (map[entry.type] || (map[entry.type] = [])).push(entry);
         return entry;
       },
       del = function (entry) {
-        forAll(entry.element, entry.type, null, entry.handler, function(handler, list, i) {
+        forAll(entry.element, entry.type, null, entry.handler, function(entry, list, i) {
           list.splice(i, 1);
           return false;
         });
       },
       entries = function () {
         var t, entries = [];
-        for (t in map) map[own](t) && (entries = entries.concat(map[t]));
+        for (t in map) map(t) && (entries = entries.concat(map[t]));
         return entries;
       }
-    return { forAll: forAll, get: get, put: put, del: del, entries: entries };
+    return { forAll: forAll, has: has, get: get, put: put, del: del, entries: entries };
   }(),
 
   isDescendant = function (parent, node) {
@@ -111,9 +119,9 @@
 
   customHandler = function (element, fn, type, condition, args) {
     return function (event) {
-      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event) {
+      if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
         event = event ? fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event) : null;
-        fn.apply(element, Array.prototype.slice.call(arguments, event ? 0 : 1).concat(args));
+        fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args));
       }
     };
   },
@@ -126,13 +134,13 @@
     var entry, type = orgType.replace(stripName, ''),
       namespaces = orgType.replace(namespace, '').split('.');
 
-    if (registry.get(element, type, fn).length) return element;
+    if (registry.has(element, type, fn)) { return element; }
     if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn);
     if (customEvents[type]) {
       fn = customEvents[type].condition ? customHandler(element, fn, type, customEvents[type].condition) : fn;
       type = customEvents[type].base || type;
     }
-    entry = registry.put(new RegEntry(element, type, fn, originalFn, !!namespaces[0] && namespaces));
+    entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces));
     entry.handler = entry.isNative ?
       nativeHandler(element, entry.handler, args) :
       customHandler(element, entry.handler, type, false, args);
@@ -142,15 +150,13 @@
   },
 
   removeListener = function (element, orgType, handler, names) {
-    var i, entry, type = (orgType && orgType.replace(stripName, '')),
+    var i, l, entry, type = (orgType && orgType.replace(stripName, '')),
       handlers = registry.get(element, type, handler);
 
-    if (!handlers.length) return element;
-
-    for (i in handlers) {
-      if (handlers[own](i) && handlers[i].inNamespaces(names)) {
-        entry = handlers[i];
-        entry.eventSupport && listener(entry.targetElement, entry.eventType, entry.handler, false, entry.type);
+    for (i = 0, l = handlers.length; i < l; i++) {
+      if (handlers[i].inNamespaces(names)) {
+        if ((entry = handlers[i]).eventSupport)
+          listener(entry.targetElement, entry.eventType, entry.handler, false, entry.type);
         registry.del(entry)
       }
     }
@@ -159,10 +165,10 @@
 
   del = function (selector, fn, $) {
     return function (e) {
-      var target, i, array = typeof selector == 'string' ? $(selector, this) : selector;
-      for (target = e.target; target && target != this; target = target.parentNode) {
+      var target, i, array = typeof selector === 'string' ? $(selector, this) : selector;
+      for (target = e.target; target && target !== this; target = target.parentNode) {
         for (i = array.length; i--;) {
-          if (array[i] == target) {
+          if (array[i] === target) {
             return fn.apply(target, arguments);
           }
         }
@@ -170,21 +176,17 @@
     };
   },
 
-  _add = function (meth, element, events, fn, delfn, $) {
-    var type, types, i, isDel = typeof fn === 'string',  originalFn = fn,
-      args = Array.prototype.slice.call(arguments, 4);
-
-    if (typeof events == 'object' && !fn) {
+  add = function (element, events, fn, delfn, $) {
+    var type, types, i, args, originalFn = fn, isDel = fn && typeof fn === 'string';
+    if (events && !fn && typeof events === 'object') {
       for (type in events) {
-        events[own](type) && _add(meth, element, type, events[type]);
+        events[own](type) && add.apply(this, [ element, type, events[type] ]);
       }
     } else {
+      args = arguments.length > 3 ? slice.call(arguments, 3) : [];
       types = (isDel ? fn : events).split(' ');
-      if (isDel) {
-       fn = del(events, (originalFn = delfn), $);
-       args = args.slice(1);
-      }
-      if (meth === 'one') fn = once(remove, element, events, fn, originalFn);
+      isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1));
+      this === ONE && (fn = once(remove, element, events, fn, originalFn));
       for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args);
     }
     return element;
@@ -194,26 +196,20 @@
     return function () { rm(element, type, originalFn) && fn.apply(this, arguments); };
   },
 
-  add = function () {
-    return _add.apply(this, ['add'].concat(Array.prototype.slice.call(arguments, 0)))
-  },
-
   one = function () {
-    return _add.apply(this, ['one'].concat(Array.prototype.slice.call(arguments, 0)))
+    return add.apply(ONE, arguments)
   },
 
   remove = function (element, orgEvents, fn) {
-    var k, m, type, events, i, names,
-        isString = typeof(orgEvents) == 'string',
-        rm = removeListener;
-
-    if (isString && /\s/.test(orgEvents)) {
+    var k, m, type, events, i, names, rm = removeListener,
+        isString = orgEvents && typeof orgEvents === 'string';
+    if (isString && orgEvents.indexOf(' ') > 0) {
       orgEvents = orgEvents.split(' ');
-      for (i = orgEvents.length; remove(element, orgEvents[i], fn) && i--;) {}
+      for (i = orgEvents.length; i-- && remove(element, orgEvents[i], fn);) {}
       return element;
     }
     events = isString ? orgEvents.replace(stripName, '') : orgEvents;
-    if (typeof fn == 'function') {
+    if (fn && typeof fn === 'function') {
       rm(element, events, fn);
     } else {
       if (names = isString && orgEvents.replace(namespace, '')) names = names.split('.');
@@ -223,7 +219,7 @@
   },
 
   fire = function (element, type, args) {
-    var evt, k, i, names, handlers, types = type.split(' ');
+    var i, j, l, names, handlers, types = type.split(' ');
     for (i = types.length; i--;) {
       type = types[i].replace(stripName, '');
       if (names = types[i].replace(namespace, '')) names = names.split('.');
@@ -231,9 +227,10 @@
         fireListener(nativeEvents[type], type, element);
       } else {
         handlers = registry.get(element, type);
-        for (k in handlers) {
-          if (handlers[own](k) && handlers[k].inNamespaces(names))
-            handlers[k].handler.apply(element, [false].concat(args));
+        args = [false].concat(args);
+        for (j = 0, l = handlers.length; j < l; j++) {
+          if (handlers[j].inNamespaces && handlers[j].inNamespaces(names))
+            handlers[j].handler.apply(element, args);
         }
       }
     }
@@ -241,7 +238,7 @@
   },
 
   fireListener = W3C_MODEL ? function (isNative, type, element) {
-    evt = doc.createEvent(isNative ? "HTMLEvents" : "UIEvents");
+    var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents');
     evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1);
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
@@ -250,26 +247,25 @@
   },
 
   clone = function (element, from, type) {
-    var i, handlers = registry.get(from, type)
-    for (i in handlers) {
-      handlers[own](i) && add(element, handlers[i].type, handlers[i].original)
-    }
+    var i = 0, handlers = registry.get(from, type), l = handlers.length;
+    for (;i < l; i++)
+      handlers[i].original && add(element, handlers[i].type, handlers[i].original)
     return element;
   },
 
+  copyProps = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode metaKey newValue offsetX offsetY pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' '), // thanks to jQuery for this basis of this list
+
   fixEvent = function (e) {
     var result = {};
-    if (!e) {
-      return result;
-    }
-    var type = e.type, target = e.target || e.srcElement;
+    if (!e) return result;
+    var i, p, type = e.type, target = e.target || e.srcElement;
     result.preventDefault = fixEvent.preventDefault(e);
     result.stopPropagation = fixEvent.stopPropagation(e);
-    result.target = target && target.nodeType == 3 ? target.parentNode : target;
+    result.target = target && target.nodeType === 3 ? target.parentNode : target;
     if (~type.indexOf('key')) {
       result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
-      result.rightClick = e.which == 3 || e.button == 2;
+      result.rightClick = e.which === 3 || e.button === 2;
       result.pos = { x: 0, y: 0 };
       if (e.pageX || e.pageY) {
         result.clientX = e.pageX;
@@ -278,36 +274,32 @@
         result.clientX = e.clientX + doc.body.scrollLeft + root.scrollLeft;
         result.clientY = e.clientY + doc.body.scrollTop + root.scrollTop;
       }
-      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
+      overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type === 'mouseover' ? 'from' : 'to') + 'Element']);
     }
-    for (var k in e) {
-      if (!(k in result)) {
-        result[k] = e[k];
-      }
+    for (i = copyProps.length; i--;) {
+      p = copyProps[i];
+      if (!(p in result) && p in e) result[p] = e[p];
     }
     return result;
   };
 
   fixEvent.preventDefault = function (e) {
     return function () {
-      if (e.preventDefault) {
+      if (e.preventDefault)
         e.preventDefault();
-      }
-      else {
+      else
         e.returnValue = false;
-      }
     };
-  };
+  }
 
   fixEvent.stopPropagation = function (e) {
     return function () {
-      if (e.stopPropagation) {
+      if (e.stopPropagation)
         e.stopPropagation();
-      } else {
+      else
         e.cancelBubble = true;
-      }
     };
-  };
+  }
 
   var nativeEvents = { click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1, //mouse buttons
     mousewheel: 1, DOMMouseScroll: 1, //mouse wheel
@@ -322,10 +314,8 @@
 
   function check(event) {
     var related = event.relatedTarget;
-    if (!related) {
-      return related === null;
-    }
-    return (related != this && related.prefix != 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
+    if (!related) return related === null;
+    return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related));
   }
 
   var customEvents = {
@@ -340,7 +330,7 @@
     var cleanup = function () {
       var i, entries = registry.entries();
       for (i in entries) {
-        if (entries[own](i) && entries[i].type !== 'unload')
+        if (entries[i].type && entries[i].type !== 'unload')
           remove(entries[i].element, entries[i].type);
       }
       win[detachEvent]('onunload', cleanup);
