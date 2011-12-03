@@ -60,18 +60,22 @@
         if (!type) {
           for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
         } else {
-          var i = 0, l, list = map[type], all = element === '*';
-          if (!list) return
-          for (l = list.length; i < l; i++) {
+          var i = 0, list = map[type], all = element === '*';
+          if (!list) return;
+	  for (i = list.length; i--;) {
             if (all || list[i].matches(element, original, handler))
               if (!fn(list[i], list, i, type)) return;
           }
         }
       },
       has = function (element, type, original) {
-        var b = false;
-        forAll(element, type, original, null, function(entry) { return !(b = true); });
-        return b;
+        var i, list = map[type]
+        if (list) {
+          for (i = list.length; i--;) {
+            if (list[i].matches(element, original, null)) return true;
+          }
+        }
+        return false;
       },
       get = function (element, type, original) {
         var entries = [];
