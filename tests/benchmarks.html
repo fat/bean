@@ -126,7 +126,7 @@ function basicBench(maxms, handlers, fires, el, type, add, remove, fire) {
       remove(el, type, fna[j])
     if (+new Date - start >= maxms) break
   }
-  return Math.round((1000 / (+new Date - start)) * iters)
+  return Math.round(1000 / ((+new Date - start) / iters))
 }
 
 function manyElementsBench(maxms, handlers, elements, type, add, remove, fire) {
@@ -140,10 +140,10 @@ function manyElementsBench(maxms, handlers, elements, type, add, remove, fire) {
       remove(ela[j % elements], type, fna[j])
     if (+new Date - start >= maxms) break
   }
-  return Math.round((1000 / (+new Date - start)) * iters)
+  return Math.round(1000 / ((+new Date - start) / iters))
 }
 
-var maxms = 300, listeners = 25, elements = 10, fires = 10
+var maxms = 500, listeners = 25, elements = 10, fires = 10
 var bench = [
   function(ind) {
     result(ind, 'Element click add/click/remove', [
