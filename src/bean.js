@@ -57,7 +57,7 @@
   registry = function () {
     var map = {},
       forAll = function (element, type, original, handler, fn) {
-        if (!type) {
+        if (!type || type === '*') {
           for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
         } else {
           var i = 0, list = map[type], all = element === '*';
@@ -96,8 +96,14 @@
         var t, entries = [];
         for (t in map) map(t) && (entries = entries.concat(map[t]));
         return entries;
+      },
+      // probably temporary, not for production release
+      size = function() {
+        var c = 0
+        forAll('*', '*', null, null, function() { c++ })
+        return c;
       }
-    return { forAll: forAll, has: has, get: get, put: put, del: del, entries: entries };
+    return { forAll: forAll, has: has, get: get, put: put, del: del, entries: entries, size: size };
   }(),
 
   isDescendant = function (parent, node) {
@@ -151,7 +157,6 @@
       customHandler(element, entry.handler, type, false, args, false);
     if (entry.eventSupport)
       listener(entry.targetElement, entry.eventType, entry.handler, true, entry.customType);
-    return element
   },
 
   removeListener = function (element, orgType, handler, names) {
@@ -165,7 +170,6 @@
         registry.del(entry)
       }
     }
-    return element;
   },
 
   del = function (selector, fn, $) {
@@ -351,6 +355,9 @@
     context.bean = old;
     return this;
   };
+
+  // temporary for debugging, not for production release
+  bean.registry = registry
 
   return bean;
 
