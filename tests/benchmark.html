@@ -2,6 +2,29 @@
 <html lang="en-us">
   <head>
     <title>Bean Benchmarks</title>
+    <style type="text/css">
+      body { font-family: 'helvetica neue', helvetica, arial; }
+      table { border-collapse: collapse; }
+      td,th { border: solid 1px #ddd; padding: 0.25em 1em; }
+      tbody th { text-align: right; }
+      td span { font-size: 8pt; color: #555; }
+      applet { position: absolute; left: -9999em; }
+    </style>
+  </head>
+  <body>
+    <h1>Running Benchmark Suite</h1>
+    <table cellpadding="0" cellspacing="0" >
+      <thead>
+        <th></th>
+        <th>Bean</th>
+        <th>New Bean</th>
+        <th>NWEvents</th>
+        <th>jQuery</th>
+      </thead>
+      <tbody id="results">
+      </tbody>
+    </table>
+
     <script src="benchmark.js"></script>
     <script src="../bean.js"></script>
     <script src="../src/bean.js"></script>
@@ -15,9 +38,10 @@
 
       var libs = [ 'bean', 'newbean', 'nw', 'jquery' ]
         , suite = new Benchmark.Suite
+        , i, j, elements, element, listeners, fn = function() {}
 
       function add(name, setup, exec, teardown) {
-        for (var i = 0; i < libs.length; i++) {
+        for (i = 0; i < libs.length; i++) {
           exec[libs[i]] && suite.add(name, exec[libs[i]], {
               'libid': libs[i]
             , 'setup': typeof setup === 'function' ? setup : setup[libs[i]]
@@ -26,34 +50,32 @@
         }
       }
 
-      var setupElement = function() { var element = document.createElement('div') }
+      var setupElement = function() { element = document.createElement('div') }
         , teardownElement = {
-              'bean':    function() { bean.remove(element); element = null }
-            , 'newbean': function() { newbean.remove(element); element = null }
+              'bean':    function() { bean.remove(element); }
+            , 'newbean': function() { newbean.remove(element); }
             , 'nw':      function() {
-                           var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
+                           listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
                            for (j = 0; j < listeners.length; j++) NW.Event.unlisten(element, 'click', listeners[j])
-                           element = null
                          }
-            , 'jquery':  function() { jQuery(element).off('click'); element = null }
+            , 'jquery':  function() { jQuery(element).off('click') }
           }
         , setupUniqueElements = function() {
-                           var i = this.count, elements = []
+                           i = this.count
+                           elements = []
                            while (i--) elements.push(document.createElement('div'))
                            i = 0
                          }
         , teardownUniqueElements = {
-              'bean':    function() { while (i--) bean.remove(elements[i]); elements = null }
-            , 'newbean': function() { while (i--) newbean.remove(elements[i]); elements = null }
+              'bean':    function() { while (i--) bean.remove(elements[i]) }
+            , 'newbean': function() { while (i--) newbean.remove(elements[i]) }
             , 'nw':      function() {
-                           var j, listeners
                            while (i--) {
-                             j, listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
+                             listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
                              for (j = 0; j < listeners.length; j++) NW.Event.unlisten(elements[i], 'click', listeners[j])
                            }
-                           elements = null
                          }
-            , 'jquery':  function() { while (i--) jQuery(elements[i]).off('click'); elements = null }
+            , 'jquery':  function() { while (i--) jQuery(elements[i]).off('click') }
           }
 
       add( 'add( element, event, fn )', setupElement
@@ -77,21 +99,18 @@
       var teardownElementCustom = {
               'bean': teardownElement.bean, 'newbean': teardownElement.newbean, 'jquery': teardownElement.jquery
             , 'nw':   function () {
-                        var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'fat', '*')
+                        listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'fat', '*')
                         for (j = 0; j < listeners.length; j++) NW.Event.unlisten(element, 'fat', listeners[j])
-                        element = null
                      }
           }
         , teardownUniqueElementsCustom = {
               'bean': teardownUniqueElements.bean
             , 'newbean': teardownUniqueElements.newbean
             , 'nw':      function() {
-                           var j, listeners
                            while (i--) {
-                             j, listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'fat', '*')
+                             listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'fat', '*')
                              for (j = 0; j < listeners.length; j++) NW.Event.unlisten(elements[i], 'fat', listeners[j])
                            }
-                           elements = null
                          }
             , 'jquery': teardownUniqueElements.jquery
           }
@@ -133,21 +152,18 @@
       var teardownElementDelegate = {
                 'bean': teardownElement.bean, 'newbean': teardownElement.newbean, 'jquery': teardownElement.jquery
               , 'nw':   function () {
-                          var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
+                          listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
                           for (j = 0; j < listeners.length; j++) NW.Event.undelegate('a.close', 'click', listeners[j], element)
-                          element = null
                         }
           }
         , teardownUniqueElementsDelegate = {
               'bean': teardownUniqueElements.bean
             , 'newbean': teardownUniqueElements.newbean
             , 'nw':      function() {
-                           var j, listeners
                            while (i--) {
-                             j, listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
+                             listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
                              for (j = 0; j < listeners.length; j++) NW.Event.undelegate(elements[i], 'click', listeners[j])
                            }
-                           elements = null
                          }
             , 'jquery': teardownUniqueElements.jquery
           }
@@ -188,7 +204,8 @@
 /*
       var setupElementRemove = {
               'bean':    function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) bean.add(element, 'click', function () {})
@@ -197,7 +214,8 @@
                            i = 0
                          }
             , 'newbean': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) newbean.add(element, 'click', function () {})
@@ -206,7 +224,8 @@
                            i = 0
                          }
             , 'nw': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) NW.Event.listen(element, 'click', function () {})
@@ -215,7 +234,8 @@
                            i = 0
                          }
             , 'jquery': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) jQuery(element).on('click', function () {})
@@ -226,7 +246,8 @@
           }
         , setupElementRemoveCustom = {
               'bean':    function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) bean.add(element, 'fat', function () {})
@@ -235,7 +256,8 @@
                            i = 0
                          }
             , 'newbean': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) newbean.add(element, 'fat', function () {})
@@ -244,7 +266,8 @@
                            i = 0
                          }
             , 'nw': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) NW.Event.listen(element, 'fat', function () {})
@@ -253,7 +276,8 @@
                            i = 0
                          }
             , 'jquery': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) jQuery(element).on('fat', function () {})
@@ -264,7 +288,8 @@
           }
         , setupElementRemoveNamespace = {
               'bean':    function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) bean.add(element, 'click.fat', function () {})
@@ -273,7 +298,8 @@
                            i = 0
                          }
             , 'newbean': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) newbean.add(element, 'click.fat', function () {})
@@ -282,7 +308,8 @@
                            i = 0
                          }
             , 'jquery': function () {
-                           var i = this.count, element, elements = [], j, fn = function() {}
+                           i = this.count
+                           elements = []
                            while (i--) {
                              elements.push(element = document.createElement('div'))
                              for (j = 10; j--;) jQuery(element).on('click.fat', function () {})
@@ -291,7 +318,7 @@
                            i = 0
                          }
           }
-        , teardownElementRemove = function () { elements = null; element = null; fn = null }  
+        , teardownElementRemove = function () { }  
 
       add( 'remove()', setupElementRemove
         , {
@@ -306,7 +333,7 @@
               'bean':    function () { bean.remove(elements[i++], 'click') }
             , 'newbean': function () { newbean.remove(elements[i++], 'click') }
             , 'nw':      function () {
-                           var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element[i], 'click', '*')
+                           listeners = NW.Event.getRegistered(NW.Event.Listeners, element[i], 'click', '*')
                            for (j = 0; j < listeners.length; j++) NW.Event.unlisten(elements[i], 'click', listeners[j])
                            i++
                          }
@@ -319,7 +346,7 @@
               'bean':    function () { bean.remove(elements[i++], 'fat') }
             , 'newbean': function () { newbean.remove(elements[i++], 'fat') }
             , 'nw':      function () {
-                           var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'fat', '*')
+                           listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'fat', '*')
                            for (j = 0; j < listeners.length; j++) NW.Event.unlisten(elements[i], 'fat', listeners[j])
                            i++
                          }
@@ -347,17 +374,16 @@
           }
         // teardown
         , {
-              'bean':    function () { i = this.count; while (i--) bean.remove(elements[i]); elements = null; element = null }
-            , 'newbean': function () { i = this.count; while (i--) newbean.remove(elements[i]); elements = null; element = null }
+              'bean':    function () { i = this.count; while (i--) bean.remove(elements[i]) }
+            , 'newbean': function () { i = this.count; while (i--) newbean.remove(elements[i]) }
             , 'nw':      function () {
                            i = this.count
                            while(i--) {
-                             var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
+                             listeners = NW.Event.getRegistered(NW.Event.Listeners, elements[i], 'click', '*')
                              for (j = 0; j < listeners.length; j++) NW.Event.unlisten(elements[i], 'click', listeners[j])
                            }
-                           elements = null; element = null
                          }
-            , 'jquery':  function () { i = this.count; while (i--) jQuery(elements[i]).off('click'); elements = null; element = null }
+            , 'jquery':  function () { i = this.count; while (i--) jQuery(elements[i]).off('click') }
           }
         )
 
@@ -373,14 +399,13 @@
           }
         // teardown
         , {
-              'bean':    function () { bean.remove(element); element = null }
-            , 'newbean': function () { newbean.remove(element); element = null }
+              'bean':    function () { bean.remove(element) }
+            , 'newbean': function () { newbean.remove(element) }
             , 'nw':      function () {
-                           var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
+                           listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'click', '*')
                            for (j = 0; j < listeners.length; j++) NW.Event.unlisten(element, 'click', listeners[j])
-                           element = null
                          }
-            , 'jquery':  function () { jQuery(element).off('click'); element = null }
+            , 'jquery':  function () { jQuery(element).off('click') }
           }
         )
 
@@ -396,14 +421,13 @@
           }
         // teardown
         , {
-              'bean':    function () { bean.remove(element); element = null }
-            , 'newbean': function () { newbean.remove(element); element = null }
+              'bean':    function () { bean.remove(element) }
+            , 'newbean': function () { newbean.remove(element) }
             , 'nw':      function () {
-                           var j, listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'fat', '*')
+                           listeners = NW.Event.getRegistered(NW.Event.Listeners, element, 'fat', '*')
                            for (j = 0; j < listeners.length; j++) NW.Event.unlisten(element, 'fat', listeners[j])
-                           element = null
                          }
-            , 'jquery':  function () { jQuery(element).off('fat'); element = null }
+            , 'jquery':  function () { jQuery(element).off('fat') }
           }
         )
 */
@@ -413,15 +437,18 @@
         , {
             // bean can't do this, it needs a a 'type' as well as a namespace
             //  'bean':    function () {
-            //               var i = 20, element = document.createElement('div')
+            //               i = 20
+            //               element = document.createElement('div')
             //               while (i--) bean.add(element, 'whatup.fat', function () {})
             //             }
               'newbean': function () {
-                           var i = 20, element = document.createElement('div')
+                           i = 20
+                           element = document.createElement('div')
                            while (i--) newbean.add(element, 'whatup.fat', function () {})
                          }
             //, 'jquery': function () {
-            //               var i = 20, element = document.createElement('div')
+            //               i = 20
+            //               element = document.createElement('div')
             //               while (i--) jQuery(element).on('whatup.fat', function () {})
             //             }
           }
@@ -433,9 +460,9 @@
           }
         // teardown
         , {
-            //  'bean':    function () { bean.remove(element); element = null }
-              'newbean': function () { newbean.remove(element); element = null }
-            //, 'jquery':  function () { jQuery(element).off('.fat'); element = null }
+            //  'bean':    function () { bean.remove(element) }
+              'newbean': function () { newbean.remove(element) }
+            //, 'jquery':  function () { jQuery(element).off('.fat') }
           }
       )
 
@@ -447,7 +474,6 @@
                 document.body.appendChild(item)
               }
             )
-      setTimeout(function() { suite.run({ 'async': true }) }, 100);
 
       function cycle(e, benchmark) {
         if (benchmark.error) throw benchmark.error
@@ -473,28 +499,15 @@
         cell.innerHTML = Benchmark.formatNumber(benchmark.hz.toFixed(0)) + ' ops/sec <span>\xb1' +
           benchmark.stats.rme.toFixed(2) + '% (' + benchmark.stats.size + ' samp)</span>'
       }
+
+      if (!/[?&]nojava=true(?:&|$)/.test(location.search)) {
+        document.write('<applet code="nano" archive="nano.jar"></applet>')
+      }
+
+      window.onload = function() {
+        suite.run({ 'async': true })
+      }
+
     </script>
-    <style type="text/css">
-      body { font-family: 'helvetica neue', helvetica, arial; }
-      table { border-collapse: collapse; }
-      td,th { border: solid 1px #ddd; padding: 0.25em 1em; }
-      tbody th { text-align: right; }
-      td span { font-size: 8pt; color: #555; }
-    </style>
-  </head>
-  <body>
-    <h1>Running Benchmark Suite</h1>
-    <table cellpadding="0" cellspacing="0" >
-      <thead>
-        <th></th>
-        <th>Bean</th>
-        <th>New Bean</th>
-        <th>NWEvents</th>
-        <th>jQuery</th>
-      </thead>
-      <tbody id="results">
-      </tbody>
-    </table>
-    <applet code="nano" archive="nano.jar">Java not installed, won't use nano-timer</applet>
   </body>
 </html>
