@@ -16,7 +16,6 @@
     <script>
 
       var element;
-      var fn = function () {};
       var suite = new Benchmark.Suite;
 
       suite
@@ -64,56 +63,42 @@
               }) }
             , { 'setup': function () { element = document.createElement('div'); }
               , 'teardown': function () { bean.remove(element); }
-              })
+              }
+            )
 
         .add( 'remove()'
-            , function() { bean.remove( element ); }
-            , { 'setup': function () {
-                  var i = 100;
-                  element = document.createElement('div');
-                  while (i--) bean.add(element, 'click', function () {});
-                }
+            , function() {
+                bean.add(element, 'click', function () {});
+                bean.remove( element );
               }
             )
 
         .add( 'remove( event )'
-            , function() { bean.remove( element, 'click' ); }
-            , { 'setup': function () {
-                  var i = 100;
-                  element = document.createElement('div');
-                  while (i--) bean.add(element, 'click', function () {});
-                }
+            , function() {
+                bean.add(element, 'click', function () {});
+                bean.remove( element, 'click' );
               }
             )
 
         .add( 'remove( custom )'
-            , function() { bean.remove( element, 'fat' ); }
-            , { 'setup': function () {
-                  var i = 100;
-                  element = document.createElement('div');
-                  while (i--) bean.add(element, 'fat', function () {});
-                }
+            , function() {
+                bean.add(element, 'fat', function () {});
+                bean.remove( element, 'fat' );
               }
             )
 
         .add( 'remove( namespace )'
-            , function() { bean.remove( element, '.foo' ); }
-            , { 'setup': function () {
-                  var i = 100;
-                  element = document.createElement('div');
-                  while (i--) bean.add(element, 'click.foo', function () {});
-                }
+            , function() {
+                bean.add(element, 'click.foo', function () {});
+                bean.remove( element, 'click.foo' );
               }
             )
 
         .add( 'remove( event, fn )'
-            , function() { bean.remove( element, 'click', fn ); }
-            , { 'setup': function () {
-                  var i = 99;
-                  element = document.createElement('div');
-                  while (i--) bean.add(element, 'click', function () {});
-                  bean.add(element, 'click', fn);
-                }
+            , function() {
+                var fn = function () {};
+                bean.add(element, 'click', fn);
+                bean.remove( element, 'click', fn );
               }
             )
 
@@ -124,6 +109,7 @@
                   element = document.createElement('div');
                   while (i--) bean.add(element, 'click', function () {});
                 }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
@@ -134,16 +120,18 @@
                   element = document.createElement('div');
                   while (i--) bean.add(element, 'fat', function () {});
                 }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'fire( namespace )'
-            , function() { bean.fire( element, '.foo' ); }
+            , function() { bean.fire( element, 'click.foo' ); }
             , { 'setup': function () {
                   var i = 100;
                   element = document.createElement('div');
                   while (i--) bean.add(element, 'click.foo', function () {});
                 }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
