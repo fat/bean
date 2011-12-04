@@ -4,44 +4,54 @@
     <title>Bean Benchmarks</title>
     <script src="benchmark.js"></script>
     <script src="../src/bean.js"></script>
+    <style>
+      applet {
+        position: absolute;
+        left: -9999em;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Running Benchmark Suite</h1>
     <script>
 
-      var suite = new Benchmark.Suite
+      var element;
+      var suite = new Benchmark.Suite;
 
       suite
 
         .add( 'add( element, event, fn )'
-            , function() { bean.add(element, 'click', function () {}) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
+            , function() { bean.add(element, 'click', function () {}); }
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'add( element, custom, fn )'
-            , function() { bean.add(element, 'fat', function () {}) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
+            , function() { bean.add(element, 'fat', function () {}); }
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'add( element, event.namespace, fn )'
-            , function() { bean.add(element, 'click.fat', function () {}) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
+            , function() { bean.add(element, 'click.fat', function () {}); }
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'add( element, selector, event, fn )'
-            , function() { bean.add(element, 'a.close', 'click', function () {}) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
+            , function() { bean.add(element, 'a.close', 'click', function () {}); }
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'add( element, selector, event, fn )'
-            , function() { bean.add(element, 'a.close', 'click', function () {}) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
+            , function() { bean.add(element, 'a.close', 'click', function () {}); }
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
@@ -51,113 +61,105 @@
               , 'mouseover': function () {}
               , 'mouseout': function () {}
               }) }
-            , { 'setup': function () { var element = document.createElement('div') }
-              , 'teardown': function () { bean.remove(element); element = null; }
-              })
+            , { 'setup': function () { element = document.createElement('div'); }
+              , 'teardown': function () { bean.remove(element); }
+              }
+            )
 
         .add( 'remove()'
-            , function() { bean.remove( element ) }
-            , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'click', function () {})
-                }
-              , 'teardown': function () { element = null; }
+            , function() {
+                bean.add(element, 'click', function () {});
+                bean.remove( element );
               }
             )
 
         .add( 'remove( event )'
-            , function() { bean.remove( element, 'click' ) }
-            , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'click', function () {})
-                }
-              , 'teardown': function () { element = null; }
+            , function() {
+                bean.add(element, 'click', function () {});
+                bean.remove( element, 'click' );
               }
             )
 
         .add( 'remove( custom )'
-            , function() { bean.remove( element, 'fat' ) }
-            , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'fat', function () {})
-                }
-              , 'teardown': function () { element = null; }
+            , function() {
+                bean.add(element, 'fat', function () {});
+                bean.remove( element, 'fat' );
               }
             )
 
         .add( 'remove( namespace )'
-            , function() { bean.remove( element, '.foo' ) }
-            , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'click.foo', function () {})
-                }
-              , 'teardown': function () { element = null; }
+            , function() {
+                bean.add(element, 'click.foo', function () {});
+                bean.remove( element, 'click.foo' );
               }
             )
 
         .add( 'remove( event, fn )'
-            , function() { bean.remove( element, 'click', fn ) }
-            , { 'setup': function () {
-                  var i = 100, element = document.createElement('div'), fn = function () {}
-                  while (i--) bean.add(element, 'click', function () {})
-                  bean.add(element, 'click', fn)
-                }
-              , 'teardown': function () { element = null; }
+            , function() {
+                var fn = function () {};
+                bean.add(element, 'click', fn);
+                bean.remove( element, 'click', fn );
               }
             )
 
         .add( 'fire( event )'
-            , function() { bean.fire( element, 'click' ) }
+            , function() { bean.fire( element, 'click' ); }
             , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'click', function () {})
+                  var i = 100;
+                  element = document.createElement('div');
+                  while (i--) bean.add(element, 'click', function () {});
                 }
-              , 'teardown': function () { element = null; }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'fire( custom )'
-            , function() { bean.fire( element, 'fat' ) }
+            , function() { bean.fire( element, 'fat' ); }
             , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'fat', function () {})
+                  var i = 100;
+                  element = document.createElement('div');
+                  while (i--) bean.add(element, 'fat', function () {});
                 }
-              , 'teardown': function () { element = null; }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .add( 'fire( namespace )'
-            , function() { bean.fire( element, '.foo' ) }
+            , function() { bean.fire( element, 'click.foo' ); }
             , { 'setup': function () {
-                  var i = 100, element = document.createElement('div')
-                  while (i--) bean.add(element, 'click.foo', function () {})
+                  var i = 100;
+                  element = document.createElement('div');
+                  while (i--) bean.add(element, 'click.foo', function () {});
                 }
-              , 'teardown': function () { element = null; }
+              , 'teardown': function () { bean.remove(element); }
               }
             )
 
         .on( 'cycle'
            , function(e, benchmark) {
-                if (benchmark.error) throw benchmark.error
-                var item = document.createElement('div')
-                item.innerHTML = benchmark.name + ': ' + (Math.round(benchmark.hz * 100) / 100) + ' ops/sec'
-                document.body.appendChild(item)
+                if (benchmark.error) throw benchmark.error;
+                var item = document.createElement('div');
+                item.innerHTML = String(benchmark);
+                document.body.appendChild(item);
               }
             )
 
         .on( 'complete'
             , function(e, benchmark) {
-                var item = document.createElement('h3')
-                item.innerHTML = 'benchmarking complete!'
-                document.body.appendChild(item)
+                var item = document.createElement('h3');
+                item.innerHTML = 'benchmarking complete!';
+                document.body.appendChild(item);
               }
-            )
+            );
 
-        .run({ 'async': true });
+      if (!/[?&]nojava=true(?:&|$)/.test(location.search)) {
+        document.write('<applet code="nano" archive="nano.jar"></applet>');
+      }
+
+      window.onload = function() {
+        suite.run({ 'async': true });
+      };
 
     </script>
-  </head>
-  <body>
-    <h1>Running Benchmark Suite</h1>
   </body>
 </html>
