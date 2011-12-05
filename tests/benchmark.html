@@ -29,7 +29,7 @@
     <script src="../bean.js"></script>
     <script src="../src/bean.js"></script>
     <script type="text/javascript">
-      var newbean = bean.noConflict();
+      var newbean = bean.noConflict()
     </script>
     <script src="../support/nwevents/src/nwevents.js"></script>
     <script src="../support/nwevents/src/modules/nwevents-pubsub.js"></script>
@@ -201,7 +201,18 @@
           }
         , teardownElementDelegate)
 
-/*
+/*******************************************************
+
+   This, unfortunately, is garbage. Because benchmark.js runs 'execute' in a loop of
+   1 _or more_ iterations, we can't reliably test remove() because all our listeners
+   will be removed in the first iteration with the remaining iterations only testing
+   how fast we can remove no listeners.
+   The code below attempts to add enough listeners to remove per iteration but the
+   performance changes too much over each iteration because when we use a registry
+   it just gets quicker each time we remove stuff from it.
+   So unless you have some brilliant idea on how to benchmark remove(), leave it
+   commented out. @rvagg
+
       var setupElementRemove = {
               'bean':    function () {
                            i = this.count
@@ -387,9 +398,32 @@
           }
         )
 
+******************************************************************************/
+
       add( 'fire( event )'
         // setup
-        , setupElementRemove
+        , {
+              'bean':    function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) bean.add(element, 'click', function () {})
+                         }
+            , 'newbean': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) newbean.add(element, 'click', function () {})
+                         }
+            , 'nw': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) NW.Event.listen(element, 'click', function () {})
+                         }
+            , 'jquery': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) jQuery(element).on('click', function () {})
+                         }
+          }
         // execute
         , {
               'bean':    function () { bean.fire(element, 'click') }
@@ -411,7 +445,28 @@
 
       add( 'fire( custom )'
         // setup
-        , setupElementRemoveCustom
+        , {
+              'bean':    function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) bean.add(element, 'foo', function () {})
+                         }
+            , 'newbean': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) newbean.add(element, 'foo', function () {})
+                         }
+            , 'nw': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) NW.Event.listen(element, 'foo', function () {})
+                         }
+            , 'jquery': function () {
+                           i = 100
+                           element = document.createElement('div')
+                           while (i--) jQuery(element).on('foo', function () {})
+                         }
+          }
         // execute
         , {
               'bean':    function () { bean.fire(element, 'fat') }
@@ -430,7 +485,6 @@
             , 'jquery':  function () { jQuery(element).off('fat') }
           }
         )
-*/
 
       add( 'fire( namespace )'
         // setup
@@ -446,6 +500,7 @@
                            element = document.createElement('div')
                            while (i--) newbean.add(element, 'whatup.fat', function () {})
                          }
+            // not sure jQuery can do the generic namespace fire
             //, 'jquery': function () {
             //               i = 20
             //               element = document.createElement('div')

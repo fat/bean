@@ -9,7 +9,7 @@
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
-      own = 'hasOwnProperty',
+    own = 'hasOwnProperty',
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -21,6 +21,7 @@
       slice = Array.prototype.slice,
       ONE = {one:1}, // singleton for quick matching making add() do one()
 
+  // we use one of these per listener, of any type
   RegEntry = function () {
     function entry(element, type, handler, original, namespaces) {
       this.element = element;
@@ -56,13 +57,15 @@
 
   registry = function () {
     var map = {},
+      // generic functional search of our registry for matching listeners,
+      // `fn` returns false to break out of the loop
       forAll = function (element, type, original, handler, fn) {
         if (!type || type === '*') {
           for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
         } else {
-          var i = 0, list = map[type], all = element === '*';
+          var i = 0, l, list = map[type], all = element === '*';
           if (!list) return;
-          for (i = list.length; i--;) {
+          for (l = list.length; i < l; i++) {
             if (all || list[i].matches(element, original, handler))
               if (!fn(list[i], list, i, type)) return;
           }
@@ -92,6 +95,7 @@
           return false;
         });
       },
+      // dump all entries, used for onunload
       entries = function () {
         var t, entries = [];
         for (t in map) map(t) && (entries = entries.concat(map[t]));
@@ -113,6 +117,7 @@
     return false;
   },
 
+  // add and remove listeners to DOM elements
   listener = W3C_MODEL ? function (element, type, fn, add) {
     element[add ? addEvent : removeEvent](type, fn, false);
   } : function (element, type, fn, add, custom) {
@@ -137,6 +142,7 @@
     };
   },
 
+  // if we're in old IE we can't do onpropertychange on doc or win so we use doc.documentElement for both
   targetElement = function (element, isNative) {
     return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element;
   },
@@ -145,8 +151,8 @@
     var entry, type = orgType.replace(stripName, ''),
       namespaces = orgType.replace(namespace, '').split('.');
 
-    if (registry.has(element, type, fn)) { return element; }
-    if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn);
+    if (registry.has(element, type, fn)) { return element; } // no dupe
+    if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn); // self clean-up
     if (customEvents[type]) {
       fn = customEvents[type].condition ? customHandler(element, fn, type, customEvents[type].condition, true) : fn;
       type = customEvents[type].base || type;
@@ -167,6 +173,11 @@
       if (handlers[i].inNamespaces(names)) {
         if ((entry = handlers[i]).eventSupport)
           listener(entry.targetElement, entry.eventType, entry.handler, false, entry.type);
+        // TODO: this is problematic, we have a registry.get() and registry.del() that
+        // both do registry searches so we waste cycles doing this. Needs to be rolled into
+        // a single registry.forAll(fn) that removes while finding, but the catch is that
+        // we'll be splicing the arrays that we're iterating over. Needs extra tests to
+        // make sure we don't screw it up. @rvagg
         registry.del(entry)
       }
     }
@@ -195,6 +206,7 @@
       args = arguments.length > 3 ? slice.call(arguments, 3) : [];
       types = (isDel ? fn : events).split(' ');
       isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1));
+      // special case for one()
       this === ONE && (fn = once(remove, element, events, fn, originalFn));
       for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args);
     }
@@ -202,7 +214,11 @@
   },
 
   once = function (rm, element, type, fn, originalFn) {
-    return function () { rm(element, type, originalFn) && fn.apply(this, arguments); };
+    // wrap the handler in a handler that does a remove as well
+    return function () {
+      rm(element, type, originalFn);
+      fn.apply(this, arguments);
+    };
   },
 
   one = function () {
@@ -235,6 +251,8 @@
       if (!names && !args && element[eventSupport]) {
         fireListener(nativeEvents[type], type, element);
       } else {
+        // non-native event, either because of a namespace, arguments or a non DOM element
+        // iterate over all listeners and manually 'fire'
         handlers = registry.get(element, type);
         args = [false].concat(args);
         for (j = 0, l = handlers.length; j < l; j++) {
@@ -252,6 +270,7 @@
     element.dispatchEvent(evt);
   } : function (isNative, type, element) {
     element = targetElement(element, isNative);
+    // if not-native then we're using onpropertychange so we just increment a custom property
     isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++;
   },
 
@@ -262,7 +281,9 @@
     return element;
   },
 
-  copyProps = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode metaKey newValue offsetX offsetY pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' '), // thanks to jQuery for this basis of this list
+  // thanks to jQuery for this basis of this list, helps avoid copying more than we need to
+  // from native events
+  copyProps = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode metaKey newValue offsetX offsetY pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' '),
 
   fixEvent = function (event, isNative) {
     var result = {};
@@ -271,7 +292,7 @@
     result.preventDefault = fixEvent.preventDefault(event);
     result.stopPropagation = fixEvent.stopPropagation(event);
     result.target = target && target.nodeType === 3 ? target.parentNode : target;
-    if (isNative) { // we only need basic augmentation on custom events
+    if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
       if (~type.indexOf('key')) {
         result.keyCode = event.which || event.keyCode;
       } else if ((/click|mouse|menu/i).test(type)) {
@@ -339,6 +360,7 @@
   var bean = { add: add, one: one, remove: remove, clone: clone, fire: fire };
 
   if (win[attachEvent]) {
+    // for IE, clean up on unload to avoid leaks
     var cleanup = function () {
       var i, entries = registry.entries();
       for (i in entries) {
