@@ -26,6 +26,10 @@
     </table>
 
     <script src="benchmark.js"></script>
+    <script src="../support/syn/synthetic.js"></script>
+    <script src="../support/syn/mouse.js"></script>
+    <script src="../support/syn/browsers.js"></script>
+    <script src="../support/syn/key.js"></script>
     <script src="../bean.js"></script>
     <script src="../src/bean.js"></script>
     <script type="text/javascript">
@@ -38,7 +42,7 @@
 
       var libs = [ 'bean', 'newbean', 'nw', 'jquery' ]
         , suite = new Benchmark.Suite
-        , i, j, elements, element, listeners, fn = function() {}
+        , i, j, elements, element, listeners, obj, fn = function() {}
 
       function add(name, setup, exec, teardown) {
         for (i = 0; i < libs.length; i++) {
@@ -396,7 +400,7 @@
                          }
             , 'jquery':  function () { i = this.count; while (i--) jQuery(elements[i]).off('click') }
           }
-        )
+      )
 
 ******************************************************************************/
 
@@ -441,7 +445,7 @@
                          }
             , 'jquery':  function () { jQuery(element).off('click') }
           }
-        )
+      )
 
       add( 'fire( custom )'
         // setup
@@ -484,7 +488,7 @@
                          }
             , 'jquery':  function () { jQuery(element).off('fat') }
           }
-        )
+      )
 
       add( 'fire( namespace )'
         // setup
@@ -519,6 +523,106 @@
               'newbean': function () { newbean.remove(element) }
             //, 'jquery':  function () { jQuery(element).off('.fat') }
           }
+      )
+
+      add( 'element add / click / remove'
+        // setup
+        , function () {
+            element = document.createElement('div')
+            fn = function () {}
+          }
+        // execute
+        , {
+              'bean':    function () {
+                           bean.add(element, 'click', fn)
+                           Syn.click(element)
+                           bean.remove(element, 'click', fn)
+                         }
+            , 'newbean': function () {
+                           newbean.add(element, 'click', fn)
+                           Syn.click(element)
+                           newbean.remove(element, 'click', fn)
+                         }
+            , 'nw':      function () {
+                           NW.Event.listen(element, 'click', fn)
+                           Syn.click(element)
+                           NW.Event.unlisten(element, 'click', fn)
+                         }
+            , 'jquery':  function () {
+                           jQuery(element).on('click', fn)
+                           Syn.click(element)
+                           jQuery(element).off('click', fn)
+                         }
+          }
+        // teardown
+        // teardown
+        , function() { }
+      )
+
+      add( 'element add / fire / remove'
+        // setup
+        , function () {
+            element = document.createElement('div')
+            fn = function () {}
+          }
+        // execute
+        , {
+              'bean':    function () {
+                           bean.add(element, 'foo', fn)
+                           bean.fire(element, 'foo')
+                           bean.remove(element, 'foo', fn)
+                         }
+            , 'newbean': function () {
+                           newbean.add(element, 'foo', fn)
+                           newbean.fire(element, 'foo')
+                           newbean.remove(element, 'foo', fn)
+                         }
+            , 'nw':      function () {
+                           NW.Event.listen(element, 'foo', fn)
+                           NW.Event.dispatch(element, 'foo')
+                           NW.Event.unlisten(element, 'foo', fn)
+                         }
+            , 'jquery':  function () {
+                           jQuery(element).on('foo', fn)
+                           jQuery(element).trigger('foo')
+                           jQuery(element).off('foo', fn)
+                         }
+          }
+        // teardown
+        , function() { }
+      )
+
+      add( 'object add / fire / remove'
+        // setup
+        , function () {
+            element = document.createElement('div')
+            obj = {}
+          }
+        // execute
+        , {
+              'bean':    function () {
+                           bean.add(obj, 'foo', fn)
+                           bean.fire(obj, 'foo')
+                           bean.remove(obj, 'foo', fn)
+                         }
+            , 'newbean': function () {
+                           newbean.add(obj, 'foo', fn)
+                           newbean.fire(obj, 'foo')
+                           newbean.remove(obj, 'foo', fn)
+                         }
+            , 'nw':      function () {
+                           NW.Event.subscribe(obj, 'foo', fn)
+                           NW.Event.publish(obj, 'foo')
+                           NW.Event.unsubscribe(obj, 'foo', fn)
+                         }
+            , 'jquery':  function () {
+                           jQuery(obj).on('foo', fn)
+                           jQuery(obj).trigger('foo')
+                           jQuery(obj).off('foo', fn)
+                         }
+          }
+        // teardown
+        , function() { }
       )
 
       suite.on( 'cycle', cycle)
