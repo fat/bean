@@ -9,7 +9,7 @@
       overOut = /over|out/,
       namespace = /[^\.]*(?=\..*)\.|.*/,
       stripName = /\..*/,
-    own = 'hasOwnProperty',
+      own = 'hasOwnProperty',
       addEvent = 'addEventListener',
       attachEvent = 'attachEvent',
       removeEvent = 'removeEventListener',
@@ -36,6 +36,7 @@
       this.targetElement = targetElement(element, this.isNative);
       this.eventSupport = this.targetElement[eventSupport];
     }
+    // given a list of namespaces, is our entry in any of them?
     entry.prototype.inNamespaces = function (namespaces) {
       var i, j;
       if (!namespaces) return true;
@@ -47,6 +48,7 @@
       }
       return false;
     }
+    // match by element, original fn (opt), handler fn (opt)
     entry.prototype.matches = function (element, original, handler) {
       return this.element === element &&
         (!original || this.original === original) &&
@@ -56,11 +58,14 @@
   }(),
 
   registry = function () {
+    // our map stores arrays by event type, just because it's better than storing
+    // everything in a single array
     var map = {},
       // generic functional search of our registry for matching listeners,
       // `fn` returns false to break out of the loop
       forAll = function (element, type, original, handler, fn) {
         if (!type || type === '*') {
+          // search the whole registry
           for (var t in map) map[own](t) && forAll(element, t, original, handler, fn);
         } else {
           var i = 0, l, list = map[type], all = element === '*';
@@ -72,6 +77,8 @@
         }
       },
       has = function (element, type, original) {
+        // we're not using forAll here simply because it's a bit slower and this
+        // needs to be fast
         var i, list = map[type]
         if (list) {
           for (i = list.length; i--;) {
@@ -379,7 +386,7 @@
   };
 
   // temporary for debugging, not for production release
-  bean.registry = registry
+  bean.registry = registry;
 
   return bean;
 
