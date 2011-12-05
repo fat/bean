@@ -27,6 +27,7 @@
 
     one: integrate('one'),
 
+    off: remove,
     unbind: remove,
     unlisten: remove,
     removeListener: remove,
