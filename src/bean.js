@@ -282,6 +282,7 @@
     result.preventDefault = fixEvent.preventDefault(e);
     result.stopPropagation = fixEvent.stopPropagation(e);
     result.target = target && target.nodeType == 3 ? target.parentNode : target;
+    result.layerX = result.layerY = true;
     if (~type.indexOf('key')) {
       result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
