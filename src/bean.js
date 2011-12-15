@@ -297,10 +297,11 @@
       overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
     for (var k in e) {
-      if (!(k in result)) {
+      if (!(k in result) && !(/layer[XY]/i).test(k)) {
         result[k] = e[k];
       }
     }
+    result.originalEvent = e;
     return result;
   },
 
