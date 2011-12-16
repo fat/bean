@@ -275,6 +275,7 @@
 
   fixEvent = function (e) {
     var result = {};
+    var props = "attrChange attrName relatedNode srcElement altKey bubbles cancelable ctrlKey currentTarget eventPhase metaKey relatedTarget shiftKey target timeStamp view which".split(" ")
     if (!e) {
       return result;
     }
@@ -283,8 +284,10 @@
     result.stopPropagation = fixEvent.stopPropagation(e);
     result.target = target && target.nodeType == 3 ? target.parentNode : target;
     if (~type.indexOf('key')) {
+      props.concat("char charCode key keyCode".split(" "));
       result.keyCode = e.which || e.keyCode;
     } else if ((/click|mouse|menu/i).test(type)) {
+      props.concat("button buttons clientX clientY fromElement offsetX offsetY pageX pageY screenX screenY toElement".split(" "));
       result.rightClick = e.which == 3 || e.button == 2;
       result.pos = { x: 0, y: 0 };
       if (e.pageX || e.pageY) {
@@ -297,7 +300,7 @@
       overOut.test(type) && (result.relatedTarget = e.relatedTarget || e[(type == 'mouseover' ? 'from' : 'to') + 'Element']);
     }
     for (var k in e) {
-      if (!(k in result) && !(/layer[XY]/i).test(k)) {
+      if (!(k in result) && props.hasOwnProperty(k)) {
         result[k] = e[k];
       }
     }
