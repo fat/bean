@@ -58,7 +58,9 @@
     , fixEvent = (function () {
         // thanks to jQuery for this basis of this list, helps avoid copying more than we need to
         // from native events
-        var copyProps = 'altKey attrChange attrName bubbles button cancelable charCode clientX clientY ctrlKey currentTarget data detail eventPhase fromElement handler keyCode metaKey newValue offsetX offsetY pageX pageY prevValue relatedNode relatedTarget screenX screenY shiftKey srcElement target toElement view wheelDelta which'.split(' ')
+        var commonProps = 'attrChange attrName relatedNode srcElement altKey bubbles cancelable ctrlKey currentTarget eventPhase metaKey relatedTarget shiftKey target timeStamp view which'.split(' ')
+          , mouseProps = commonProps.concat('button buttons clientX clientY fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
+          , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
           , preventDefault = function (e) {
               return function () {
                 if (e.preventDefault)
@@ -75,13 +77,20 @@
                   e.cancelBubble = true
               }
             }
+          , copyProps = function(result, event, props) {
+              var i, p
+              for (i = props.length; i--;) {
+                p = props[i]
+                if (!(p in result) && p in event) result[p] = event[p]
+              }
+            }
 
         return function (event, isNative) {
-          var result = {}
+          var result = { originalEvent: event }
           if (!event)
             return result
 
-          var i, p
+          var props
             , type = event.type
             , target = event.target || event.srcElement
 
@@ -91,8 +100,10 @@
 
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
             if (~type.indexOf('key')) {
+              props = keyProps
               result.keyCode = event.which || event.keyCode
             } else if ((/click|mouse|menu/i).test(type)) {
+              props = mouseProps
               result.rightClick = event.which === 3 || event.button === 2
               result.pos = { x: 0, y: 0 }
               if (event.pageX || event.pageY) {
@@ -105,10 +116,7 @@
               if (overOut.test(type))
                 result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
             }
-            for (i = copyProps.length; i--;) {
-              p = copyProps[i]
-              if (!(p in result) && p in event) result[p] = event[p]
-            }
+            copyProps(event, result, props || commonProps)
           }
           return result
         }
