@@ -498,8 +498,8 @@ sink('namespaces', function (test, ok) {
   test('namespace: should be able to target namespaced event handlers with fire', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
-    bean.add(el1, 'click.fat', function () {ok(true, 'targets namespaced event handlers with fire')});
-    bean.add(el1, 'click', function () {ok(true, 'targets namespaced event handlers with fire')});
+    bean.add(el1, 'click.fat', function () {ok(true, 'targets namespaced event handlers with fire (namespaced)')});
+    bean.add(el1, 'click', function () {ok(true, 'targets namespaced event handlers with fire (plain)')});
     bean.fire(el1, 'click.fat');
   });
 
