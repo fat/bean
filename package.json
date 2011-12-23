@@ -1,7 +1,7 @@
 {
   "name": "bean",
   "description": "an events api for javascript",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "homepage": "https://github.com/fat/bean",
   "authors": ["Jacob Thornton <@fat>", "Dustin Diaz <@ded>", "Rod Vagg <@rvagg>"],
   "repository": {
