@@ -99,7 +99,7 @@ one()
 
 remove()
 ------
-<code>bean.remove()</code> is how you get rid of listeners once you no longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives bean a chance to clean up some things and prevents memory leaks)
+<code>bean.remove()</code> is how you get rid of listeners once you no longer want them. It's also a good idea to call remove on elements before you remove elements from your dom (this gives Bean a chance to clean up some things and prevents memory leaks)
 
 ```javascript
 // remove a single event handlers
@@ -108,11 +108,17 @@ bean.remove(element, 'click', handler);
 // remove all click handlers
 bean.remove(element, 'click');
 
+// remove handler for all events
+bean.remove(element, handler);
+
 // remove multiple events
 bean.remove(element, 'mousedown mouseup');
 
 // remove all events
 bean.remove(element);
+
+// remove handlers for events using object literal
+bean.remove(element, { click: clickHandler, keyup: keyupHandler })
 ```
 
 clone()
@@ -142,7 +148,7 @@ bean.fire(element, 'mousedown mouseup');
 
 custom events
 -------------
-Bean uses methods similar to [Dean Edward's event model](http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/) to ensure custom events behave like real events, rather than just callbacks.
+Bean uses methods similar to [Dean Edwards' event model](http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/) to ensure custom events behave like real events, rather than just callbacks.
 
 For all intents and purposes, you can just think of them as native events, which will bubble up, and everything else you would expect...
 
@@ -163,7 +169,7 @@ use them like regular events:
 
 object support
 --------------
-Good news, everything you can do in bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
+Good news, everything you can do in Bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
 
 ```javascript
 var inst = new Klass();
@@ -220,9 +226,9 @@ point your browser at <code>bean/tests/index.html</code>
 Ender Integration API
 ---------------------
 
-If you use bean with ender it's API is greatly extended through it's Bridge file. This extension aims to give bean the look and feel of jQuery, but at the tiny size of bean.
+If you use Bean with Ender its API is greatly extended through its bridge file. This extension aims to give Bean the look and feel of jQuery, but at the tiny size of Bean.
 
-Here's the run down of the method alias's added...
+Here's the run down of the method alias' added...
 
 **ADD EVENTS**
 
