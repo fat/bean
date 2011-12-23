@@ -1,12 +1,11 @@
 /*global module:true, define:true*/
-!function (name, definition) {
-  if (typeof module !== 'undefined') module.exports = definition()
-  else if (typeof define === 'function' && typeof define.amd === 'object') define(definition)
-  else this[name] = definition()
-}('bean', function () {
-  var context = this
-    , old = this.bean
-    , win = window
+!function (name, context, definition) {
+  if (typeof module !== 'undefined') module.exports = definition(name, context);
+  else if (typeof define === 'function' && typeof define.amd  === 'object') define(definition);
+  else context[name] = definition(name, context);
+}('bean', this, function (name, context) {
+  var win = window
+    , old = context[name]
     , overOut = /over|out/
     , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
     , nameRegex = /\..*/
@@ -446,7 +445,7 @@
         , clone: clone
         , fire: fire
         , noConflict: function () {
-            context.bean = old
+            context[name] = old
             return this
           }
       }
