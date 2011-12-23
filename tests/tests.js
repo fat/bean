@@ -516,6 +516,79 @@ sink('namespaces', function (test, ok) {
     bean.remove(el1, 'click.ded.fat');
     Syn.click(el1);
   });
+});
+
+sink('custom extended events', function (test, ok) {
+  test('custom extended events: testing adding custom events with handlers', 1, function () {
+    var el = document.getElementById('foo');
+    bean.customEvents.threeclicks = { 
+      base: 'click',
+      handler: function(event)
+      {
+        var elem = this, clicks = this.__threeclicks__ || 0;
+        clicks += 1;
+        if ( clicks === 3) {
+            clicks = 0;
+
+            // set event type to "tripleclick"
+            event.type = "threeclicks";
+            
+            //FIRE AWAY
+            bean.fire(this, "threeclicks", event);
+        }
+        this.__threeclicks__ = clicks;
+      }
+    }
+    bean.remove(el);
+    bean.add(el, 'threeclicks', function () {
+      ok(true, 'custom events: threeclick worked')
+      bean.remove(el, 'threeclicks');
+      delete bean.customEvents.threeclicks;
+    });
+    Syn.click(el);
+    Syn.click(el);
+    Syn.click(el);
+  });
+
+  test('custom extended events: testing removing custom events with handlers', 3, function () {
+    var test = 0;
+    var el = document.getElementById('foo');
+    bean.customEvents.threeclicks = { 
+      base: 'click',
+      handler: function(event)
+      {
+        var elem = this, clicks = this.__threeclicks__ || 0;
+        clicks += 1;
+        if ( clicks === 3) {
+            ok(test++ == 0, 'custom extended events: triggering custom handler')
+            clicks = 0;
+
+            // set event type to "tripleclick"
+            event.type = "threeclicks";
+            
+            //FIRE AWAY
+            bean.fire(this, "threeclicks", event);
+        }
+        this.__threeclicks__ = clicks;
+      }
+    }
+    bean.remove(el);
+    var handler = function() {
+      ok(test++ == 1, 'custom extended events: removing handler')
+      bean.remove(el, 'threeclicks', handler);
+      delete bean.customEvents.threeclicks;
+      Syn.click(el);
+      Syn.click(el);
+      Syn.click(el);
+    };
+    bean.add(el, 'threeclicks', handler);
+    // by timeout, we shouldn't run the custom and native handlers more than one time each!
+    setTimeout(function() { ok(test++ == 2, 'custom extended events: no extra calls made')}, 500);
+    Syn.click(el);
+    Syn.click(el);
+    Syn.click(el);
+  });
+
 
 });
 

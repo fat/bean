@@ -20,6 +20,10 @@
       W3C_MODEL = root[addEvent],
       eventSupport = W3C_MODEL ? addEvent : attachEvent,
 
+  customNamespace = function(type) {
+    return ".__beanCustomNamespace_" + type.replace(/\./, "_");
+  },
+
   isDescendant = function (parent, child) {
     var node = child.parentNode;
     while (node !== null) {
@@ -79,8 +83,15 @@
     }
     var custom = customEvents[type];
     if (custom) {
-      fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
-      type = custom.base || type;
+      // if custom event has a handler and a base, separately register the handler on the base action
+      // and continue registering a custom event, allowing the handler to determine when to fire/trigger
+      if (custom.handler && custom.base) {
+        addListener(element, custom.base + customNamespace(orgType), customHandler(element, custom.handler, custom.base, custom.condition))
+      } else {
+        // otherwise, this is a traditional custom event
+        fn = custom.condition ? customHandler(element, fn, type, custom.condition) : fn;
+        type = custom.base || type;
+      }
     }
     var isNative = nativeEvents[type];
     fn = isNative ? nativeHandler(element, fn, args) : customHandler(element, fn, type, false, args);
@@ -117,7 +128,17 @@
       }
       delete events[type][uid];
       if (element[eventSupport]) {
-        type = customEvents[type] ? customEvents[type].base : type;
+        var custom = customEvents[type];
+        // if the custom event has a handler and a base
+        // separately remove the listener from the base event and 
+        // continue to remove the custom event listener as well
+        if(custom && custom.handler && custom.base) {
+          // this version or remove does the proper namespace lookup
+          remove(element, custom.base + customNamespace(orgType));
+        } else {
+          // otherwise we have a traditional custom event or none at all
+          type = custom ? custom.base : type;
+        }
         var isNative = W3C_MODEL || nativeEvents[type];
         element = targetElement(element, isNative);
         listener(element, isNative ? type : 'propertychange', handler, false, !isNative && type);
@@ -374,6 +395,8 @@
       win.CollectGarbage && CollectGarbage();
     });
   }
+
+  bean.customEvents = customEvents;
 
   bean.noConflict = function () {
     context[name] = old;
