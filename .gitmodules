@@ -10,3 +10,6 @@
 [submodule "support/qwery"]
 	path = support/qwery
 	url = git@github.com:ded/qwery.git
+[submodule "support/nwevents"]
+	path = support/nwevents
+	url = https://github.com/dperini/nwevents.git
