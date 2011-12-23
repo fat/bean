@@ -1,12 +1,11 @@
-!function (name, definition) {
-  if (typeof module != 'undefined') module.exports = definition();
+!function (name, context, definition) {
+  if (typeof module != 'undefined') module.exports = definition(name, context);
   else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
-  else this[name] = definition();
-}('bean', function () {
-  var context = this,
-      old = this.bean,
-      win = window,
+  else context[name] = definition(name, context);
+}('bean', this, function (name, context) {
+  var win = window,
       __uid = 1,
+      old = context[name],
       registry = {},
       collected = {},
       overOut = /over|out/,
@@ -377,7 +376,7 @@
   }
 
   bean.noConflict = function () {
-    context.bean = old;
+    context[name] = old;
     return this;
   };
 
