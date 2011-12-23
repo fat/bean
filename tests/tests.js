@@ -124,17 +124,17 @@ sink('add', function (test, ok) {
     bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
   });
 
-  test('one: should only trigger handler once', 1, function() {
+  test('one: should only trigger handler once', 1, function () {
     var el = document.getElementById('input')
-    bean.one(el, 'click', function() { ok(true, 'handler called exactly one time') })
+    bean.one(el, 'click', function () { ok(true, 'handler called exactly one time') })
     Syn.click(el)
     Syn.click(el)
     Syn.click(el)
   });
 
-  test('one: should be removable', 0, function() {
+  test('one: should be removable', 0, function () {
     var el = document.getElementById('input')
-      , handler = function() { ok(false, 'handler shouldn\'t have been called') }
+      , handler = function () { ok(false, 'handler shouldn\'t have been called') }
     bean.one(el, 'click', handler)
     bean.remove(el, 'click', handler)
     Syn.click(el)
@@ -266,6 +266,83 @@ sink('event object', function (test, ok) {
     Syn.key(el, 'f');
   });
 
+  // the idea here is that we have a whitelist in bean.js for properties to copy over from the original
+  // event object (if they exist) to the new synthetic one. But, there are a bunch of browser specific
+  // properties we don't care about. We list those properties here and then we check to see if there are
+  // any properties in source event objects that aren't being copied to the new event objects that we
+  // haven't specifically listed as 'ignorable'. This way we should be able to pick up new event properties
+  // browsers as they're implemented and then make a decision as to whether they should be copied or not
+
+  var commonIgnorables = 'cancelBubble clipboardData defaultPrevented explicitOriginalTarget getPreventDefault initEvent initUIEvent isChar originalTarget preventCapture preventBubble rangeOffset rangeParent returnValue stopImmediatePropagation synthetic'.split(' ')
+      // stuff from IE8 and below
+    , oldIEIgnorables = 'recordset altLeft repeat reason data behaviorCookie source contentOverflow behaviorPart url shiftLeft dataFld qualifier wheelDelta bookmarks srcFilter nextPage srcUrn origin boundElements propertyName ctrlLeft'.split(' ')
+    , clickIgnorables = commonIgnorables.concat(oldIEIgnorables).concat('charCode defaultPrevented initMouseEvent keyCode layerX layerY initNSMouseEvent x y'.split(' '))
+    , oldIEKeyIgnorables = 'fromElement toElement dataTransfer button x y screenX screenY clientX clientY offsetX offsetY'.split(' ')
+    , keyIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(oldIEKeyIgnorables).concat('initKeyEvent layerX layerY pageX pageY'.split(' '))
+
+    , getEventObject = function (evType, elType, trigger, callback) {
+        var el = document.getElementById('input')
+          , handler = function (e) {
+              bean.remove(el)
+              callback(e)
+            }
+        bean.add(el, evType, handler)
+        trigger(el)
+      }
+
+    , contains = function (arr, e) {
+        for (var i = arr.length; i--;) {
+          if (arr[i] === e) return true
+        }
+        return false
+      }
+
+    , verifyEventObject = function (event, ignorables) {
+        var p, orig = event.originalEvent
+        for (var p in orig) {
+          if (
+                 !event.hasOwnProperty(p)
+              && !contains(ignorables, p)
+              && !/^[A-Z_\d]+$/.test(p) // STUFF_LIKE_THIS
+              && !/^moz[A-Z]/.test(p) // Mozilla prefixed properties
+              )
+            ok(true, 'additional, uncopied property: "' + p + '"')
+        }
+      }
+
+  var testMouseEvent = function (type, syn) {
+    getEventObject(
+        type
+      , 'button'
+      , function (el) { Syn[syn || type](el) }
+      , function (event) {
+          ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
+          verifyEventObject(event, clickIgnorables)
+        }
+    )
+  }
+
+  test('click: has correct properties', 1, function () { testMouseEvent('click') })
+  test('dblclick: has correct properties', 1, function () { testMouseEvent('dblclick') })
+  test('mousedown: has correct properties', 1, function () { testMouseEvent('mousedown', 'click') })
+  test('mouseup: has correct properties', 1, function () { testMouseEvent('mouseup', 'click') })
+
+  var testKeyEvent = function (type) {
+    getEventObject(
+        type
+      , 'input'
+      , function (el) { Syn.key(el, 'f') }
+      , function (event) {
+          ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
+          verifyEventObject(event, keyIgnorables)
+        }
+    )
+  }
+
+  test('keyup: has correct properties', 1, function () { testKeyEvent('keyup') })
+  test('keydown: has correct properties', 1, function () { testKeyEvent('keydown') })
+  test('keypress: has correct properties', 1, function () { testKeyEvent('keypress') })
+
 })
 
 sink('remove', function (test, ok) {
@@ -291,22 +368,27 @@ sink('remove', function (test, ok) {
     Syn.click(el)
   });
 
-  test('remove: should be able to remove mulitple events with an object literal', 1, function () {
-    var el = document.getElementById('input'),
-        handler1 = function () {
-          ok(true, 'remove mulitple events with an object literal1');
+  test('remove: should be able to remove mulitple events with an object literal', 2, function () {
+    var el = document.getElementById('input')
+      , handler1 = function () {
+          ok(true, 'remove mulitple events with an object literal (1)')
           bean.remove(el, {
-            click: handler1,
-            keydown: handler2
-          });
-          Syn.click(el).key('j');
-        },
-        handler2 = function () {
-          ok(true, 'remove mulitple events with an object literal2');
-        };
-    bean.add(el, 'click', handler1);
-    bean.add(el, 'keydown', handler2);
-    Syn.click(el);
+              click: handler1
+            , keydown: handler2
+          })
+          Syn.click(el).key('j')
+        }
+      , handler2 = function () {
+          ok(true, 'remove mulitple events with an object literal (1)')
+        }
+      , handler3 = function () { // should be called once
+          bean.remove(el, 'keydown', handler3)
+          ok(true, 'remove mulitple events with an object literal (3)')
+        }
+    bean.add(el, 'click', handler1)
+    bean.add(el, 'keydown', handler2)
+    bean.add(el, 'keydown', handler3)
+    Syn.click(el)
   });
 
   test('remove: should be able to remove all events of a specific type', 2, function () {
@@ -356,29 +438,82 @@ sink('remove', function (test, ok) {
     Syn.click(el);
   });
 
-  test('remove: should be able to remove all events of a certain namespace', 1, function () {
-    var el = document.getElementById('input'),
-        handler1 = function () {
-          ok(true, 'remove all events 1');
-          bean.remove(el, '.foo');
-          Syn.click(el).key('j');
-        },
-        handler2 = function () {
-          ok(true, 'remove all events 2');
-        };
-    bean.add(el, 'click.foo', handler1);
-    bean.add(el, 'keydown.foo', handler2);
-    Syn.click(el);
-  });
+  test('remove: should only remove events of specified type', 4, function () {
+    // testing that bean.remove(el, type) removes *only* of that type and no others
+    var el = document.getElementById('input')
+      , handler1 = function (e) {
+          ok(true, 'handled ' + e.type + ' event (1)')
+        }
+      , handler2 = function (e) {
+          ok(true, 'handled ' + e.type + ' event (2)')
+          bean.remove(el, e.type)
+        }
+
+    bean.add(el, 'click', handler1)
+    bean.add(el, 'keyup', handler1)
+    bean.add(el, 'click', handler2)
+    bean.add(el, 'keyup', handler2)
+    Syn.click(el)
+    Syn.key(el, 'f')
+    Syn.click(el)
+    Syn.key(el, 'f')
+  })
+
+  test('remove: should only remove events for specified handler', 2, function () {
+    // testing that bean.remove(el, fn) removes *only* that handler and no others
+    var el = document.getElementById('input')
+      , c = 0
+      , handler1 = function (e) {
+          ok(true, 'handled ' + e.type + ' event (1)')
+        }
+      , handler2 = function (e) {
+          ok(true, 'handled ' + e.type + ' event (2)')
+          ++c == 2 && bean.remove(el)
+        }
+
+    bean.add(el, 'click', handler1)
+    bean.add(el, 'keyup', handler1)
+    bean.add(el, 'click', handler2)
+    bean.add(el, 'keyup', handler2)
+    bean.remove(el, handler1)
+    Syn.click(el)
+    Syn.key(el, 'f')
+  })
+
+  test('remove: should be able to remove all events of a certain namespace', 3, function () {
+    var el = document.getElementById('input')
+      , handler1 = function () {
+          ok(true, 'remove all events (1)')
+          bean.remove(el, '.foo')
+          Syn.click(el).key('j')
+        }
+      , handler2 = function () {
+          ok(true, 'remove all events (2)')
+        }
+      , handler3 = function () { // should be called twice
+          bean.remove(el, '.foo')
+          ok(true, 'remove all events (3)')
+        }
+    bean.remove(el)
+    bean.add(el, 'click.foo', handler1)
+    bean.add(el, 'keydown.foo', handler2)
+    bean.add(el, 'click.bar', handler3)
+    Syn.click(el)
+  })
 
 })
 
-sink('clone', function (test, ok, before) {
+sink('clone', function (test, ok, before, after) {
 
   var el1 = document.getElementById('input');
   var el2 = document.getElementById('input2');
 
   before(function () {
+    bean.remove(el1);
+    bean.remove(el2);
+  })
+
+  after(function () {
     bean.remove(el1);
     bean.remove(el2);
   })
@@ -451,12 +586,12 @@ sink('delegation', function (test, ok) {
     Syn.click(el4);
   });
 
-  test('delegate: should be able to remove delegated handler', 1, function() {
+  test('delegate: should be able to remove delegated handler', 1, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
     bean.remove(el1);
     bean.remove(el2);
-    var fn = function() {
+    var fn = function () {
       ok(true, 'degegated event triggered once');
       bean.remove(el1, 'click', fn);
     }
@@ -533,4 +668,64 @@ sink('namespaces', function (test, ok) {
 
 });
 
-window.onload = start;
+sink('custom types', function (test, ok) {
+
+  test('custom types: mouseenter/mouseleave should wrap simple mouseover/mouseout', 2, function () {
+    var html = document.documentElement
+      , foo = document.getElementById('foo')
+      , bar = document.getElementById('bar')
+      , bang = document.getElementById('bang')
+      , me = function (e) { ok(true, 'triggers single mouseenter event') }
+      , ml = function (e) { ok(true, 'triggers single mouseleave event') }
+    bean.remove(foo)
+    bean.add(foo, 'mouseenter', me)
+    bean.add(foo, 'mouseleave', ml)
+    // relatedTarget is where the mouse came from for mouseover and where it's going to in mouseout
+    Syn.trigger('mouseover', { relatedTarget: html }, foo)
+    Syn.trigger('mouseover', { relatedTarget: foo }, bar)
+    Syn.trigger('mouseover', { relatedTarget: bar }, bang)
+    Syn.trigger('mouseout', { relatedTarget: bar }, bang)
+    Syn.trigger('mouseout', { relatedTarget: foo }, bar)
+    Syn.trigger('mouseout', { relatedTarget: html }, foo)
+    bean.remove(foo)
+  })
+
+  function testRemove(removeFn) {
+    var html = document.documentElement
+      , foo = document.getElementById('foo')
+      , me = function (e) { ok(true, 'triggers single mouseenter event') }
+      , ml = function (e) { ok(true, 'triggers single mouseleave event') }
+
+    bean.remove(foo)
+    bean.add(foo, 'mouseenter', me)
+    bean.add(foo, 'mouseleave', ml)
+    Syn.trigger('mouseover', { relatedTarget: html }, foo)
+    Syn.trigger('mouseout', { relatedTarget: html }, foo)
+    removeFn(foo, me, ml)
+    Syn.trigger('mouseover', { relatedTarget: html }, foo)
+    Syn.trigger('mouseout', { relatedTarget: html }, foo)
+  }
+
+  test('custom types: custom events should be removable', 2, function () {
+    testRemove(function (foo, me, ml) {
+      bean.remove(foo)
+    })
+  })
+
+  test('custom types: custom events should be removable by type', 2, function () {
+    testRemove(function (foo, me, ml) {
+      bean.remove(foo, 'mouseenter')
+      bean.remove(foo, 'mouseleave')
+    })
+  })
+
+  test('custom types: custom events should be removable by type+handler', 2, function () {
+    testRemove(function (foo, me, ml) {
+      bean.remove(foo, 'mouseenter', me)
+      bean.remove(foo, 'mouseleave', ml)
+    })
+  })
+
+})
+
+window.onload = start

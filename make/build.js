@@ -25,5 +25,7 @@ require('smoosh').config({
       , 'laxbreak': true
       , 'browser': true
       , 'eqeqeq': true
+      , 'bitwise': false
+      , 'loopfunc': false
     }
 }).run().build().analyze()
