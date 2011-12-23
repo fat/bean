@@ -257,6 +257,47 @@ sink('event object', function (test, ok) {
     bean.fire(el, 'customEvent');
   });
 
+  test('event: stop should preventDefault and stopPropagation', 1, function () {
+    // first feature-test, if we don't support native createEvent then there's
+    // no point running this test unfortunately
+    var supported = false
+    try {
+      document.createEvent('KeyEvents')
+      supported = true
+    } catch (e) {
+      try {
+        document.createEvent('TextEvent')
+        supported = true
+      } catch (e) { }
+    }
+    if (!supported) {
+      ok(true, 'not running test in this browser, native createEvent() not supported')
+      return
+    }
+
+    // we should be able to prevent a keypress and event propagation with stop()
+    // on the keypress event, checking the parent doesn't receive the keypress
+    // and then checking the input contents on a keyup, it should be empty.
+    var txt = document.getElementById('txt')
+      , parent = document.getElementById('stopper')
+      , txtHandler = function (event) {
+          event.stop()
+        }
+      , txtCheckHandler = function (event) {
+          ok(!txt.value.length, 'input is has no text after keypress')
+        }
+      , parentHandler = function (event) {
+          ok(true, 'parent should not receive event')
+          bean.remove(parent)
+        }
+
+    txt.value = ''
+    bean.add(txt, 'keypress', txtHandler)
+    bean.add(txt, 'keyup', txtCheckHandler)
+    bean.add(parent, 'keypress', parentHandler)
+    Syn.key(txt, 'f')
+  })
+
   test('event: should have keyCode', 1, function () {
     var el = document.getElementById('input');
     bean.add(el, 'keypress', function (e) {

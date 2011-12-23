@@ -199,6 +199,12 @@ bean.add(el, 'click', function (e) {
   e.stopPropagation();
 });
 
+// a simple shortcut, since you usually want preventDefault() and stopPropagation() at the same time
+// (works the same as the previous example)
+bean.add(el, 'click', function (e) {
+  e.stop();
+});
+
 // DOMContentLoaded
 bean.add(document, 'DOMContentLoaded', fn);
 

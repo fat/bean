@@ -59,20 +59,29 @@
         var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
           , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
           , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
-          , preventDefault = function (e) {
+          , preventDefault = 'preventDefault'
+          , createPreventDefault = function (e) {
               return function () {
-                if (e.preventDefault)
-                  e.preventDefault()
+                if (e[preventDefault])
+                  e[preventDefault]()
                 else
                   e.returnValue = false
               }
             }
-          , stopPropagation = function (e) {
+          , stopPropagation = 'stopPropagation'
+          , createStopPropagation = function (e) {
               return function () {
-                if (e.stopPropagation)
-                  e.stopPropagation()
+                if (e[stopPropagation])
+                  e[stopPropagation]()
                 else
                   e.cancelBubble = true
+              }
+            }
+          , createStop = function (e) {
+              return function () {
+                e[preventDefault]()
+                e[stopPropagation]()
+                e.stopped = true
               }
             }
           , copyProps = function (event, result, props) {
@@ -92,8 +101,9 @@
             , type = event.type
             , target = event.target || event.srcElement
 
-          result.preventDefault = preventDefault(event)
-          result.stopPropagation = stopPropagation(event)
+          result[preventDefault] = createPreventDefault(event)
+          result[stopPropagation] = createStopPropagation(event)
+          result.stop = createStop(event)
           result.target = target && target.nodeType === 3 ? target.parentNode : target
 
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
@@ -141,27 +151,29 @@
           this.eventSupport = this.target[eventSupport]
         }
 
-        // given a list of namespaces, is our entry in any of them?
-        entry.prototype.inNamespaces = function (checkNamespaces) {
-          var i, j
-          if (!checkNamespaces)
-            return true
-          if (!this.namespaces)
-            return false
-          for (i = checkNamespaces.length; i--;) {
-            for (j = this.namespaces.length; j--;) {
-              if (checkNamespaces[i] === this.namespaces[j])
+        entry.prototype = {
+            // given a list of namespaces, is our entry in any of them?
+            inNamespaces: function (checkNamespaces) {
+              var i, j
+              if (!checkNamespaces)
                 return true
+              if (!this.namespaces)
+                return false
+              for (i = checkNamespaces.length; i--;) {
+                for (j = this.namespaces.length; j--;) {
+                  if (checkNamespaces[i] === this.namespaces[j])
+                    return true
+                }
+              }
+              return false
             }
-          }
-          return false
-        }
 
-        // match by element, original fn (opt), handler fn (opt)
-        entry.prototype.matches = function (checkElement, checkOriginal, checkHandler) {
-          return this.element === checkElement &&
-            (!checkOriginal || this.original === checkOriginal) &&
-            (!checkHandler || this.handler === checkHandler)
+            // match by element, original fn (opt), handler fn (opt)
+          , matches: function (checkElement, checkOriginal, checkHandler) {
+              return this.element === checkElement &&
+                (!checkOriginal || this.original === checkOriginal) &&
+                (!checkHandler || this.handler === checkHandler)
+            }
         }
 
         return entry
