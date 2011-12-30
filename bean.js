@@ -29,18 +29,32 @@
     , slice = Array.prototype.slice
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
 
-    , nativeEvents = {
-          click: 1, dblclick: 1, mouseup: 1, mousedown: 1, contextmenu: 1       // mouse buttons
-        , mousewheel: 1, DOMMouseScroll: 1                                      // mouse wheel
-        , mouseover: 1, mouseout: 1, mousemove: 1, selectstart: 1, selectend: 1 // mouse movement
-        , keydown: 1, keypress: 1, keyup: 1                                     // keyboard
-        , orientationchange: 1                                                  // mobile
-        , touchstart: 1, touchmove: 1, touchend: 1, touchcancel: 1              // touch
-        , gesturestart: 1, gesturechange: 1, gestureend: 1                      // gesture
-        , focus: 1, blur: 1, change: 1, reset: 1, select: 1, submit: 1          // form elements
-        , load: 1, unload: 1, beforeunload: 1, resize: 1, move: 1, DOMContentLoaded: 1, readystatechange: 1 // window
-        , error: 1, abort: 1, scroll: 1                                         // misc
-      }
+    , nativeEvents = (function (hash, events, i) {
+        for (i = 0; i < events.length; i++)
+          hash[events[i]] = 1
+        return hash
+      })({}, (
+          'click dblclick mouseup mousedown contextmenu show ' +             // mouse buttons
+          'mousewheel DOMMouseScroll ' +                                     // mouse wheel
+          'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
+          'keydown keypress keyup ' +                                        // keyboard
+          'orientationchange ' +                                             // mobile
+          'touchstart touchmove touchend touchcancel ' +                     // touch
+          'gesturestart gesturechange gestureend ' +                         // gesture
+          'focus blur change reset select submit input invalid ' +           // form elements
+          'load unload beforeunload resize move DOMContentLoaded message ' + // window
+          'readystatechange pageshow pagehide popstate hashchange ' +        // window
+          'offline online ' +                                                // window
+          'error abort scroll ' +                                            // misc
+          'afterprint beforeprint ' +                                        // printing
+          'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
+          'loadstart progress suspend emptied stalled loadmetadata ' +       // media
+          'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
+          'seeked ended durationchange timeupdate play pause ratechange ' +  // media
+          'volumechange cuechange ' +                                        // media
+          'checking noupdate downloading cached updateready obsolete ' +     // appacahe
+          '').split(' ')
+      )
 
     , customEvents = (function () {
         function isDescendant(parent, node) {
