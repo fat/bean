@@ -34,26 +34,31 @@
           hash[events[i]] = 1
         return hash
       })({}, (
-          'click dblclick mouseup mousedown contextmenu show ' +             // mouse buttons
+          'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
           'mousewheel DOMMouseScroll ' +                                     // mouse wheel
           'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
           'keydown keypress keyup ' +                                        // keyboard
           'orientationchange ' +                                             // mobile
           'touchstart touchmove touchend touchcancel ' +                     // touch
           'gesturestart gesturechange gestureend ' +                         // gesture
-          'focus blur change reset select submit input invalid ' +           // form elements
-          'load unload beforeunload resize move DOMContentLoaded message ' + // window
-          'readystatechange pageshow pagehide popstate hashchange ' +        // window
-          'offline online ' +                                                // window
+          'focus blur change reset select submit ' +                         // form elements
+          'load unload beforeunload resize move DOMContentLoaded readystatechange ' + // window
           'error abort scroll ' +                                            // misc
-          'afterprint beforeprint ' +                                        // printing
-          'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
-          'loadstart progress suspend emptied stalled loadmetadata ' +       // media
-          'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
-          'seeked ended durationchange timeupdate play pause ratechange ' +  // media
-          'volumechange cuechange ' +                                        // media
-          'checking noupdate downloading cached updateready obsolete ' +     // appacahe
-          '').split(' ')
+          (W3C_MODEL ? // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
+                       // that doesn't actually exist, so make sure we only do these on newer browsers
+            'show ' +                                                          // mouse buttons
+            'input invalid ' +                                                 // form elements
+            'message readystatechange pageshow pagehide popstate ' +           // window
+            'hashchange offline online ' +                                     // window
+            'afterprint beforeprint ' +                                        // printing
+            'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
+            'loadstart progress suspend emptied stalled loadmetadata ' +       // media
+            'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
+            'seeked ended durationchange timeupdate play pause ratechange ' +  // media
+            'volumechange cuechange ' +                                        // media
+            'checking noupdate downloading cached updateready obsolete ' +     // appcache
+            '' : '')
+        ).split(' ')
       )
 
     , customEvents = (function () {
