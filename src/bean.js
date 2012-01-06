@@ -78,28 +78,28 @@
           , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
           , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
           , preventDefault = 'preventDefault'
-          , createPreventDefault = function (e) {
+          , createPreventDefault = function (event) {
               return function () {
-                if (e[preventDefault])
-                  e[preventDefault]()
+                if (event[preventDefault])
+                  event[preventDefault]()
                 else
-                  e.returnValue = false
+                  event.returnValue = false
               }
             }
           , stopPropagation = 'stopPropagation'
-          , createStopPropagation = function (e) {
+          , createStopPropagation = function (event) {
               return function () {
-                if (e[stopPropagation])
-                  e[stopPropagation]()
+                if (event[stopPropagation])
+                  event[stopPropagation]()
                 else
-                  e.cancelBubble = true
+                  event.cancelBubble = true
               }
             }
-          , createStop = function (e) {
+          , createStop = function (synEvent) {
               return function () {
-                e[preventDefault]()
-                e[stopPropagation]()
-                e.stopped = true
+                synEvent[preventDefault]()
+                synEvent[stopPropagation]()
+                synEvent.stopped = true
               }
             }
           , copyProps = function (event, result, props) {
@@ -121,7 +121,7 @@
 
           result[preventDefault] = createPreventDefault(event)
           result[stopPropagation] = createStopPropagation(event)
-          result.stop = createStop(event)
+          result.stop = createStop(result)
           result.target = target && target.nodeType === 3 ? target.parentNode : target
 
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
