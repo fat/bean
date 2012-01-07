@@ -209,6 +209,7 @@
     , registry = (function () {
         // our map stores arrays by event type, just because it's better than storing
         // everything in a single array
+        // use '$' as a prefix for the keys for ownProperty and '__proto__' clash safety
         var map = {}
 
           // generic functional search of our registry for matching listeners,
@@ -217,11 +218,11 @@
               if (!type || type === '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (map.hasOwnProperty(t))
-                    forAll(element, t, original, handler, fn)
+                  if (t[0] === '$')
+                    forAll(element, t.substr(1), original, handler, fn)
                 }
               } else {
-                var i = 0, l, list = map[type], all = element === '*'
+                var i = 0, l, list = map['$' + type], all = element === '*'
                 if (!list)
                   return
                 for (l = list.length; i < l; i++) {
@@ -235,7 +236,7 @@
           , has = function (element, type, original) {
               // we're not using forAll here simply because it's a bit slower and this
               // needs to be fast
-              var i, list = map[type]
+              var i, list = map['$' + type]
               if (list) {
                 for (i = list.length; i--;) {
                   if (list[i].matches(element, original, null))
@@ -252,7 +253,7 @@
             }
 
           , put = function (entry) {
-              (map[entry.type] || (map[entry.type] = [])).push(entry)
+              (map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
               return entry
             }
 
@@ -267,7 +268,7 @@
           , entries = function () {
               var t, entries = []
               for (t in map) {
-                if (map.hasOwnProperty(t))
+                if (t[0] === '$')
                   entries = entries.concat(map[t])
               }
               return entries
