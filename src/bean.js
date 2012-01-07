@@ -199,8 +199,7 @@
 
     , registry = (function () {
         // our map stores arrays by event type, just because it's better than storing
-        // everything in a single array
-        // use '$' as a prefix for the keys for ownProperty and '__proto__' clash safety
+        // everything in a single array. uses '$' as a prefix for the keys for safety
         var map = {}
 
           // generic functional search of our registry for matching listeners,
@@ -251,6 +250,8 @@
           , del = function (entry) {
               forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
                 list.splice(i, 1)
+                if (list.length === 0)
+                  delete map['$' + entry.type]
                 return false
               })
             }
