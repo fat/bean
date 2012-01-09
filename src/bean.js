@@ -18,6 +18,7 @@
     , W3C_MODEL = root[addEvent]
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
     , slice = Array.prototype.slice
+    , mouseTypeRegex = /click|mouse|menu|drag|drop/i
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
 
     , nativeEvents = (function (hash, events, i) {
@@ -128,7 +129,7 @@
             if (type.indexOf('key') !== -1) {
               props = keyProps
               result.keyCode = event.which || event.keyCode
-            } else if ((/click|mouse|menu|drag|drop/i).test(type)) {
+            } else if (mouseTypeRegex.test(type)) {
               props = mouseProps
               result.rightClick = event.which === 3 || event.button === 2
               result.pos = { x: 0, y: 0 }
@@ -208,7 +209,7 @@
               if (!type || type === '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (t[0] === '$')
+                  if (t.charAt(0) === '$')
                     forAll(element, t.substr(1), original, handler, fn)
                 }
               } else {
@@ -260,7 +261,7 @@
           , entries = function () {
               var t, entries = []
               for (t in map) {
-                if (t[0] === '$')
+                if (t.charAt(0) === '$')
                   entries = entries.concat(map[t])
               }
               return entries
