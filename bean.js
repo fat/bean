@@ -137,7 +137,7 @@
             if (type.indexOf('key') !== -1) {
               props = keyProps
               result.keyCode = event.which || event.keyCode
-            } else if ((/click|mouse|menu/i).test(type)) {
+            } else if ((/click|mouse|menu|drag|drop/i).test(type)) {
               props = mouseProps
               result.rightClick = event.which === 3 || event.button === 2
               result.pos = { x: 0, y: 0 }
