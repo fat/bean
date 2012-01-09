@@ -19,6 +19,7 @@
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
     , slice = Array.prototype.slice
     , mouseTypeRegex = /click|mouse|menu|drag|drop/i
+    , touchTypeRegex = /^touch|^gesture/i
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
 
     , nativeEvents = (function (hash, events, i) {
@@ -31,8 +32,6 @@
           'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
           'keydown keypress keyup ' +                                        // keyboard
           'orientationchange ' +                                             // mobile
-          'touchstart touchmove touchend touchcancel ' +                     // touch
-          'gesturestart gesturechange gestureend ' +                         // gesture
           'focus blur change reset select submit ' +                         // form elements
           'load unload beforeunload resize move DOMContentLoaded readystatechange ' + // window
           'error abort scroll ' +                                            // misc
@@ -40,6 +39,8 @@
                        // that doesn't actually exist, so make sure we only do these on newer browsers
             'show ' +                                                          // mouse buttons
             'input invalid ' +                                                 // form elements
+            'touchstart touchmove touchend touchcancel ' +                     // touch
+            'gesturestart gesturechange gestureend ' +                         // gesture
             'message readystatechange pageshow pagehide popstate ' +           // window
             'hashchange offline online ' +                                     // window
             'afterprint beforeprint ' +                                        // printing
@@ -78,6 +79,7 @@
         var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
           , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
           , keyProps = commonProps.concat('char charCode key keyCode'.split(' '))
+          , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
           , preventDefault = 'preventDefault'
           , createPreventDefault = function (event) {
               return function () {
@@ -142,6 +144,8 @@
               }
               if (overOut.test(type))
                 result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+            } else if (touchTypeRegex.test(type)) {
+              props = touchProps
             }
             copyProps(event, result, props || commonProps)
           }
