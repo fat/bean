@@ -7,7 +7,8 @@ require('smoosh').config({
         ]
     }
   , 'JSHINT_OPTS': {
-        'boss': true
+        'predef': [ 'module', 'define' ]
+      , 'boss': true
       , 'forin': true
       , 'curly': false
       , 'debug': true
