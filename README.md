@@ -253,8 +253,8 @@ Here's the run down of the method alias' added...
 
 **DELEGATE EVENTS**
 
- + delegate - <code>$(element).delegate('.foo', fn);</code>
- + undelegate - <code>$(element).undelegate('.foo');</code>
+ + delegate - <code>$(element).delegate('.foo', 'click', fn);</code>
+ + undelegate - <code>$(element).undelegate('.foo', 'click');</code>
 
 
 **CLONE EVENTS**
