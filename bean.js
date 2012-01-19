@@ -26,9 +26,8 @@
     , W3C_MODEL = root[addEvent]
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
     , slice = Array.prototype.slice
-    , mouseTypeRegex = /click|mouse|menu|drag|drop/i
-    , mouseWheelRegex = /mousewheel/i
-    , mouseMultiWheelRegex = /mousemultiwheel/i
+    , mouseTypeRegex = /click|mouse(?!(.*wheel|scroll))|menu|drag|drop/i
+    , mouseWheelTypeRegex = /mouse.*(wheel|scroll)/i
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
@@ -39,7 +38,7 @@
         return hash
       })({}, (
           'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
-          'mousewheel DOMMouseScroll ' +                                     // mouse wheel
+          'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
           'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
           'keydown keypress keyup ' +                                        // keyboard
           'orientationchange ' +                                             // mobile
@@ -89,8 +88,7 @@
     , fixEvent = (function () {
         var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
           , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
-          , mouseWheelProps = commonProps.concat(['wheelDelta'])
-          , mouseMultiWheelProps = commonProps.concat('wheelDeltaX wheelDeltaY wheelDeltaZ'.split(' '))
+          , mouseWheelProps = mouseProps.concat('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ axis'.split(' ')) // 'axis' is FF specific
           , keyProps = commonProps.concat('char charCode key keyCode keyIdentifier keyLocation'.split(' '))
           , textProps = commonProps.concat(['data'])
           , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
@@ -160,10 +158,8 @@
                 result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
             } else if (touchTypeRegex.test(type)) {
               props = touchProps
-            } else if (mouseWheelRegex.test(type)) {
+            } else if (mouseWheelTypeRegex.test(type)) {
               props = mouseWheelProps
-            } else if (mouseMultiWheelRegex.test(type)) {
-              props = mouseMultiWheelProps
             } else if (textTypeRegex.test(type)) {
               props = textProps
             }
