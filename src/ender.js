@@ -5,8 +5,16 @@
         return function () {
           for (var args, i = 0, l = this.length; i < l; i++) {
             args = [this[i]].concat(_args, Array.prototype.slice.call(arguments, 0))
-            args.length == 4 && args.push($)
-            !arguments.length && method == 'add' && type && (method = 'fire')
+            if (args.length == 4) {
+              args.push($)
+              if (method == 'on') { // 'on' puts event type first, selector second
+                var s = args[1]
+                args[1] = args[2]
+                args[2] = s
+              }
+            }
+            if (!arguments.length && method == 'add' && type) method = 'fire'
+            else if (method == 'on') method = 'add'
             b[method].apply(this, args)
           }
           return this
@@ -17,7 +25,7 @@
     , fire = integrate('fire')
 
     , methods = {
-          on: add
+          on: integrate('on')
         , addListener: add
         , bind: add
         , listen: add
