@@ -65,17 +65,25 @@
       )
 
     , customEvents = (function () {
-        function isDescendant(parent, node) {
-          while ((node = node.parentNode) !== null) {
-            if (node === parent) return true
-          }
-          return false
-        }
+        var cdp = 'compareDocumentPosition'
+        var isAncestor = cdp in root
+          ? function (element, container) {
+              return container[cdp] && (container[cdp](element) & 16) === 16
+            }
+          : 'contains' in root
+            ? function (element, container) {
+                container = container.nodeType === 9 || container === window ? root : container
+                return container !== element && container.contains(element)
+              }
+            : function (element, container) {
+                while (element = element.parentNode) if (element === container) return 1
+                return 0
+              }
 
         function check(event) {
           var related = event.relatedTarget
           if (!related) return related === null
-          return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isDescendant(this, related))
+          return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isAncestor(related, this))
         }
 
         return {
@@ -307,8 +315,9 @@
       }
 
     , customHandler = function (element, fn, type, condition, args, isNative) {
+        var ft = fn.__findTarget
         return function (event) {
-          if (condition ? condition.apply(this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
+          if (condition ? condition.apply(ft ? ft(this) : this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
             if (event)
               event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
             fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
@@ -354,7 +363,7 @@
           fn = once(removeListener, element, type, fn, originalFn) // self clean-up
         if (customEvents[type]) {
           if (customEvents[type].condition)
-            fn = customHandler(element, fn, type, customEvents[type].condition, true)
+            fn = customHandler(element, fn, type, customEvents[type].condition, args, true)
           type = customEvents[type].base || type
         }
         entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
@@ -366,16 +375,23 @@
       }
 
     , del = function (selector, fn, $) {
-        return function (e) {
-          var target, i, array = typeof selector === 'string' ? $(selector, this) : selector
-          for (target = e.target; target && target !== this; target = target.parentNode) {
-            for (i = array.length; i--;) {
-              if (array[i] === target) {
-                return fn.apply(target, arguments)
+        var findTarget = function (target, root) {
+              var i, array = typeof selector === 'string' ? $(selector, root) : selector
+              for (; target && target !== root; target = target.parentNode) {
+                for (i = array.length; i--;) {
+                  if (array[i] === target)
+                    return target
+                }
               }
             }
-          }
-        }
+          , handler = function (e) {
+              var match = findTarget(e.target, this)
+              if (match)
+                fn.apply(match, arguments)
+            }
+
+        handler.__findTarget = findTarget // attach it here for customEvents to use too
+        return handler
       }
 
     , remove = function (element, typeSpec, fn) {
