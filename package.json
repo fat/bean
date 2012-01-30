@@ -1,14 +1,18 @@
 {
-  "name": "bean",
-  "description": "an events api for javascript",
-  "version": "0.4.8",
-  "homepage": "https://github.com/fat/bean",
-  "authors": ["Jacob Thornton <@fat>", "Dustin Diaz <@ded>", "Rod Vagg <@rvagg>"],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fat/bean.git"
-  },
-  "keywords": ["ender", "events", "event"],
-  "main": "./bean.js",
-  "ender": "./src/ender.js"
+    "name": "bean"
+  , "description": "an events api for javascript"
+  , "version": "0.4.8"
+  , "homepage": "https://github.com/fat/bean"
+  , "authors": [
+        "Jacob Thornton <@fat>"
+      , "Dustin Diaz <@ded>"
+      , "Rod Vagg <@rvagg>"
+    ]
+  , "repository": {
+        "type": "git"
+      , "url": "https://github.com/fat/bean.git"
+    }
+  , "keywords": [ "ender", "events", "event" ]
+  , "main": "./bean.js"
+  , "ender": "./src/ender.js"
 }
