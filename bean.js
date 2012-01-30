@@ -312,7 +312,7 @@
         return function (event) {
           event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true)
           if (ft) // delegated event, fix the fix
-            event.currentTarget = ft(event.target,this)
+            event.currentTarget = ft(event.target, element)
           return fn.apply(element, [event].concat(args))
         }
       }
@@ -320,7 +320,7 @@
     , customHandler = function (element, fn, type, condition, args, isNative) {
         var ft = fn.__findTarget
         return function (event) {
-          var target = ft ? ft(event.target, this) : this // deleated event
+          var target = ft ? ft(event.target, element) : this // deleated event
           if (condition ? condition.apply(target, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
             if (event) {
               event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
