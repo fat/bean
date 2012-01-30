@@ -299,8 +299,11 @@
       }
 
     , nativeHandler = function (element, fn, args) {
+        var ft = fn.__findTarget
         return function (event) {
           event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true)
+          if (ft) // delegated event, fix the fix
+            event.currentTarget = ft(event.target,this)
           return fn.apply(element, [event].concat(args))
         }
       }
@@ -308,9 +311,13 @@
     , customHandler = function (element, fn, type, condition, args, isNative) {
         var ft = fn.__findTarget
         return function (event) {
-          if (condition ? condition.apply(ft ? ft(this) : this, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
-            if (event)
+          var target = ft ? ft(event.target, this) : this // deleated event
+          if (condition ? condition.apply(target, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
+            if (event) {
               event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
+              if (ft) // for delegated events
+                event.currentTarget = target
+            }
             fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
           }
         }

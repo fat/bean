@@ -593,7 +593,7 @@ sink('clone', function (test, ok, before, after) {
 
 sink('delegation', function (test, ok) {
 
-  test('delegate: should be able to delegate on selectors', 4, function () {
+  test('delegate: should be able to delegate on selectors', 6, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
     var el3 = document.getElementById('baz');
@@ -601,9 +601,10 @@ sink('delegation', function (test, ok) {
     bean.remove(el1);
     bean.remove(el2);
     bean.remove(el3);
-    bean.add(el1, '.bar', 'click', function () {
+    bean.add(el1, '.bar', 'click', function (e) {
       ok(true, 'delegation on selectors 1');
       ok(this == el2, 'delegation on selectors, context was set to delegated element 2');
+      ok(e.currentTarget === el2, 'degated event has currentTarget property correctly set')
     }, qwery);
     Syn.click(el2);
     Syn.click(el3);
@@ -767,13 +768,19 @@ sink('custom types', function (test, ok) {
     })
   })
 
-  test('custom types: custom events should work with deleate', 2, function () {
+  test('custom types: custom events should work with deleate', 4, function () {
     var html = document.documentElement
       , foo = document.getElementById('foo')
       , bar = document.getElementById('bar')
       , bang = document.getElementById('bang')
-      , me = function (e) { ok(true, 'triggers delegated mouseenter event') }
-      , ml = function (e) { ok(true, 'triggers delegated mouseleave event') }
+      , me = function (e) {
+          ok(true, 'triggers delegated mouseenter event')
+          ok(e.currentTarget === bang, 'currentTarget property of event set correctly')
+        }
+      , ml = function (e) {
+          ok(true, 'triggers delegated mouseleave event')
+          ok(e.currentTarget === bang, 'currentTarget property of event set correctly')
+        }
     bean.remove(foo)
     bean.add(foo, '.bang', 'mouseenter', me, qwery)
     bean.add(foo, '.bang', 'mouseleave', ml, qwery)
