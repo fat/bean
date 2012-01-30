@@ -28,5 +28,6 @@ require('smoosh').config({
       , 'eqeqeq': true
       , 'bitwise': false
       , 'loopfunc': false
+      , 'laxcomma': true
     }
 }).run().build().analyze()

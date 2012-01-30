@@ -767,6 +767,24 @@ sink('custom types', function (test, ok) {
     })
   })
 
+  test('custom types: custom events should work with deleate', 2, function () {
+    var html = document.documentElement
+      , foo = document.getElementById('foo')
+      , bar = document.getElementById('bar')
+      , bang = document.getElementById('bang')
+      , me = function (e) { ok(true, 'triggers delegated mouseenter event') }
+      , ml = function (e) { ok(true, 'triggers delegated mouseleave event') }
+    bean.remove(foo)
+    bean.add(foo, '.bang', 'mouseenter', me, qwery)
+    bean.add(foo, '.bang', 'mouseleave', ml, qwery)
+    Syn.trigger('mouseover', { relatedTarget: html }, foo)
+    Syn.trigger('mouseover', { relatedTarget: foo }, bar)
+    Syn.trigger('mouseover', { relatedTarget: bar }, bang)
+    Syn.trigger('mouseout', { relatedTarget: bar }, bang)
+    Syn.trigger('mouseout', { relatedTarget: foo }, bar)
+    Syn.trigger('mouseout', { relatedTarget: html }, foo)
+    bean.remove(foo)
+  })
 })
 
 window.onload = start
