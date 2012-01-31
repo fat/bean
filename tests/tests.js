@@ -589,6 +589,16 @@ sink('clone', function (test, ok, before, after) {
     Syn.click(el2)
   });
 
+  test('clone: should work with delegated events', 1, function () {
+      var foo = document.createElement('div');
+      bean.add(foo, '.bang', 'click', function () {ok(true, 'fires intended event')});
+      bean.add(foo, '.baz', 'click', function () { ok(false, 'fires unintended event')})
+      var realfoo = document.getElementById('foo');
+      bean.clone(realfoo, foo);
+
+      var bang = document.getElementById('bang');
+      Syn.click(bang);
+  });
 })
 
 sink('delegation', function (test, ok) {
