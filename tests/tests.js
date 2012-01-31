@@ -589,14 +589,24 @@ sink('clone', function (test, ok, before, after) {
     Syn.click(el2)
   });
 
-  test('clone: should work with delegated events', 1, function () {
-      var foo = document.createElement('div');
-      bean.add(foo, '.bang', 'click', function () {ok(true, 'fires intended event')});
-      bean.add(foo, '.baz', 'click', function () { ok(false, 'fires unintended event')})
-      var realfoo = document.getElementById('foo');
+  test('clone: should work with delegated events', 3, function () {
+      var foo = document.createElement('div')
+        , realfoo = document.getElementById('foo')
+        , bang = document.getElementById('bang')
+
+      bean.add(foo, '.bang', 'click', function (e) {
+        bean.remove(foo)
+        ok(true, 'fires intended event')
+        ok(this == bang, 'context was set to delegated element')
+        ok(e.currentTarget === bang, 'degated event has currentTarget property correctly set')
+      }, qwery)
+
+      bean.add(foo, '.baz', 'click', function () {
+        ok(false, 'fires unintended event')
+      }, qwery)
+
       bean.clone(realfoo, foo);
 
-      var bang = document.getElementById('bang');
       Syn.click(bang);
   });
 })
