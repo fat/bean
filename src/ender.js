@@ -17,7 +17,7 @@
     , fire = integrate('fire')
 
     , methods = {
-          on: add
+          on: add // NOTE: .on() is likely to change in the near future, don't rely on this as-is see https://github.com/fat/bean/issues/55
         , addListener: add
         , bind: add
         , listen: add

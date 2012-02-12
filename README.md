@@ -238,7 +238,7 @@ Here's the run down of the method alias' added...
 
 **ADD EVENTS**
 
- + on - <code>$(element).on('click', fn);</code>
+ + on - <code>$(element).on('click', fn);</code> *NOTE: This API is likely to change slightly in the near future see [#55](https://github.com/fat/bean/issues/55)*
  + addListener - <code>$(element).addListener('click', fn);</code>
  + bind - <code>$(element).bind('click', fn);</code>
  + listen - <code>$(element).listen('click', fn);</code>
