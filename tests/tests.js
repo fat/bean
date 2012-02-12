@@ -732,13 +732,19 @@ sink('namespaces', function (test, ok) {
 
 sink('custom types', function (test, ok) {
 
-  test('custom types: mouseenter/mouseleave should wrap simple mouseover/mouseout', 2, function () {
+  test('custom types: mouseenter/mouseleave should wrap simple mouseover/mouseout', 4, function () {
     var html = document.documentElement
       , foo = document.getElementById('foo')
       , bar = document.getElementById('bar')
       , bang = document.getElementById('bang')
-      , me = function (e) { ok(true, 'triggers single mouseenter event') }
-      , ml = function (e) { ok(true, 'triggers single mouseleave event') }
+      , me = function (e) {
+          ok(true, 'triggers single mouseenter event')
+          ok(e.currentTarget === foo, 'currentTarget property of event set correctly')
+        }
+      , ml = function (e) {
+          ok(true, 'triggers single mouseleave event')
+          ok(e.currentTarget === foo, 'currentTarget property of event set correctly')
+        }
     bean.remove(foo)
     bean.add(foo, 'mouseenter', me)
     bean.add(foo, 'mouseleave', ml)

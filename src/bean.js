@@ -317,8 +317,7 @@
           if (condition ? condition.apply(target, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
             if (event) {
               event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
-              if (beanDel) // for delegated events
-                event.currentTarget = target
+              event.currentTarget = target
             }
             fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
           }
