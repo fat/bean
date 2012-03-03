@@ -3,7 +3,7 @@
   else if (typeof define === 'function' && typeof define.amd  === 'object') define(definition);
   else context[name] = definition(name, context);
 }('bean', this, function (name, context) {
-  var win = window
+  var win = this
     , old = context[name]
     , overOut = /over|out/
     , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
@@ -12,7 +12,7 @@
     , attachEvent = 'attachEvent'
     , removeEvent = 'removeEventListener'
     , detachEvent = 'detachEvent'
-    , doc = document || {}
+    , doc = typeof document !== 'undefined' ? document : {}
     , root = doc.documentElement || {}
     , W3C_MODEL = root[addEvent]
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
