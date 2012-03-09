@@ -150,7 +150,7 @@
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
             if (type.indexOf('key') !== -1) {
               props = keyProps
-              result.keyCode = event.which || event.keyCode
+              result.keyCode = event.keyCode || event.which
             } else if (mouseTypeRegex.test(type)) {
               props = mouseProps
               result.rightClick = event.which === 3 || event.button === 2
