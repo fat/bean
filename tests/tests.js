@@ -695,18 +695,31 @@ sink('namespaces', function (test, ok) {
   test('namespace: should be able to target namespaced event handlers with fire', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
-    bean.add(el1, 'click.fat', function () {ok(true, 'targets namespaced event handlers with fire (namespaced)')});
     bean.add(el1, 'click', function () {ok(true, 'targets namespaced event handlers with fire (plain)')});
+    bean.add(el1, 'click.fat', function () {ok(true, 'targets namespaced event handlers with fire (namespaced)')});
     bean.fire(el1, 'click.fat');
   });
 
-  test('namespace: should be able to target multiple namespaced event handlers with fire', 2, function () {
+  test('namespace: should be able to target nested namespaced event handlers with fire', 1, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
-    bean.add(el1, 'click.fat', function () {ok(true, 'target multiple namespaced event handlers with fire')});
-    bean.add(el1, 'click.ded', function () {ok(true, 'targets multiple namespaced event handlers with fire')});
-    bean.add(el1, 'click', function () {ok(true, 'targets multiple namespaced event handlers with fire')});
-    bean.fire(el1, 'click.fat.ded');
+    bean.add(el1, 'click', function () {ok(true, 'click should not get fired')});
+    bean.add(el1, 'click.ded', function () {ok(true, 'click.ded should not get fired')});
+    bean.add(el1, 'click.fat', function () {ok(true, 'click.fat should not get fired')});
+    bean.add(el1, 'click.ded.fat', function () {ok(true, 'click.ded.fat should not get fired')});
+    bean.add(el1, 'click.ded.fooz', function () {ok(true, 'click.ded.fooz should not get fired')});
+    bean.add(el1, 'click.fat.fooz', function () {ok(true, 'click.fat.fooz should not get fired')});
+    bean.add(el1, 'click.ded.fat.fooz', function () {ok(true, 'click.ded.fat.fooz should get fired')});
+    bean.fire(el1, 'click.ded.fat.fooz');
+  });
+
+  test('namespace: should be able to target multiple nested namespaced event handlers with fire', 2, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat.fooz', function () {ok(true, 'click.fat.fooz should get fired')});
+    bean.add(el1, 'click.ded.fooz', function () {ok(true, 'click.ded.fooz should get fired')});
+    bean.add(el1, 'click', function () {ok(true, 'click should not get fired')});
+    bean.fire(el1, 'click.fooz');
   });
 
   test('namespace: should be able to remove handlers based on name', 1, function () {
@@ -718,13 +731,27 @@ sink('namespaces', function (test, ok) {
     Syn.click(el1);
   });
 
-  test('namespace: should be able to remove multiple handlers based on name', 1, function () {
+  test('namespace: should be able to remove nested handlers based on name', 6, function () {
     var el1 = document.getElementById('foo');
     bean.remove(el1);
-    bean.add(el1, 'click.fat', function () {ok(true, 'removes multiple handlers based on name')});
-    bean.add(el1, 'click.ded', function () {ok(true, 'removes multiple handlers based on name')});
-    bean.add(el1, 'click', function () {ok(true, 'removes multiple handlers based on name')});
-    bean.remove(el1, 'click.ded.fat');
+    bean.add(el1, 'click', function () {ok(true, 'click should get fired')});
+    bean.add(el1, 'click.ded', function () {ok(true, 'click.ded should get fired')});
+    bean.add(el1, 'click.fat', function () {ok(true, 'click.fat should get fired')});
+    bean.add(el1, 'click.ded.fat', function () {ok(true, 'click.ded.fat should get fired')});
+    bean.add(el1, 'click.ded.fooz', function () {ok(true, 'click.ded.fooz should get fired')});
+    bean.add(el1, 'click.fat.fooz', function () {ok(true, 'click.fat.fooz should get fired')});
+    bean.add(el1, 'click.ded.fat.fooz', function () {ok(true, 'click.ded.fat.fooz should not get fired')});
+    bean.remove(el1, 'click.ded.fat.fooz');
+    Syn.click(el1);
+  });
+
+  test('namespace: should be able to remove multiple nested handlers based on name', 1, function () {
+    var el1 = document.getElementById('foo');
+    bean.remove(el1);
+    bean.add(el1, 'click.fat.fooz', function () {ok(true, 'click.fat.fooz should not get fired')});
+    bean.add(el1, 'click.ded.fooz', function () {ok(true, 'click.ded.fooz should not get fired')});
+    bean.add(el1, 'click', function () {ok(true, 'click should get fired')});
+    bean.remove(el1, 'click.fooz');
     Syn.click(el1);
   });
 
