@@ -522,7 +522,7 @@
             context[name] = old
             return this
           }
-        , selector: undefined
+        , selectorEngine: undefined
       }
 
   if (win[attachEvent]) {
