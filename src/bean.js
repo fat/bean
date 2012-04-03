@@ -433,6 +433,8 @@
       }
 
     , add = function (element, events, fn, delfn, $) {
+        var engine = arguments.length === 5 ? arguments[4] : bean.selectorEngine;
+
         var type, types, i, args
           , originalFn = fn
           , isDel = fn && typeof fn === 'string'
@@ -445,7 +447,7 @@
         } else {
           args = arguments.length > 3 ? slice.call(arguments, 3) : []
           types = (isDel ? fn : events).split(' ')
-          isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1))
+          isDel && (fn = del(events, (originalFn = delfn), engine)) && (args = slice.call(args, 1))
           // special case for one()
           this === ONE && (fn = once(remove, element, events, fn, originalFn))
           for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
@@ -520,6 +522,7 @@
             context[name] = old
             return this
           }
+        , selector: undefined
       }
 
   if (win[attachEvent]) {

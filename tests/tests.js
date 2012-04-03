@@ -631,7 +631,7 @@ sink('delegation', function (test, ok) {
     Syn.click(el4);
   });
 
-  test('delegate: should be able to delegate on arary', 4, function () {
+  test('delegate: should be able to delegate on array', 4, function () {
     var el1 = document.getElementById('foo');
     var el2 = document.getElementById('bar');
     var el3 = document.getElementById('baz');
@@ -660,6 +660,26 @@ sink('delegation', function (test, ok) {
     bean.add(el1, '.bar', 'click', fn, qwery);
     Syn.click(el2);
     Syn.click(el2);
+  });
+
+  test('delegate: should be able to set a default selector engine', 6, function () {
+    bean.selectorEngine = qwery;
+
+    var el1 = document.getElementById('foo');
+    var el2 = document.getElementById('bar');
+    var el3 = document.getElementById('baz');
+    var el4 = document.getElementById('bang');
+    bean.remove(el1);
+    bean.remove(el2);
+    bean.remove(el3);
+    bean.add(el1, '.bar', 'click', function (e) {
+      ok(true, 'delegation on selectors 1');
+      ok(this == el2, 'delegation on selectors, context was set to delegated element 2');
+      ok(e.currentTarget === el2, 'degated event has currentTarget property correctly set')
+    });
+    Syn.click(el2);
+    Syn.click(el3);
+    Syn.click(el4);
   });
 })
 

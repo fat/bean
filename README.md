@@ -61,9 +61,17 @@ bean.add(element, '.content p', 'click', handler, queryEngine);
 Developers working on Mobile Webkit applications like iPhone or Android, you may wish to simply provide the following query selector with Bean:
 
 ```javascript
-bean.add(element, '.content p', 'click', fn, function (selector) {
-  return document.querySelectorAll(selector);
+bean.add(element, '.content p', 'click', fn, function (selector, root) {
+  return root.querySelectorAll(selector);
 });
+```
+
+To set a default selector engine for all your delegation needs:
+
+```javascript
+bean.selectorEngine = qwery;
+// or
+bean.selectorEngine = function(selector, root) { return root.querySelectorAll(selector); };
 ```
 
 Or alternatively, you can pass an array of elements (this actually cuts down on selector engine work, and is a more performant means of delegation if you know your DOM won't be changing:
