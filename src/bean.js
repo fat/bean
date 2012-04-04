@@ -22,6 +22,7 @@
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
+    , selectorEngine = function(s, r) { return r.querySelectorAll(s); }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++)
@@ -433,7 +434,7 @@
       }
 
     , add = function (element, events, fn, delfn, $) {
-        var engine = arguments.length === 5 ? arguments[4] : bean.selectorEngine;
+        var engine = arguments.length === 5 ? arguments[4] : selectorEngine;
 
         var type, types, i, args
           , originalFn = fn
@@ -522,7 +523,7 @@
             context[name] = old
             return this
           }
-        , selectorEngine: undefined
+        , setSelectorEngine: function(e) { selectorEngine = e; }
       }
 
   if (win[attachEvent]) {
