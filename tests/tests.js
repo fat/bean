@@ -124,6 +124,17 @@ sink('add', function (test, ok) {
     bean.add(el, 'foo', function () {ok(true, 'additional custom event listeners trigger event 2')});
   });
 
+  test('add: should bind onmessage to window', 3, function () {
+    bean.add(window, 'message', function(e) {
+      console.log(e.data)
+      ok(e.data === 'hello there',            'data should be copied');
+      ok(e.origin === e.originalEvent.origin, 'origin should be copied');
+      ok(e.source === e.originalEvent.source, 'source should be copied');
+    });
+
+    window.postMessage('hello there', '*');
+  });
+
   test('one: should only trigger handler once', 1, function () {
     var el = document.getElementById('input')
     bean.one(el, 'click', function () { ok(true, 'handler called exactly one time') })
