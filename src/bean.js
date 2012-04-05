@@ -22,7 +22,7 @@
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
     , ONE = { one: 1 } // singleton for quick matching making add() do one()
-    , selectorEngine = function(s, r) { return r.querySelectorAll(s); }
+    , selectorEngine = function(s, r) { return r.querySelectorAll(s) }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++)
@@ -434,11 +434,10 @@
       }
 
     , add = function (element, events, fn, delfn, $) {
-        var engine = arguments.length === 5 ? arguments[4] : selectorEngine;
-
         var type, types, i, args
           , originalFn = fn
           , isDel = fn && typeof fn === 'string'
+          , engine = arguments.length === 5 ? arguments[4] : selectorEngine
 
         if (events && !fn && typeof events === 'object') {
           for (type in events) {
@@ -523,7 +522,7 @@
             context[name] = old
             return this
           }
-        , setSelectorEngine: function(e) { selectorEngine = e; }
+        , setSelectorEngine: function(e) { selectorEngine = e }
       }
 
   if (win[attachEvent]) {
