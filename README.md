@@ -57,13 +57,13 @@ bean.add(element, {
 bean.add(element, '.content p', 'click', handler, queryEngine);
 ```
 
-*(note: to use event delegation with a selector, you must pass bean.add a reference to a selector engine like qwery or sizzle)*
-Developers working on Mobile Webkit applications like iPhone or Android, you may wish to simply provide the following query selector with Bean:
+**Note**: to use event delegation with a selector, you must pass bean.add a reference to a selector engine like qwery or sizzle.
+Developers working on Mobile Webkit applications like iPhone or Android can skip the `queryEngine` parameter since `querySelectorAll` will be used by default.
+
+To set a different default selector engine for all your delegation needs:
 
 ```javascript
-bean.add(element, '.content p', 'click', fn, function (selector) {
-  return document.querySelectorAll(selector);
-});
+bean.setSelectorEngine(qwery);
 ```
 
 Or alternatively, you can pass an array of elements (this actually cuts down on selector engine work, and is a more performant means of delegation if you know your DOM won't be changing:
