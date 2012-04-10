@@ -14,6 +14,7 @@
     , detachEvent = 'detachEvent'
     , ownerDocument = 'ownerDocument'
     , targetS = 'target'
+    , qSA = 'querySelectorAll'
     , doc = document || {}
     , root = doc.documentElement || {}
     , W3C_MODEL = root[addEvent]
@@ -24,7 +25,6 @@
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
     , ONE = {} // singleton for quick matching making add() do one()
-    , selectorEngine = function(s, r) { return r.querySelectorAll(s) }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++)
@@ -297,6 +297,18 @@
         return { has: has, get: get, put: put, del: del, entries: entries }
       }())
 
+    , selectorEngine = doc[qSA]
+        ? function (s, r) {
+            return r[qSA](s)
+          }
+        : function () {
+            return true // eeek
+          }
+
+    , setSelectorEngine = function (e) {
+        selectorEngine = e
+      }
+
       // add and remove listeners to DOM elements
     , listener = W3C_MODEL ? function (element, type, fn, add) {
         element[add ? addEvent : removeEvent](type, fn, false)
@@ -440,11 +452,11 @@
         return element
       }
 
+      // 5th argument, $=selector engine, is deprecated and will be removed
     , add = function (element, events, fn, delfn, $) {
         var type, types, i, args
           , originalFn = fn
           , isDel = fn && typeof fn === 'string'
-          , engine = arguments.length === 5 ? arguments[4] : selectorEngine
 
         if (events && !fn && typeof events === 'object') {
           for (type in events) {
@@ -454,7 +466,7 @@
         } else {
           args = arguments.length > 3 ? slice.call(arguments, 3) : []
           types = (isDel ? fn : events).split(' ')
-          isDel && (fn = del(events, (originalFn = delfn), engine)) && (args = slice.call(args, 1))
+          isDel && (fn = del(events, (originalFn = delfn), $ || selectorEngine)) && (args = slice.call(args, 1))
           // special case for one()
           this === ONE && (fn = once(remove, element, events, fn, originalFn))
           for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
@@ -525,11 +537,11 @@
         , remove: remove
         , clone: clone
         , fire: fire
+        , setSelectorEngine: setSelectorEngine
         , noConflict: function () {
             context[name] = old
             return this
           }
-        , setSelectorEngine: function(e) { selectorEngine = e }
       }
 
   if (win[attachEvent]) {

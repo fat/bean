@@ -54,17 +54,10 @@ bean.add(element, {
 });
 
 // event delegated events
-bean.add(element, '.content p', 'click', handler, queryEngine);
+bean.add(element, '.content p', 'click', handler);
 ```
 
-**Note**: to use event delegation with a selector, you must pass bean.add a reference to a selector engine like qwery or sizzle.
-Developers working on Mobile Webkit applications like iPhone or Android can skip the `queryEngine` parameter since `querySelectorAll` will be used by default.
-
-To set a different default selector engine for all your delegation needs:
-
-```javascript
-bean.setSelectorEngine(qwery);
-```
+**Note**: the 5th parameter (selector engine) of previous Bean releases is now deprecated and will be removed in future versions. Use `setSelectorEngine()` instead.
 
 Or alternatively, you can pass an array of elements (this actually cuts down on selector engine work, and is a more performant means of delegation if you know your DOM won't be changing:
 
@@ -145,8 +138,17 @@ bean.fire(element, 'click');
 bean.fire(element, 'mousedown mouseup');
 ```
 
+setSelectorEngine()
+----
+<code>bean.setSelectorEngine()</code> allows you to set a default selector engine for all your delegation needs.
 
-custom events
+```javascript
+bean.setSelectorEngine(qwery);
+```
+
+**Note**: `querySelectorAll()` is used as the default selector engine, this is available on most modern platforms such as mobile WebKit. To support event delegation on older browsers you will need to install a selector engine.
+
+Custom events
 -------------
 Bean uses methods similar to [Dean Edwards' event model](http://dean.edwards.name/weblog/2009/03/callbacks-vs-events/) to ensure custom events behave like real events, rather than just callbacks.
 
@@ -167,7 +169,7 @@ use them like regular events:
 
     bean.add(element, 'mouseenter', handler);
 
-object support
+Object support
 --------------
 Good news, everything you can do in Bean with an element, you can also do with an object! This is particularly useful for working with classes or plugins.
 
