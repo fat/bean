@@ -24,6 +24,7 @@
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
     , ONE = {} // singleton for quick matching making add() do one()
+    , selectorEngine = function(s, r) { return r.querySelectorAll(s) }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++)
@@ -443,6 +444,7 @@
         var type, types, i, args
           , originalFn = fn
           , isDel = fn && typeof fn === 'string'
+          , engine = arguments.length === 5 ? arguments[4] : selectorEngine
 
         if (events && !fn && typeof events === 'object') {
           for (type in events) {
@@ -452,7 +454,7 @@
         } else {
           args = arguments.length > 3 ? slice.call(arguments, 3) : []
           types = (isDel ? fn : events).split(' ')
-          isDel && (fn = del(events, (originalFn = delfn), $)) && (args = slice.call(args, 1))
+          isDel && (fn = del(events, (originalFn = delfn), engine)) && (args = slice.call(args, 1))
           // special case for one()
           this === ONE && (fn = once(remove, element, events, fn, originalFn))
           for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
@@ -527,6 +529,7 @@
             context[name] = old
             return this
           }
+        , setSelectorEngine: function(e) { selectorEngine = e }
       }
 
   if (win[attachEvent]) {

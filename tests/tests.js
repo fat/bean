@@ -676,6 +676,45 @@ sink('delegation', function (test, ok) {
     Syn.click(el2)
     Syn.click(el2)
   })
+
+  if ('querySelectorAll' in document) {
+    test('delegate: should use qSA if available', 6, function () {
+      var el1 = document.getElementById('foo')
+        , el2 = document.getElementById('bar')
+        , el3 = document.getElementById('baz')
+        , el4 = document.getElementById('bang')
+      bean.remove(el1)
+      bean.remove(el2)
+      bean.remove(el3)
+      bean.add(el1, '.bar', 'click', function (e) {
+        ok(true, 'delegation on selectors 1')
+        ok(this == el2, 'delegation on selectors, context was set to delegated element 2')
+        ok(e.currentTarget === el2, 'degated event has currentTarget property correctly set')
+      })
+      Syn.click(el2)
+      Syn.click(el3)
+      Syn.click(el4)
+    })
+  }
+
+  test('delegate: should be able to set a default selector engine', 6, function () {
+    var el1 = document.getElementById('foo')
+      , el2 = document.getElementById('bar')
+      , el3 = document.getElementById('baz')
+      , el4 = document.getElementById('bang')
+    bean.setSelectorEngine(qwery)
+    bean.remove(el1)
+    bean.remove(el2)
+    bean.remove(el3)
+    bean.add(el1, '.bar', 'click', function (e) {
+      ok(true, 'delegation on selectors 1')
+      ok(this == el2, 'delegation on selectors, context was set to delegated element 2')
+      ok(e.currentTarget === el2, 'degated event has currentTarget property correctly set')
+    })
+    Syn.click(el2)
+    Syn.click(el3)
+    Syn.click(el4)
+  })
 })
 
 sink('namespaces', function (test, ok) {
