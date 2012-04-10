@@ -3,6 +3,7 @@
 // basic feature-tests, some tests shouldn't run in certain browsers
 var features = {
     w3c: !!window.addEventListener
+  , qSA: !!document.querySelectorAll
   , createEvent: (function () {
       try {
         document.createEvent('KeyEvents')
@@ -677,7 +678,7 @@ sink('delegation', function (test, ok) {
     Syn.click(el2)
   })
 
-  if ('querySelectorAll' in document) {
+  if (features.qSA) {
     test('delegate: should use qSA if available', 6, function () {
       var el1 = document.getElementById('foo')
         , el2 = document.getElementById('bar')
@@ -695,22 +696,49 @@ sink('delegation', function (test, ok) {
       Syn.click(el3)
       Syn.click(el4)
     })
+  } else {
+    test('delegate: should throw error when no qSA available and no selector engine set', 1, function () {
+      var el1 = document.getElementById('foo')
+        , el2 = document.getElementById('bar')
+      bean.remove(el1)
+      bean.remove(el2)
+      bean.add(el1, '.bar', 'click', function (e) {
+        ok(false, 'don\'t fire delegated event without selector engine or qSA')
+      })
+      window.onerror = function (e) {
+        ok(/Bean/.test(e.toString()), 'threw Error on delegated event trigger without selector engine or qSA')
+        window.onerror = null
+      }
+      Syn.click(el2)
+    })
   }
 
-  test('delegate: should be able to set a default selector engine', 6, function () {
+  test('delegate: should be able to set a default selector engine', 3 * 2 + 2 * 6, function () {
     var el1 = document.getElementById('foo')
       , el2 = document.getElementById('bar')
       , el3 = document.getElementById('baz')
       , el4 = document.getElementById('bang')
-    bean.setSelectorEngine(qwery)
+      , selector = "SELECTOR? WE DON'T NEED NO STINKIN' SELECTOR!"
+
+    // 2 assertions, expect them twice per click = 6
+    // TODO: findTarget() is called for setting event.currentTarget as well as checking for a match
+    // fix this so it's only called once, otherwise it's a waste
+    bean.setSelectorEngine(function (s, r) {
+      ok(s === selector, 'selector engine passed correct selector string')
+      ok(r === el1, 'selector engine passed correct root')
+      return [ el2 ]
+    })
+
     bean.remove(el1)
     bean.remove(el2)
     bean.remove(el3)
-    bean.add(el1, '.bar', 'click', function (e) {
+    // 3 assertions, expect them twice
+    bean.add(el1, selector, 'click', function (e) {
       ok(true, 'delegation on selectors 1')
       ok(this == el2, 'delegation on selectors, context was set to delegated element 2')
       ok(e.currentTarget === el2, 'degated event has currentTarget property correctly set')
     })
+
     Syn.click(el2)
     Syn.click(el3)
     Syn.click(el4)
