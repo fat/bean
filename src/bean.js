@@ -12,6 +12,8 @@
     , attachEvent = 'attachEvent'
     , removeEvent = 'removeEventListener'
     , detachEvent = 'detachEvent'
+    , ownerDocument = 'ownerDocument'
+    , targetS = 'target'
     , doc = document || {}
     , root = doc.documentElement || {}
     , W3C_MODEL = root[addEvent]
@@ -21,20 +23,21 @@
     , mouseWheelTypeRegex = /mouse.*(wheel|scroll)/i
     , textTypeRegex = /^text/i
     , touchTypeRegex = /^touch|^gesture/i
-    , ONE = { one: 1 } // singleton for quick matching making add() do one()
+    , ONE = {} // singleton for quick matching making add() do one()
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++)
           hash[events[i]] = 1
         return hash
-      })({}, (
+      }({}, (
           'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
           'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
           'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
           'keydown keypress keyup ' +                                        // keyboard
           'orientationchange ' +                                             // mobile
           'focus blur change reset select submit ' +                         // form elements
-          'load unload beforeunload resize move DOMContentLoaded readystatechange message ' + // window
+          'load unload beforeunload resize move DOMContentLoaded '+          // window
+          'readystatechange message ' +                                      // window
           'error abort scroll ' +                                            // misc
           (W3C_MODEL ? // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
                        // that doesn't actually exist, so make sure we only do these on newer browsers
@@ -53,28 +56,29 @@
             'checking noupdate downloading cached updateready obsolete ' +     // appcache
             '' : '')
         ).split(' ')
-      )
+      ))
 
     , customEvents = (function () {
         var cdp = 'compareDocumentPosition'
-        var isAncestor = cdp in root
-          ? function (element, container) {
-              return container[cdp] && (container[cdp](element) & 16) === 16
-            }
-          : 'contains' in root
-            ? function (element, container) {
-                container = container.nodeType === 9 || container === window ? root : container
-                return container !== element && container.contains(element)
-              }
-            : function (element, container) {
-                while (element = element.parentNode) if (element === container) return 1
-                return 0
-              }
+          , isAncestor = cdp in root
+              ? function (element, container) {
+                  return container[cdp] && (container[cdp](element) & 16) === 16
+                }
+              : 'contains' in root
+                ? function (element, container) {
+                    container = container.nodeType === 9 || container === window ? root : container
+                    return container !== element && container.contains(element)
+                  }
+                : function (element, container) {
+                    while (element = element.parentNode) if (element === container) return 1
+                    return 0
+                  }
 
         function check(event) {
           var related = event.relatedTarget
-          if (!related) return related === null
-          return (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isAncestor(related, this))
+          return !related
+            ? related === null
+            : (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isAncestor(related, this))
         }
 
         return {
@@ -82,7 +86,7 @@
           , mouseleave: { base: 'mouseout', condition: check }
           , mousewheel: { base: /Firefox/.test(navigator.userAgent) ? 'DOMMouseScroll' : 'mousewheel' }
         }
-      })()
+      }())
 
     , fixEvent = (function () {
         var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
@@ -132,12 +136,12 @@
 
           var props
             , type = event.type
-            , target = event.target || event.srcElement
+            , target = event[targetS] || event.srcElement
 
           result[preventDefault] = createPreventDefault(event)
           result[stopPropagation] = createStopPropagation(event)
           result.stop = createStop(result)
-          result.target = target && target.nodeType === 3 ? target.parentNode : target
+          result[targetS] = target && target.nodeType === 3 ? target.parentNode : target
 
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
             if (type.indexOf('key') !== -1) {
@@ -169,7 +173,7 @@
           }
           return result
         }
-      })()
+      }())
 
       // if we're in old IE we can't do onpropertychange on doc or win so we use doc.documentElement for both
     , targetElement = function (element, isNative) {
@@ -179,17 +183,17 @@
       // we use one of these per listener, of any type
     , RegEntry = (function () {
         function entry(element, type, handler, original, namespaces) {
+          var isNative = this.isNative = nativeEvents[type] && element[eventSupport]
           this.element = element
           this.type = type
           this.handler = handler
           this.original = original
           this.namespaces = namespaces
           this.custom = customEvents[type]
-          this.isNative = nativeEvents[type] && element[eventSupport]
-          this.eventType = W3C_MODEL || this.isNative ? type : 'propertychange'
-          this.customType = !W3C_MODEL && !this.isNative && type
-          this.target = targetElement(element, this.isNative)
-          this.eventSupport = this.target[eventSupport]
+          this.eventType = W3C_MODEL || isNative ? type : 'propertychange'
+          this.customType = !W3C_MODEL && !isNative && type
+          this[targetS] = targetElement(element, isNative)
+          this[eventSupport] = this[targetS][eventSupport]
         }
 
         entry.prototype = {
@@ -218,7 +222,7 @@
         }
 
         return entry
-      })()
+      }())
 
     , registry = (function () {
         // our map stores arrays by event type, just because it's better than storing
@@ -290,7 +294,7 @@
             }
 
         return { has: has, get: get, put: put, del: del, entries: entries }
-      })()
+      }())
 
       // add and remove listeners to DOM elements
     , listener = W3C_MODEL ? function (element, type, fn, add) {
@@ -304,9 +308,9 @@
     , nativeHandler = function (element, fn, args) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-          event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, true)
+          event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
           if (beanDel) // delegated event, fix the fix
-            event.currentTarget = beanDel.ft(event.target, element)
+            event.currentTarget = beanDel.ft(event[targetS], element)
           return fn.apply(element, [event].concat(args))
         }
         handler.__beanDel = beanDel
@@ -316,10 +320,10 @@
     , customHandler = function (element, fn, type, condition, args, isNative) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-          var target = beanDel ? beanDel.ft(event.target, element) : this // deleated event
+          var target = beanDel ? beanDel.ft(event[targetS], element) : this // deleated event
           if (condition ? condition.apply(target, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
             if (event) {
-              event = fixEvent(event || ((this.ownerDocument || this.document || this).parentWindow || win).event, isNative)
+              event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
               event.currentTarget = target
             }
             fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
@@ -344,8 +348,8 @@
 
         for (i = 0, l = handlers.length; i < l; i++) {
           if (handlers[i].inNamespaces(namespaces)) {
-            if ((entry = handlers[i]).eventSupport)
-              listener(entry.target, entry.eventType, entry.handler, false, entry.type)
+            if ((entry = handlers[i])[eventSupport])
+              listener(entry[targetS], entry.eventType, entry.handler, false, entry.type)
             // TODO: this is problematic, we have a registry.get() and registry.del() that
             // both do registry searches so we waste cycles doing this. Needs to be rolled into
             // a single registry.forAll(fn) that removes while finding, but the catch is that
@@ -374,8 +378,8 @@
         entry.handler = entry.isNative ?
           nativeHandler(element, entry.handler, args) :
           customHandler(element, entry.handler, type, false, args, false)
-        if (entry.eventSupport)
-          listener(entry.target, entry.eventType, entry.handler, true, entry.customType)
+        if (entry[eventSupport])
+          listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
       }
 
     , del = function (selector, fn, $) {
@@ -389,7 +393,7 @@
               }
             }
           , handler = function (e) {
-              var match = findTarget(e.target, this)
+              var match = findTarget(e[targetS], this)
               if (match)
                 fn.apply(match, arguments)
             }
@@ -403,7 +407,7 @@
       }
 
     , remove = function (element, typeSpec, fn) {
-        var k, m, type, namespaces, i
+        var k, type, namespaces, i
           , rm = removeListener
           , isString = typeSpec && typeof typeSpec === 'string'
 
