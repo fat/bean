@@ -311,7 +311,7 @@
             return r[qSA](s)
           }
         : function () {
-            return true // eeek
+            throw new Error('Bean: No selector engine installed') // eeek
           }
 
     , setSelectorEngine = function (e) {
@@ -405,6 +405,8 @@
       }
 
     , del = function (selector, fn, $) {
+            //TODO: findTarget (therefore $) is called twice, once for match and once for
+            // setting e.currentTarget, fix this so it's only needed once
         var findTarget = function (target, root) {
               var i, array = typeof selector === 'string' ? $(selector, root) : selector
               for (; target && target !== root; target = target.parentNode) {
@@ -416,8 +418,7 @@
             }
           , handler = function (e) {
               var match = findTarget(e[targetS], this)
-              if (match)
-                fn.apply(match, arguments)
+              match && fn.apply(match, arguments)
             }
 
         handler.__beanDel = {
