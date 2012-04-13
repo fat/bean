@@ -5,7 +5,6 @@
 }('bean', this, function (name, context) {
   var win = window
     , old = context[name]
-    , overOut = /over|out/
     , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
     , nameRegex = /\..*/
     , addEvent = 'addEventListener'
@@ -20,10 +19,6 @@
     , W3C_MODEL = root[addEvent]
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
     , slice = Array.prototype.slice
-    , mouseTypeRegex = /click|mouse(?!(.*wheel|scroll))|menu|drag|drop/i
-    , mouseWheelTypeRegex = /mouse.*(wheel|scroll)/i
-    , textTypeRegex = /^text/i
-    , touchTypeRegex = /^touch|^gesture/i
     , ONE = {} // singleton for quick matching making add() do one()
 
     , nativeEvents = (function (hash, events, i) {
@@ -46,6 +41,7 @@
             'input invalid ' +                                                 // form elements
             'touchstart touchmove touchend touchcancel ' +                     // touch
             'gesturestart gesturechange gestureend ' +                         // gesture
+            'textinput' +                                                      // TextEvent
             'readystatechange pageshow pagehide popstate ' +                   // window
             'hashchange offline online ' +                                     // window
             'afterprint beforeprint ' +                                        // printing
@@ -97,6 +93,55 @@
           , textProps = commonProps.concat(['data'])
           , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
           , messageProps = commonProps.concat(['data', 'origin', 'source'])
+          , overOutRegex = /over|out/
+            // some event types need special handling and some need special properties, do that all here
+          , typeFixers = [
+                { // key events
+                    reg: /key/i
+                  , fix: function (event, newEvent) {
+                      newEvent.keyCode = event.which || event.keyCode
+                      return keyProps
+                    }
+                }
+              , { // mouse events
+                    reg: /click|mouse(?!(.*wheel|scroll))|menu|drag|drop/i
+                  , fix: function (event, newEvent, type) {
+                      newEvent.rightClick = event.which === 3 || event.button === 2
+                      newEvent.pos = { x: 0, y: 0 }
+                      if (event.pageX || event.pageY) {
+                        newEvent.clientX = event.pageX
+                        newEvent.clientY = event.pageY
+                      } else if (event.clientX || event.clientY) {
+                        newEvent.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
+                        newEvent.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
+                      }
+                      if (overOutRegex.test(type))
+                        newEvent.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+                      return mouseProps
+                    }
+                }
+              , { // mouse wheel events
+                    reg: /mouse.*(wheel|scroll)/i
+                  , fix: function () { return mouseWheelProps }
+                }
+              , { // TextEvent
+                    reg: /^text/i
+                  , fix: function () { return textProps }
+                }
+              , { // touch and gesture events
+                    reg: /^touch|^gesture/i
+                  , fix: function () { return touchProps }
+                }
+              , { // message events
+                    reg: /^message$/i
+                  , fix: function () { return messageProps }
+                }
+              , { // everything else
+                    reg: /.*/
+                  , fix: function () { return commonProps }
+                }
+            ]
+          , typeFixerMap = {} // used to map event types to fixer functions (above), a basic cache mechanism
           , preventDefault = 'preventDefault'
           , createPreventDefault = function (event) {
               return function () {
@@ -135,7 +180,7 @@
           if (!event)
             return result
 
-          var props
+          var i, l, fixer
             , type = event.type
             , target = event[targetS] || event.srcElement
 
@@ -144,33 +189,17 @@
           result.stop = createStop(result)
           result[targetS] = target && target.nodeType === 3 ? target.parentNode : target
 
-          if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
-            if (type.indexOf('key') !== -1) {
-              props = keyProps
-              result.keyCode = event.keyCode || event.which
-            } else if (mouseTypeRegex.test(type)) {
-              props = mouseProps
-              result.rightClick = event.which === 3 || event.button === 2
-              result.pos = { x: 0, y: 0 }
-              if (event.pageX || event.pageY) {
-                result.clientX = event.pageX
-                result.clientY = event.pageY
-              } else if (event.clientX || event.clientY) {
-                result.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
-                result.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
+          if (isNative) { // we only need basic augmentation on custom events, the rest expensive & pointless
+            fixer = typeFixerMap[type]
+            if (!fixer) { // haven't encountered this event type before, map a fixer function for it
+              for (i = 0, l = typeFixers.length; i < l; i++) {
+                if (typeFixers[i].reg.test(type)) { // guaranteed to match at least one, last is .*
+                  typeFixerMap[type] = fixer = typeFixers[i].fix
+                  break
+                }
               }
-              if (overOut.test(type))
-                result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
-            } else if (touchTypeRegex.test(type)) {
-              props = touchProps
-            } else if (mouseWheelTypeRegex.test(type)) {
-              props = mouseWheelProps
-            } else if (textTypeRegex.test(type)) {
-              props = textProps
-            } else if (type === 'message') {
-              props = messageProps
             }
-            copyProps(event, result, props || commonProps)
+            copyProps(event, result, fixer(event, result, type))
           }
           return result
         }
