@@ -15,4 +15,7 @@
   , "keywords": [ "ender", "events", "event" ]
   , "main": "./bean.js"
   , "ender": "./src/ender.js"
+  , "devDependencies": {
+        "smoosh": "0.3.x"
+  }
 }
