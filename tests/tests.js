@@ -816,6 +816,15 @@ sink('namespaces', function (test, ok) {
     bean.fire(el1, 'fat.test1', ['1'])
 	bean.fire(el1, 'fat.test2', ['2'])
   })
+  
+  test('namespace: should be able to add multiple custom events with multi namespaces to a single handler and call them individually', 4, function () {
+    var el1 = document.getElementById('foo')
+    bean.remove(el1)
+    bean.add(el1, 'fat.test1.foo fat.test2.foo', function (e) {ok(true, 'bubbles up dom '+e)})
+    bean.fire(el1, 'fat.test1', ['1'])
+	bean.fire(el1, 'fat.test2', ['2'])
+	bean.fire(el1, 'fat.foo', ['2'])
+  })
 })
 
 sink('custom types', function (test, ok) {

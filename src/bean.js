@@ -215,10 +215,11 @@
             }
 
             // match by element, original fn (opt), handler fn (opt)
-          , matches: function (checkElement, checkOriginal, checkHandler) {
+          , matches: function (checkElement, checkOriginal, checkHandler, checkNamespaces) {
               return this.element === checkElement &&
                 (!checkOriginal || this.original === checkOriginal) &&
-                (!checkHandler || this.handler === checkHandler)
+                (!checkHandler || this.handler === checkHandler) &&
+                (!checkNamespaces || this.namespaces === checkNamespaces)
             }
         }
 
@@ -244,20 +245,20 @@
                 if (!list)
                   return
                 for (l = list.length; i < l; i++) {
-                  if (all || list[i].matches(element, original, handler))
+                  if (all || list[i].matches(element, original, handler, null))
                     if (!fn(list[i], list, i, type))
                       return
                 }
               }
             }
 
-          , has = function (element, type, original) {
+          , has = function (element, type, original, namespaces) {
               // we're not using forAll here simply because it's a bit slower and this
               // needs to be fast
               var i, list = map['$' + type]
               if (list) {
                 for (i = list.length; i--;) {
-                  if (list[i].matches(element, original, null))
+                  if (list[i].matches(element, original, null, namespaces))
                     return true
                 }
               }
@@ -378,7 +379,7 @@
           , type = orgType.replace(nameRegex, '')
           , namespaces = orgType.replace(namespaceRegex, '').split('.')
 
-        if (registry.has(element, type, fn))
+        if (registry.has(element, type, fn, namespaces[0] && namespaces)) 
           return element // no dupe
         if (type === 'unload')
           fn = once(removeListener, element, type, fn, originalFn) // self clean-up
