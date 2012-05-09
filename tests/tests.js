@@ -809,6 +809,13 @@ sink('namespaces', function (test, ok) {
     Syn.click(el1)
   })
 
+  test('namespace: should be able to add multiple custom events to a single handler and call them individually', 2, function () {
+    var el1 = document.getElementById('foo')
+    bean.remove(el1)
+    bean.add(el1, 'fat.test1 fat.test2', function (e) {ok(true, 'bubbles up dom '+e)})
+    bean.fire(el1, 'fat.test1', ['1'])
+	bean.fire(el1, 'fat.test2', ['2'])
+  })
 })
 
 sink('custom types', function (test, ok) {
