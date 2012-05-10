@@ -814,16 +814,33 @@ sink('namespaces', function (test, ok) {
     bean.remove(el1)
     bean.add(el1, 'fat.test1 fat.test2', function (e) {ok(true, 'bubbles up dom '+e)})
     bean.fire(el1, 'fat.test1', ['1'])
-	bean.fire(el1, 'fat.test2', ['2'])
+    bean.fire(el1, 'fat.test2', ['2'])
   })
   
-  test('namespace: should be able to add multiple custom events with multi namespaces to a single handler and call them individually', 4, function () {
+  test('namespace: should be able to fire an event if the fired namespace is within the event namespace range', 4, function () {
     var el1 = document.getElementById('foo')
     bean.remove(el1)
     bean.add(el1, 'fat.test1.foo fat.test2.foo', function (e) {ok(true, 'bubbles up dom '+e)})
     bean.fire(el1, 'fat.test1', ['1'])
-	bean.fire(el1, 'fat.test2', ['2'])
-	bean.fire(el1, 'fat.foo', ['2'])
+    bean.fire(el1, 'fat.test2', ['2'])
+    bean.fire(el1, 'fat.foo', ['3'])
+  })
+
+  test('namespace: should be able to fire multiple events and fire them regardless of the order of the namespaces', 4, function () {
+    var el1 = document.getElementById('foo')
+    bean.remove(el1)
+    bean.add(el1, 'fat.test.foo fat.foo.test', function (e) {ok(true, 'bubbles up dom '+e)})
+    bean.fire(el1, 'fat.test.foo', ['1'])
+    bean.fire(el1, 'fat.foo.test', ['2'])
+  })
+  
+  test('namespace: should only fire an event if the fired namespaces is within the event namespace or if the event namespace is within the fired namespace', 6, function () {
+    var el1 = document.getElementById('foo')
+    bean.remove(el1)
+    bean.add(el1, 'fat.test.foo.ded fat.foo.test fat.ded', function (e) {ok(true, 'bubbles up dom '+e)})
+    bean.fire(el1, 'fat.test.foo', ['1'])
+    bean.fire(el1, 'fat.foo.test', ['2'])
+    bean.fire(el1, 'fat.test.ded', ['3'])
   })
 })
 
