@@ -199,7 +199,7 @@
 
         entry.prototype = {
             // given a list of namespaces, is our entry in any of them?
-            inNamespaces: function (checkNamespaces, matchAll) {
+            inNamespaces: function (checkNamespaces) {
               var i, j
               , c = 0
               if (!checkNamespaces)
@@ -209,12 +209,11 @@
               for (i = checkNamespaces.length; i--;) {
                 for (j = this.namespaces.length; j--;) {
                   if (checkNamespaces[i] === this.namespaces[j]) {
-                    if (!matchAll) return true
                     c++
                   }
                 }
               }
-              if (matchAll && (checkNamespaces.length === c || this.namespaces.length === c))
+              if (checkNamespaces.length === c || this.namespaces.length === c)
                 return true
               else 
                 return false
@@ -512,7 +511,7 @@
             handlers = registry.get(element, type)
             args = [false].concat(args)
             for (j = 0, l = handlers.length; j < l; j++) {
-              if (handlers[j].inNamespaces(names, true))
+              if (handlers[j].inNamespaces(names))
                 handlers[j].handler.apply(element, args)
             }
           }

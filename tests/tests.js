@@ -559,6 +559,16 @@ sink('remove', function (test, ok) {
     Syn.click(el)
   })
 
+  test('remove: should only remove event if the remove namespaces is within the event namespace or if the event namespace is within the remove namespace', 4, function () {
+    var el1 = document.getElementById('foo')
+    bean.remove(el1)
+    bean.add(el1, 'fat.test1.foo.ded fat.test2.foo fat.test1.foo', function (e) {ok(true, 'bubbles up dom '+e)})
+    bean.fire(el1, 'fat.test1.ded', ['1'])
+    bean.fire(el1, 'fat.test2', ['2'])
+    bean.remove(el1, '.foo.ded')
+    bean.fire(el1, 'fat.foo', ['3'])
+  })
+
 })
 
 sink('clone', function (test, ok, before, after) {
