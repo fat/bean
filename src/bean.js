@@ -213,18 +213,14 @@
                   }
                 }
               }
-              if (checkNamespaces.length === c || this.namespaces.length === c)
-                return true
-              else 
-                return false
+              return checkNamespaces.length === c
             }
 
             // match by element, original fn (opt), handler fn (opt)
-          , matches: function (checkElement, checkOriginal, checkHandler, checkNamespaces) {
+          , matches: function (checkElement, checkOriginal, checkHandler) {
               return this.element === checkElement &&
                 (!checkOriginal || this.original === checkOriginal) &&
-                (!checkHandler || this.handler === checkHandler) &&
-                (!checkNamespaces || false)
+                (!checkHandler || this.handler === checkHandler)
             }
         }
 
@@ -250,20 +246,20 @@
                 if (!list)
                   return
                 for (l = list.length; i < l; i++) {
-                  if (all || list[i].matches(element, original, handler, null))
+                  if (all || list[i].matches(element, original, handler))
                     if (!fn(list[i], list, i, type))
                       return
                 }
               }
             }
 
-          , has = function (element, type, original, namespaces) {
+          , has = function (element, type, original) {
               // we're not using forAll here simply because it's a bit slower and this
               // needs to be fast
               var i, list = map['$' + type]
               if (list) {
                 for (i = list.length; i--;) {
-                  if (list[i].matches(element, original, null, namespaces))
+                  if (list[i].matches(element, original, null))
                     return true
                 }
               }
@@ -361,6 +357,7 @@
       }
 
     , removeListener = function (element, orgType, handler, namespaces) {
+	    console.log(namespaces);
         var i, l, entry
           , type = (orgType && orgType.replace(nameRegex, ''))
           , handlers = registry.get(element, type, handler)
@@ -384,8 +381,6 @@
           , type = orgType.replace(nameRegex, '')
           , namespaces = orgType.replace(namespaceRegex, '').split('.')
 
-        if (registry.has(element, type, fn, namespaces[0] && namespaces)) 
-          return element // no dupe
         if (type === 'unload')
           fn = once(removeListener, element, type, fn, originalFn) // self clean-up
         if (customEvents[type]) {
