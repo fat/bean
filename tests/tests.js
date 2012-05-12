@@ -793,7 +793,7 @@ sink('namespaces', function (test, ok) {
   test('namespace: should be able to remove handlers based on name', 1, function () {
     var el1 = document.getElementById('foo')
     bean.remove(el1)
-    bean.add(el1, 'click.ded', function () {ok(true, 'removes handlers based on name - ded')})
+    bean.add(el1, 'click.ded', function () {ok(true, 'removes handlers based on name')})
     bean.add(el1, 'click', function () {ok(true, 'removes handlers based on name')})
     bean.remove(el1, 'click.ded')
     Syn.click(el1)

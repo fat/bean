@@ -357,7 +357,6 @@
       }
 
     , removeListener = function (element, orgType, handler, namespaces) {
-	    console.log(namespaces);
         var i, l, entry
           , type = (orgType && orgType.replace(nameRegex, ''))
           , handlers = registry.get(element, type, handler)
