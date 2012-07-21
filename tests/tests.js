@@ -331,10 +331,10 @@ sink('event object', function (test, ok) {
 
   var commonIgnorables = 'cancelBubble clipboardData defaultPrevented explicitOriginalTarget getPreventDefault initEvent initUIEvent isChar originalTarget preventCapture preventBubble rangeOffset rangeParent returnValue stopImmediatePropagation synthetic'.split(' ')
       // stuff from IE8 and below
-    , oldIEIgnorables = 'recordset altLeft repeat reason data behaviorCookie source contentOverflow behaviorPart url shiftLeft dataFld qualifier wheelDelta bookmarks srcFilter nextPage srcUrn origin boundElements propertyName ctrlLeft'.split(' ')
-    , clickIgnorables = commonIgnorables.concat(oldIEIgnorables).concat('charCode defaultPrevented initMouseEvent keyCode layerX layerY initNSMouseEvent x y'.split(' '))
-    , oldIEKeyIgnorables = 'fromElement toElement dataTransfer button x y screenX screenY clientX clientY offsetX offsetY'.split(' ')
-    , keyIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(oldIEKeyIgnorables).concat('initKeyEvent layerX layerY pageX pageY'.split(' '))
+    , oldIEIgnorables = 'recordset altLeft repeat reason data behaviorCookie source contentOverflow behaviorPart url shiftLeft dataFld qualifier wheelDelta bookmarks srcFilter nextPage srcUrn origin boundElements propertyName ctrlLeft state'.split(' ')
+    , clickIgnorables = commonIgnorables.concat(oldIEIgnorables).concat('charCode defaultPrevented initMouseEvent keyCode layerX layerY initNSMouseEvent x y state'.split(' '))
+    , oldIEKeyIgnorables = 'fromElement toElement dataTransfer button x y screenX screenY clientX clientY offsetX offsetY state'.split(' ')
+    , keyIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(oldIEKeyIgnorables).concat('initKeyEvent layerX layerY pageX pageY state'.split(' '))
 
     , getEventObject = function (evType, elType, trigger, callback) {
         var el = document.getElementById('input')
@@ -342,6 +342,7 @@ sink('event object', function (test, ok) {
               bean.remove(el)
               callback(e)
             }
+        el = elType === window ? elType : el;
         bean.add(el, evType, handler)
         trigger(el)
       }
@@ -378,11 +379,27 @@ sink('event object', function (test, ok) {
             }
         )
       }
-
   test('click: has correct properties', 1, function () { testMouseEvent('click') })
   test('dblclick: has correct properties', 1, function () { testMouseEvent('dblclick') })
   test('mousedown: has correct properties', 1, function () { testMouseEvent('mousedown', 'click') })
   test('mouseup: has correct properties', 1, function () { testMouseEvent('mouseup', 'click') })
+
+  var testStateEvent = function (type, syn) {
+        getEventObject(
+            type
+          , window
+          , function (el) {
+              window.history.pushState({}, '/test-state')
+              window.history.go(-1)
+            }
+          , function (event) {
+              ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
+              verifyEventObject(event, commonIgnorables)
+            }
+        )
+      }
+
+  test('popstate: has correct properties', 1, function() { testStateEvent('popstate') })
 
   var testKeyEvent = function (type) {
     getEventObject(
