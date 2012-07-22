@@ -97,6 +97,7 @@
           , textProps = commonProps.concat(['data'])
           , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
           , messageProps = commonProps.concat(['data', 'origin', 'source'])
+          , stateProps = commonProps.concat(['state'])
           , preventDefault = 'preventDefault'
           , createPreventDefault = function (event) {
               return function () {
@@ -143,7 +144,6 @@
           result[stopPropagation] = createStopPropagation(event)
           result.stop = createStop(result)
           result[targetS] = target && target.nodeType === 3 ? target.parentNode : target
-
           if (isNative) { // we only need basic augmentation on custom events, the rest is too expensive
             if (type.indexOf('key') !== -1) {
               props = keyProps
@@ -159,7 +159,7 @@
                 result.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
                 result.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
               }
-              if (overOut.test(type))
+            if (overOut.test(type))
                 result.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
             } else if (touchTypeRegex.test(type)) {
               props = touchProps
@@ -169,6 +169,8 @@
               props = textProps
             } else if (type === 'message') {
               props = messageProps
+            } else if (type === 'popstate') {
+              props = stateProps;
             }
             copyProps(event, result, props || commonProps)
           }
