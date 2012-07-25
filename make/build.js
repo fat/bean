@@ -6,28 +6,31 @@ require('smoosh').config({
           , './src/bean.js'
         ]
     }
-  , 'JSHINT_OPTS': {
-        'predef': [ 'module', 'define' ]
-      , 'boss': true
-      , 'forin': true
-      , 'curly': false
-      , 'debug': true
-      , 'devel': false
-      , 'evil': false
-      , 'regexp': false
-      , 'undef': true
-      , 'sub': true
-      , 'white': false
-      , 'indent': 2
-      , 'whitespace': true
-      , 'asi': true
-      , 'trailing': true
-      , 'latedef': true
-      , 'laxbreak': true
-      , 'browser': true
-      , 'eqeqeq': true
-      , 'bitwise': false
-      , 'loopfunc': false
-      , 'laxcomma': true
+  , "JSHINT_OPTS": {
+        "predef": [ "assert", "refute", "define", "self" ]
+      , "boss": true
+      , "shadow": true
+      , "trailing": true
+      , "latedef": true
+      , "forin": false
+      , "curly": false
+      , "debug": true
+      , "devel": false
+      , "evil": true
+      , "regexp": false
+      , "undef": true
+      , "sub": true
+      , "white": false
+      , "indent": 2
+      , "asi": true
+      , "laxbreak": true
+      , "eqnull": true
+      , "browser": true
+      , "node": true
+      , "laxcomma": true
+      , "proto": true
+      , "expr": true
+      , "es5": true
+      , "strict": false
     }
 }).run().build().analyze()

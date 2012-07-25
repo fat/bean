@@ -93,6 +93,7 @@
           , textProps = commonProps.concat(['data'])
           , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
           , messageProps = commonProps.concat(['data', 'origin', 'source'])
+          , stateProps = commonProps.concat(['state'])
           , overOutRegex = /over|out/
             // some event types need special handling and some need special properties, do that all here
           , typeFixers = [
@@ -135,6 +136,10 @@
               , { // message events
                     reg: /^message$/i
                   , fix: function () { return messageProps }
+                }
+              , { // popstate events
+                    reg: /^popstate$/i
+                  , fix: function () { return stateProps }
                 }
               , { // everything else
                     reg: /.*/
@@ -589,4 +594,4 @@
   }
 
   return bean
-})
+});
