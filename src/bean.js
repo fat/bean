@@ -156,20 +156,27 @@
           , createPreventDefault = function (event) {
               return function () {
                 if (event[preventDefault]) event[preventDefault]()
-                else event.returnValue = false
+                event.returnValue = false
               }
             }
           , stopPropagation = 'stopPropagation'
           , createStopPropagation = function (event) {
               return function () {
                 if (event[stopPropagation]) event[stopPropagation]()
-                else event.cancelBubble = true
+                event.cancelBubble = true
+              }
+            }
+          , stopImmediatePropagation = 'stopImmediatePropagation'
+          , createStopImmediatePropagation = function (event) {
+              return function () {
+                if (event[stopImmediatePropagation]) event[stopImmediatePropagation]()
               }
             }
           , createStop = function (synEvent) {
               return function () {
                 synEvent[preventDefault]()
                 synEvent[stopPropagation]()
+                synEvent[stopImmediatePropagation]()
                 synEvent.stopped = true
               }
             }
@@ -189,10 +196,11 @@
             , type   = event.type
             , target = event[targetS] || event.srcElement
 
-          result[preventDefault] = createPreventDefault(event)
+          result[preventDefault]  = createPreventDefault(event)
           result[stopPropagation] = createStopPropagation(event)
-          result.stop = createStop(result)
-          result[targetS] = target && target.nodeType === 3 ? target.parentNode : target
+          result[stopImmediatePropagation] = createStopImmediatePropagation(event)
+          result.stop             = createStop(result)
+          result[targetS]         = target && target.nodeType === 3 ? target.parentNode : target
 
           if (isNative) { // we only need basic augmentation on custom events, the rest expensive & pointless
             fixer = typeFixerMap[type]
@@ -344,10 +352,10 @@
     , nativeHandler = function (element, fn, args) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-          event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
-          if (beanDel) event.currentTarget = beanDel.ft(event[targetS], element) // delegated event, fix the fix
-          return fn.apply(element, [event].concat(args))
-        }
+              event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
+              if (beanDel) event.currentTarget = beanDel.ft(event[targetS], element) // delegated event, fix the fix
+              return fn.apply(element, [event].concat(args))
+            }
         handler.__beanDel = beanDel
         return handler
       }
@@ -434,13 +442,13 @@
             }
           , handler = function (e) {
               var match = findTarget(e[targetS], this)
-              match && fn.apply(match, arguments)
+              if (match) fn.apply(match, arguments)
             }
 
         handler.__beanDel = {
-            ft: findTarget // attach it here for customEvents to use too
-          , selector: selector
-          , $: $
+            ft       : findTarget // attach it here for customEvents to use too
+          , selector : selector
+          , $        : $
         }
         return handler
       }

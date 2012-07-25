@@ -196,8 +196,7 @@ sink('fire', function (test, ok) {
 
 })
 
-sink('custom', function (test, ok) {
-
+sink('custom', function (test, ok, before, after, assert) {
   test('custom: should be able to add single custom events', 1, function () {
     var el = document.getElementById('input')
     bean.remove(el)
@@ -276,31 +275,59 @@ sink('event object', function (test, ok) {
     bean.add(el, 'customEvent', function (e) {ok(e.preventDefault != null, 'has prevent default method')})
     bean.fire(el, 'customEvent')
   })
-
   if (features.createEvent) {
-    test('event: stop should preventDefault and stopPropagation', 1, function () {
-      // we should be able to prevent a keypress and event propagation with stop()
-      // on the keypress event, checking the parent doesn't receive the keypress
-      // and then checking the input contents on a keyup, it should be empty.
-      var txt = document.getElementById('txt')
-        , parent = document.getElementById('stopper')
-        , txtHandler = function (event) {
-            event.stop()
-          }
-        , txtCheckHandler = function (event) {
-            ok(!txt.value.length, 'input is has no text after keypress')
-          }
-        , parentHandler = function (event) {
-            ok(true, 'parent should not receive event')
-            bean.remove(parent)
-          }
+    var stopPropagationTest = function (delegate) {
+      return function (complete) {
+        // we should be able to prevent a keypress and event propagation with stop()
+        // on the keypress event, checking the parent doesn't receive the keypress
+        // and then checking the input contents on a keyup, it should be empty.
+        var txt        = document.getElementById('txt')
+          , parent     = document.getElementById('stopper')
+          , fixture    = document.getElementById('fixtures')
+          , calls      = 0
+          , txtHandler = function (event) {
+              event.stop()
+              ok(++calls === 1, 'should call this only once')
+            }
+          , txtCheckHandler = function (event) {
+              ok(!txt.value.length, 'input is has no text after keypress (should see this only once)')
+            }
+          , parentHandler = function (event) {
+              assert(false, 'parent should not receive event')
+              bean.remove(parent)
+            }
 
-      txt.value = ''
-      bean.add(txt, 'keypress', txtHandler)
-      bean.add(txt, 'keyup', txtCheckHandler)
-      bean.add(parent, 'keypress', parentHandler)
-      Syn.key(txt, 'f')
-    })
+        txt.value = ''
+        if (delegate) {
+          bean.add(parent  , '*' , 'keypress' , txtHandler)
+          bean.add(parent  , '*' , 'keypress' , txtHandler)
+          bean.add(txt           , 'keyup'    , txtCheckHandler)
+          bean.add(fixture       , 'keypress' , parentHandler)
+        } else {
+          bean.add(txt    , 'keypress' , txtHandler)
+          bean.add(txt    , 'keypress' , txtHandler)
+          bean.add(txt    , 'keyup'    , txtCheckHandler)
+          bean.add(parent , 'keypress' , parentHandler)
+        }
+        Syn.key(txt, 'f')
+
+        setTimeout(function () {
+          bean.remove(txt, 'keypress')
+          bean.remove(txt, 'keypup')
+          bean.remove(parent, 'keypress')
+          bean.remove(fixture, 'keypress')
+          complete()
+        }, 100) // kludge alert...
+      }
+    }
+    test(
+        'event: stop should preventDefault and stopPropagation'
+      , stopPropagationTest(false)
+    )
+    test(
+        'event: stop should preventDefault and stopPropagation on delegated events'
+      , stopPropagationTest(true)
+    )
   }
 
   test('event: should have keyCode', 1, function () {
@@ -393,7 +420,7 @@ sink('event object', function (test, ok) {
 
   test('popstate: has correct properties', function(complete) { testStateEvent('popstate', complete) })
 
-  var testKeyEvent = function (type) {
+  var testKeyEvent = function (type, complete) {
     getEventObject(
         type
       , 'input'
@@ -401,13 +428,14 @@ sink('event object', function (test, ok) {
       , function (event) {
           ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
           verifyEventObject(event, keyIgnorables)
+          complete()
         }
     )
   }
 
-  test('keyup: has correct properties', 1, function () { testKeyEvent('keyup') })
-  test('keydown: has correct properties', 1, function () { testKeyEvent('keydown') })
-  test('keypress: has correct properties', 1, function () { testKeyEvent('keypress') })
+  test('keyup: has correct properties', function (complete) { testKeyEvent('keyup', complete) })
+  test('keydown: has correct properties', function (complete) { testKeyEvent('keydown', complete) })
+  test('keypress: has correct properties', function (complete) { testKeyEvent('keypress', complete) })
 
 })
 
