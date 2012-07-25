@@ -8,27 +8,27 @@
   * the entire mootools team: github.com/mootools/mootools-core
   */
 !function (name, context, definition) {
-  if (typeof module !== 'undefined') module.exports = definition(name, context);
-  else if (typeof define === 'function' && typeof define.amd  === 'object') define(definition);
+  if (typeof module != 'undefined') module.exports = definition(name, context);
+  else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
   else context[name] = definition(name, context);
 }('bean', this, function (name, context) {
-  var win = window
-    , old = context[name]
+  var win            = window
+    , old            = context[name]
     , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
-    , nameRegex = /\..*/
-    , addEvent = 'addEventListener'
-    , attachEvent = 'attachEvent'
-    , removeEvent = 'removeEventListener'
-    , detachEvent = 'detachEvent'
-    , ownerDocument = 'ownerDocument'
-    , targetS = 'target'
-    , qSA = 'querySelectorAll'
-    , doc = document || {}
-    , root = doc.documentElement || {}
-    , W3C_MODEL = root[addEvent]
-    , eventSupport = W3C_MODEL ? addEvent : attachEvent
-    , slice = Array.prototype.slice
-    , ONE = {} // singleton for quick matching making add() do one()
+    , nameRegex      = /\..*/
+    , addEvent       = 'addEventListener'
+    , attachEvent    = 'attachEvent'
+    , removeEvent    = 'removeEventListener'
+    , detachEvent    = 'detachEvent'
+    , ownerDocument  = 'ownerDocument'
+    , targetS        = 'target'
+    , qSA            = 'querySelectorAll'
+    , doc            = document || {}
+    , root           = doc.documentElement || {}
+    , W3C_MODEL      = root[addEvent]
+    , eventSupport   = W3C_MODEL ? addEvent : attachEvent
+    , slice          = Array.prototype.slice
+    , ONE            = {} // singleton for quick matching making add() do one()
     , standardNativeEvents =
         'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
         'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
@@ -80,7 +80,7 @@
           , check = function (event) {
               var related = event.relatedTarget
               return !related
-                ? related === null
+                ? related == null
                 : (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString())
                     && !isAncestor(related, this))
             }
@@ -93,21 +93,21 @@
       }())
 
     , fixEvent = (function () {
-        var commonProps = ('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail ' +
+        var commonProps  = ('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail ' +
               'eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey ' +
               'srcElement target timeStamp type view which').split(' ')
-          , mouseProps = commonProps.concat(('button buttons clientX clientY dataTransfer fromElement ' +
+          , mouseProps   = commonProps.concat(('button buttons clientX clientY dataTransfer fromElement ' +
               'offsetX offsetY pageX pageY screenX screenY toElement').split(' '))
           , mouseWheelProps = mouseProps.concat(('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
               'axis').split(' ')) // 'axis' is FF specific
-          , keyProps = commonProps.concat('char charCode key keyCode keyIdentifier keyLocation'.split(' '))
-          , textProps = commonProps.concat(['data'])
-          , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
+          , keyProps     = commonProps.concat('char charCode key keyCode keyIdentifier keyLocation'.split(' '))
+          , textProps    = commonProps.concat(['data'])
+          , touchProps   = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
           , messageProps = commonProps.concat(['data', 'origin', 'source'])
-          , stateProps = commonProps.concat(['state'])
+          , stateProps   = commonProps.concat(['state'])
           , overOutRegex = /over|out/
             // some event types need special handling and some need special properties, do that all here
-          , typeFixers = [
+          , typeFixers   = [
                 { // key events
                     reg: /key/i
                   , fix: function (event, newEvent) {
@@ -129,7 +129,7 @@
                       }
                       if (overOutRegex.test(type)) {
                         newEvent.relatedTarget = event.relatedTarget
-                          || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+                          || event[(type == 'mouseover' ? 'from' : 'to') + 'Element']
                       }
                       return mouseProps
                     }
@@ -226,16 +226,16 @@
       // we use one of these per listener, of any type
     , RegEntry = (function () {
         function entry(element, type, handler, original, namespaces) {
-          var isNative = this.isNative = nativeEvents[type] && element[eventSupport]
-          this.element = element
-          this.type = type
-          this.handler = handler
-          this.original = original
-          this.namespaces = namespaces
-          this.custom = customEvents[type]
-          this.eventType = W3C_MODEL || isNative ? type : 'propertychange'
-          this.customType = !W3C_MODEL && !isNative && type
-          this[targetS] = targetElement(element, isNative)
+          var isNative       = this.isNative = nativeEvents[type] && element[eventSupport]
+          this.element       = element
+          this.type          = type
+          this.handler       = handler
+          this.original      = original
+          this.namespaces    = namespaces
+          this.custom        = customEvents[type]
+          this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
+          this.customType    = !W3C_MODEL && !isNative && type
+          this[targetS]      = targetElement(element, isNative)
           this[eventSupport] = this[targetS][eventSupport]
         }
 
@@ -247,7 +247,7 @@
               if (!this.namespaces) return false
               for (i = checkNamespaces.length; i--;) {
                 for (j = this.namespaces.length; j--;) {
-                  if (checkNamespaces[i] === this.namespaces[j]) c++
+                  if (checkNamespaces[i] == this.namespaces[j]) c++
                 }
               }
               return checkNamespaces.length === c
@@ -272,13 +272,13 @@
           // generic functional search of our registry for matching listeners,
           // `fn` returns false to break out of the loop
           , forAll = function (element, type, original, handler, fn) {
-              if (!type || type === '*') {
+              if (!type || type == '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (t.charAt(0) === '$') forAll(element, t.substr(1), original, handler, fn)
+                  if (t.charAt(0) == '$') forAll(element, t.substr(1), original, handler, fn)
                 }
               } else {
-                var i = 0, l, list = map['$' + type], all = element === '*'
+                var i = 0, l, list = map['$' + type], all = element == '*'
                 if (!list) return
                 for (l = list.length; i < l; i++) {
                   if ((all || list[i].matches(element, original, handler)) && !fn(list[i], list, i, type)) return
@@ -321,7 +321,7 @@
           , entries = function () {
               var t, entries = []
               for (t in map) {
-                if (t.charAt(0) === '$') entries = entries.concat(map[t])
+                if (t.charAt(0) == '$') entries = entries.concat(map[t])
               }
               return entries
             }
@@ -345,7 +345,7 @@
     , listener = W3C_MODEL ? function (element, type, fn, add) {
         element[add ? addEvent : removeEvent](type, fn, false)
       } : function (element, type, fn, add, custom) {
-        if (custom && add && element['_on' + custom] === null) element['_on' + custom] = 0
+        if (custom && add && element['_on' + custom] == null) element['_on' + custom] = 0
         element[add ? attachEvent : detachEvent]('on' + type, fn)
       }
 
@@ -366,7 +366,7 @@
               var target = beanDel ? beanDel.ft(event[targetS], element) : this // deleated event
                 , handle = condition
                     ? condition.apply(target, arguments)
-                    : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event
+                    : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event
               if (handle) {
                 if (event) {
                   event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
@@ -389,9 +389,9 @@
       }
 
     , removeListener = function (element, orgType, handler, namespaces) {
-        var i, l, entry
-          , type = (orgType && orgType.replace(nameRegex, ''))
+        var type     = (orgType && orgType.replace(nameRegex, ''))
           , handlers = registry.get(element, type, handler)
+          , i, l, entry
 
         for (i = 0, l = handlers.length; i < l; i++) {
           if (handlers[i].inNamespaces(namespaces)) {
@@ -409,11 +409,11 @@
       }
 
     , addListener = function (element, orgType, fn, originalFn, args) {
-        var entry
-          , type = orgType.replace(nameRegex, '')
+        var type       = orgType.replace(nameRegex, '')
           , namespaces = orgType.replace(namespaceRegex, '').split('.')
+          , entry
 
-        if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn) // self clean-up
+        if (type == 'unload') fn = once(removeListener, element, type, fn, originalFn) // self clean-up
         if (customEvents[type]) {
           if (customEvents[type].condition) {
             fn = customHandler(element, fn, type, customEvents[type].condition, args, true)
@@ -433,7 +433,7 @@
             //TODO: findTarget (therefore $) is called twice, once for match and once for
             // setting e.currentTarget, fix this so it's only needed once
         var findTarget = function (target, root) {
-              var i, array = typeof selector === 'string' ? $(selector, root) : selector
+              var i, array = typeof selector == 'string' ? $(selector, root) : selector
               for (; target && target !== root; target = target.parentNode) {
                 for (i = array.length; i--;) {
                   if (array[i] === target) return target
@@ -454,9 +454,9 @@
       }
 
     , remove = function (element, typeSpec, fn) {
-        var k, type, namespaces, i
-          , rm = removeListener
-          , isString = typeSpec && typeof typeSpec === 'string'
+        var rm       = removeListener
+          , isString = typeSpec && typeof typeSpec == 'string'
+          , k, type, namespaces, i
 
         if (isString && typeSpec.indexOf(' ') > 0) {
           // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
@@ -471,7 +471,7 @@
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
           if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = namespaces.split('.')
           rm(element, type, fn, namespaces)
-        } else if (typeof typeSpec === 'function') {
+        } else if (typeof typeSpec == 'function') {
           // remove(el, fn)
           rm(element, null, typeSpec)
         } else {
@@ -485,11 +485,11 @@
 
       // 5th argument, $=selector engine, is deprecated and will be removed
     , add = function (element, events, fn, delfn, $) {
-        var type, types, i, args
-          , originalFn = fn
-          , isDel = fn && typeof fn === 'string'
+        var originalFn = fn
+          , isDel      = fn && typeof fn == 'string'
+          , type, types, i, args
 
-        if (events && !fn && typeof events === 'object') {
+        if (events && !fn && typeof events == 'object') {
           for (type in events) {
             if (events.hasOwnProperty(type)) add.apply(this, [ element, type, events[type] ])
           }
@@ -519,8 +519,8 @@
       }
 
     , fire = function (element, type, args) {
-        var i, j, l, names, handlers
-          , types = type.split(' ')
+        var types = type.split(' ')
+          , i, j, l, names, handlers
 
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
@@ -541,12 +541,10 @@
       }
 
     , clone = function (element, from, type) {
-        var i = 0
-          , handlers = registry.get(from, type)
-          , l = handlers.length
-          , args, beanDel
+        var handlers = registry.get(from, type)
+          , i, l, args, beanDel
 
-        for (;i < l; i++) {
+        for (i = 0, l = handlers.length;i < l; i++) {
           if (handlers[i].original) {
             beanDel = handlers[i].handler.__beanDel
             if (beanDel) {
@@ -560,13 +558,13 @@
       }
 
     , bean = {
-          add: add
-        , one: one
-        , remove: remove
-        , clone: clone
-        , fire: fire
-        , setSelectorEngine: setSelectorEngine
-        , noConflict: function () {
+          add               : add
+        , one               : one
+        , remove            : remove
+        , clone             : clone
+        , fire              : fire
+        , setSelectorEngine : setSelectorEngine
+        , noConflict        : function () {
             context[name] = old
             return this
           }
