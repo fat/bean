@@ -225,7 +225,7 @@ bean.add(el, 'gesturestart gesturechange gestureend', fn);
 
 Building Bean
 -------------
-Bean uses [JSHint](http://www.jshint.com/) to keep some house rules as well as [UglifyJS](https://github.com/mishoo/UglifyJS) for its compression. For those interested in building Bean yourself. Run *make* in the root of the project.
+Bean uses [JSHint](http://www.jshint.com/) to keep some house rules as well as [UglifyJS](https://github.com/mishoo/UglifyJS) for its compression. For those interested in building Bean yourself, first install the development dependencies with *npm install* in the root of the project and then run *make* to build the project.
 
 Tests
 -----
