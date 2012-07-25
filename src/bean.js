@@ -20,40 +20,38 @@
     , eventSupport = W3C_MODEL ? addEvent : attachEvent
     , slice = Array.prototype.slice
     , ONE = {} // singleton for quick matching making add() do one()
+    , standardNativeEvents =
+        'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
+        'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
+        'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
+        'keydown keypress keyup ' +                                        // keyboard
+        'orientationchange ' +                                             // mobile
+        'focus blur change reset select submit ' +                         // form elements
+        'load unload beforeunload resize move DOMContentLoaded '+          // window
+        'readystatechange message ' +                                      // window
+        'error abort scroll '                                              // misc
+      // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
+      // that doesn't actually exist, so make sure we only do these on newer browsers
+    , w3cNativeEvents =
+        'show ' +                                                          // mouse buttons
+        'input invalid ' +                                                 // form elements
+        'touchstart touchmove touchend touchcancel ' +                     // touch
+        'gesturestart gesturechange gestureend ' +                         // gesture
+        'textinput' +                                                      // TextEvent
+        'readystatechange pageshow pagehide popstate ' +                   // window
+        'hashchange offline online ' +                                     // window
+        'afterprint beforeprint ' +                                        // printing
+        'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
+        'loadstart progress suspend emptied stalled loadmetadata ' +       // media
+        'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
+        'seeked ended durationchange timeupdate play pause ratechange ' +  // media
+        'volumechange cuechange ' +                                        // media
+        'checking noupdate downloading cached updateready obsolete '       // appcache
 
     , nativeEvents = (function (hash, events, i) {
-        for (i = 0; i < events.length; i++)
-          hash[events[i]] = 1
+        for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
         return hash
-      }({}, (
-          'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
-          'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
-          'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
-          'keydown keypress keyup ' +                                        // keyboard
-          'orientationchange ' +                                             // mobile
-          'focus blur change reset select submit ' +                         // form elements
-          'load unload beforeunload resize move DOMContentLoaded '+          // window
-          'readystatechange message ' +                                      // window
-          'error abort scroll ' +                                            // misc
-          (W3C_MODEL ? // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
-                       // that doesn't actually exist, so make sure we only do these on newer browsers
-            'show ' +                                                          // mouse buttons
-            'input invalid ' +                                                 // form elements
-            'touchstart touchmove touchend touchcancel ' +                     // touch
-            'gesturestart gesturechange gestureend ' +                         // gesture
-            'textinput' +                                                      // TextEvent
-            'readystatechange pageshow pagehide popstate ' +                   // window
-            'hashchange offline online ' +                                     // window
-            'afterprint beforeprint ' +                                        // printing
-            'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
-            'loadstart progress suspend emptied stalled loadmetadata ' +       // media
-            'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
-            'seeked ended durationchange timeupdate play pause ratechange ' +  // media
-            'volumechange cuechange ' +                                        // media
-            'checking noupdate downloading cached updateready obsolete ' +     // appcache
-            '' : '')
-        ).split(' ')
-      ))
+      }({}, (standardNativeEvents + (W3C_MODEL ? w3cNativeEvents : '')).split(' ')))
 
     , customEvents = (function () {
         var cdp = 'compareDocumentPosition'
@@ -70,13 +68,13 @@
                     while (element = element.parentNode) if (element === container) return 1
                     return 0
                   }
-
-        function check(event) {
-          var related = event.relatedTarget
-          return !related
-            ? related === null
-            : (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString()) && !isAncestor(related, this))
-        }
+          , check = function (event) {
+              var related = event.relatedTarget
+              return !related
+                ? related === null
+                : (related !== this && related.prefix !== 'xul' && !/document/.test(this.toString())
+                    && !isAncestor(related, this))
+            }
 
         return {
             mouseenter: { base: 'mouseover', condition: check }
@@ -86,9 +84,13 @@
       }())
 
     , fixEvent = (function () {
-        var commonProps = 'altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey srcElement target timeStamp type view which'.split(' ')
-          , mouseProps = commonProps.concat('button buttons clientX clientY dataTransfer fromElement offsetX offsetY pageX pageY screenX screenY toElement'.split(' '))
-          , mouseWheelProps = mouseProps.concat('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ axis'.split(' ')) // 'axis' is FF specific
+        var commonProps = ('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail ' +
+              'eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey ' +
+              'srcElement target timeStamp type view which').split(' ')
+          , mouseProps = commonProps.concat(('button buttons clientX clientY dataTransfer fromElement ' +
+              'offsetX offsetY pageX pageY screenX screenY toElement').split(' '))
+          , mouseWheelProps = mouseProps.concat(('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
+              'axis').split(' ')) // 'axis' is FF specific
           , keyProps = commonProps.concat('char charCode key keyCode keyIdentifier keyLocation'.split(' '))
           , textProps = commonProps.concat(['data'])
           , touchProps = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
@@ -117,7 +119,8 @@
                         newEvent.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
                       }
                       if (overOutRegex.test(type)) {
-                        newEvent.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+                        newEvent.relatedTarget = event.relatedTarget
+                          || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
                       }
                       return mouseProps
                     }
@@ -351,15 +354,19 @@
     , customHandler = function (element, fn, type, condition, args, isNative) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-          var target = beanDel ? beanDel.ft(event[targetS], element) : this // deleated event
-          if (condition ? condition.apply(target, arguments) : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event) {
-            if (event) {
-              event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
-              event.currentTarget = target
+              var target = beanDel ? beanDel.ft(event[targetS], element) : this // deleated event
+                , handle = condition
+                    ? condition.apply(target, arguments)
+                    : W3C_MODEL ? true : event && event.propertyName === '_on' + type || !event
+              if (handle) {
+                if (event) {
+                  event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
+                  event.currentTarget = target
+                }
+                fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
+              }
             }
-            fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
-          }
-        }
+
         handler.__beanDel = beanDel
         return handler
       }
@@ -405,9 +412,9 @@
           type = customEvents[type].base || type
         }
         entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
-        entry.handler = entry.isNative ?
-          nativeHandler(element, entry.handler, args) :
-          customHandler(element, entry.handler, type, false, args, false)
+        entry.handler = entry.isNative
+          ? nativeHandler(element, entry.handler, args)
+          : customHandler(element, entry.handler, type, false, args, false)
         if (entry[eventSupport]) {
           listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
         }
