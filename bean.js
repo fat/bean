@@ -125,8 +125,9 @@
                         newEvent.clientX = event.clientX + doc.body.scrollLeft + root.scrollLeft
                         newEvent.clientY = event.clientY + doc.body.scrollTop + root.scrollTop
                       }
-                      if (overOutRegex.test(type))
+                      if (overOutRegex.test(type)) {
                         newEvent.relatedTarget = event.relatedTarget || event[(type === 'mouseover' ? 'from' : 'to') + 'Element']
+                      }
                       return mouseProps
                     }
                 }
@@ -159,19 +160,15 @@
           , preventDefault = 'preventDefault'
           , createPreventDefault = function (event) {
               return function () {
-                if (event[preventDefault])
-                  event[preventDefault]()
-                else
-                  event.returnValue = false
+                if (event[preventDefault]) event[preventDefault]()
+                else event.returnValue = false
               }
             }
           , stopPropagation = 'stopPropagation'
           , createStopPropagation = function (event) {
               return function () {
-                if (event[stopPropagation])
-                  event[stopPropagation]()
-                else
-                  event.cancelBubble = true
+                if (event[stopPropagation]) event[stopPropagation]()
+                else event.cancelBubble = true
               }
             }
           , createStop = function (synEvent) {
@@ -191,8 +188,7 @@
 
         return function (event, isNative) {
           var result = { originalEvent: event, isNative: isNative }
-          if (!event)
-            return result
+          if (!event) return result
 
           var i, l, fixer
             , type = event.type
@@ -243,17 +239,12 @@
         entry.prototype = {
             // given a list of namespaces, is our entry in any of them?
             inNamespaces: function (checkNamespaces) {
-              var i, j
-              , c = 0
-              if (!checkNamespaces)
-                return true
-              if (!this.namespaces)
-                return false
+              var i, j, c = 0
+              if (!checkNamespaces) return true
+              if (!this.namespaces) return false
               for (i = checkNamespaces.length; i--;) {
                 for (j = this.namespaces.length; j--;) {
-                  if (checkNamespaces[i] === this.namespaces[j]) {
-                    c++
-                  }
+                  if (checkNamespaces[i] === this.namespaces[j]) c++
                 }
               }
               return checkNamespaces.length === c
@@ -281,17 +272,13 @@
               if (!type || type === '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (t.charAt(0) === '$')
-                    forAll(element, t.substr(1), original, handler, fn)
+                  if (t.charAt(0) === '$') forAll(element, t.substr(1), original, handler, fn)
                 }
               } else {
                 var i = 0, l, list = map['$' + type], all = element === '*'
-                if (!list)
-                  return
+                if (!list) return
                 for (l = list.length; i < l; i++) {
-                  if (all || list[i].matches(element, original, handler))
-                    if (!fn(list[i], list, i, type))
-                      return
+                  if ((all || list[i].matches(element, original, handler)) && !fn(list[i], list, i, type)) return
                 }
               }
             }
@@ -302,8 +289,7 @@
               var i, list = map['$' + type]
               if (list) {
                 for (i = list.length; i--;) {
-                  if (list[i].matches(element, original, null))
-                    return true
+                  if (list[i].matches(element, original, null)) return true
                 }
               }
               return false
@@ -323,8 +309,7 @@
           , del = function (entry) {
               forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
                 list.splice(i, 1)
-                if (list.length === 0)
-                  delete map['$' + entry.type]
+                if (list.length === 0) delete map['$' + entry.type]
                 return false
               })
             }
@@ -333,8 +318,7 @@
           , entries = function () {
               var t, entries = []
               for (t in map) {
-                if (t.charAt(0) === '$')
-                  entries = entries.concat(map[t])
+                if (t.charAt(0) === '$') entries = entries.concat(map[t])
               }
               return entries
             }
@@ -358,8 +342,7 @@
     , listener = W3C_MODEL ? function (element, type, fn, add) {
         element[add ? addEvent : removeEvent](type, fn, false)
       } : function (element, type, fn, add, custom) {
-        if (custom && add && element['_on' + custom] === null)
-          element['_on' + custom] = 0
+        if (custom && add && element['_on' + custom] === null) element['_on' + custom] = 0
         element[add ? attachEvent : detachEvent]('on' + type, fn)
       }
 
@@ -367,8 +350,7 @@
         var beanDel = fn.__beanDel
           , handler = function (event) {
           event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
-          if (beanDel) // delegated event, fix the fix
-            event.currentTarget = beanDel.ft(event[targetS], element)
+          if (beanDel) event.currentTarget = beanDel.ft(event[targetS], element) // delegated event, fix the fix
           return fn.apply(element, [event].concat(args))
         }
         handler.__beanDel = beanDel
@@ -406,8 +388,9 @@
 
         for (i = 0, l = handlers.length; i < l; i++) {
           if (handlers[i].inNamespaces(namespaces)) {
-            if ((entry = handlers[i])[eventSupport])
+            if ((entry = handlers[i])[eventSupport]) {
               listener(entry[targetS], entry.eventType, entry.handler, false, entry.type)
+            }
             // TODO: this is problematic, we have a registry.get() and registry.del() that
             // both do registry searches so we waste cycles doing this. Needs to be rolled into
             // a single registry.forAll(fn) that removes while finding, but the catch is that
@@ -423,19 +406,20 @@
           , type = orgType.replace(nameRegex, '')
           , namespaces = orgType.replace(namespaceRegex, '').split('.')
 
-        if (type === 'unload')
-          fn = once(removeListener, element, type, fn, originalFn) // self clean-up
+        if (type === 'unload') fn = once(removeListener, element, type, fn, originalFn) // self clean-up
         if (customEvents[type]) {
-          if (customEvents[type].condition)
+          if (customEvents[type].condition) {
             fn = customHandler(element, fn, type, customEvents[type].condition, args, true)
+          }
           type = customEvents[type].base || type
         }
         entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
         entry.handler = entry.isNative ?
           nativeHandler(element, entry.handler, args) :
           customHandler(element, entry.handler, type, false, args, false)
-        if (entry[eventSupport])
+        if (entry[eventSupport]) {
           listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
+        }
       }
 
     , del = function (selector, fn, $) {
@@ -445,8 +429,7 @@
               var i, array = typeof selector === 'string' ? $(selector, root) : selector
               for (; target && target !== root; target = target.parentNode) {
                 for (i = array.length; i--;) {
-                  if (array[i] === target)
-                    return target
+                  if (array[i] === target) return target
                 }
               }
             }
@@ -476,12 +459,10 @@
           return element
         }
         type = isString && typeSpec.replace(nameRegex, '')
-        if (type && customEvents[type])
-          type = customEvents[type].type
+        if (type && customEvents[type]) type = customEvents[type].type
         if (!typeSpec || isString) {
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
-          if (namespaces = isString && typeSpec.replace(namespaceRegex, ''))
-            namespaces = namespaces.split('.')
+          if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = namespaces.split('.')
           rm(element, type, fn, namespaces)
         } else if (typeof typeSpec === 'function') {
           // remove(el, fn)
@@ -489,8 +470,7 @@
         } else {
           // remove(el, { t1: fn1, t2, fn2 })
           for (k in typeSpec) {
-            if (typeSpec.hasOwnProperty(k))
-              remove(element, k, typeSpec[k])
+            if (typeSpec.hasOwnProperty(k)) remove(element, k, typeSpec[k])
           }
         }
         return element
@@ -504,8 +484,7 @@
 
         if (events && !fn && typeof events === 'object') {
           for (type in events) {
-            if (events.hasOwnProperty(type))
-              add.apply(this, [ element, type, events[type] ])
+            if (events.hasOwnProperty(type)) add.apply(this, [ element, type, events[type] ])
           }
         } else {
           args = arguments.length > 3 ? slice.call(arguments, 3) : []
@@ -538,8 +517,7 @@
 
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
-          if (names = types[i].replace(namespaceRegex, ''))
-            names = names.split('.')
+          if (names = types[i].replace(namespaceRegex, '')) names = names.split('.')
           if (!names && !args && element[eventSupport]) {
             fireListener(nativeEvents[type], type, element)
           } else {
@@ -548,8 +526,7 @@
             handlers = registry.get(element, type)
             args = [false].concat(args)
             for (j = 0, l = handlers.length; j < l; j++) {
-              if (handlers[j].inNamespaces(names))
-                handlers[j].handler.apply(element, args)
+              if (handlers[j].inNamespaces(names)) handlers[j].handler.apply(element, args)
             }
           }
         }
@@ -593,8 +570,7 @@
     var cleanup = function () {
       var i, entries = registry.entries()
       for (i in entries) {
-        if (entries[i].type && entries[i].type !== 'unload')
-          remove(entries[i].element, entries[i].type)
+        if (entries[i].type && entries[i].type !== 'unload') remove(entries[i].element, entries[i].type)
       }
       win[detachEvent]('onunload', cleanup)
       win.CollectGarbage && win.CollectGarbage()
