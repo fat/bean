@@ -30,37 +30,38 @@
     , slice          = Array.prototype.slice
     , ONE            = {} // singleton for quick matching making add() do one()
     , standardNativeEvents =
-        'click dblclick mouseup mousedown contextmenu ' +                  // mouse buttons
-        'mousewheel mousemultiwheel DOMMouseScroll ' +                     // mouse wheel
-        'mouseover mouseout mousemove selectstart selectend ' +            // mouse movement
-        'keydown keypress keyup ' +                                        // keyboard
-        'orientationchange ' +                                             // mobile
-        'focus blur change reset select submit ' +                         // form elements
-        'load unload beforeunload resize move DOMContentLoaded '+          // window
-        'readystatechange message ' +                                      // window
+        'click dblclick mouseup mousedown contextmenu '                  + // mouse buttons
+        'mousewheel mousemultiwheel DOMMouseScroll '                     + // mouse wheel
+        'mouseover mouseout mousemove selectstart selectend '            + // mouse movement
+        'keydown keypress keyup '                                        + // keyboard
+        'orientationchange '                                             + // mobile
+        'focus blur change reset select submit '                         + // form elements
+        'load unload beforeunload resize move DOMContentLoaded '         + // window
+        'readystatechange message '                                      + // window
         'error abort scroll '                                              // misc
       // element.fireEvent('onXYZ'... is not forgiving if we try to fire an event
       // that doesn't actually exist, so make sure we only do these on newer browsers
     , w3cNativeEvents =
-        'show ' +                                                          // mouse buttons
-        'input invalid ' +                                                 // form elements
-        'touchstart touchmove touchend touchcancel ' +                     // touch
-        'gesturestart gesturechange gestureend ' +                         // gesture
-        'textinput' +                                                      // TextEvent
-        'readystatechange pageshow pagehide popstate ' +                   // window
-        'hashchange offline online ' +                                     // window
-        'afterprint beforeprint ' +                                        // printing
-        'dragstart dragenter dragover dragleave drag drop dragend ' +      // dnd
-        'loadstart progress suspend emptied stalled loadmetadata ' +       // media
-        'loadeddata canplay canplaythrough playing waiting seeking ' +     // media
-        'seeked ended durationchange timeupdate play pause ratechange ' +  // media
-        'volumechange cuechange ' +                                        // media
+        'show '                                                          + // mouse buttons
+        'input invalid '                                                 + // form elements
+        'touchstart touchmove touchend touchcancel '                     + // touch
+        'gesturestart gesturechange gestureend '                         + // gesture
+        'textinput'                                                      + // TextEvent
+        'readystatechange pageshow pagehide popstate '                   + // window
+        'hashchange offline online '                                     + // window
+        'afterprint beforeprint '                                        + // printing
+        'dragstart dragenter dragover dragleave drag drop dragend '      + // dnd
+        'loadstart progress suspend emptied stalled loadmetadata '       + // media
+        'loadeddata canplay canplaythrough playing waiting seeking '     + // media
+        'seeked ended durationchange timeupdate play pause ratechange '  + // media
+        'volumechange cuechange '                                        + // media
         'checking noupdate downloading cached updateready obsolete '       // appcache
+    , str2arr = function (s, d) { return s.split(d || ' ') }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
         return hash
-      }({}, (standardNativeEvents + (W3C_MODEL ? w3cNativeEvents : '')).split(' ')))
+      }({}, str2arr(standardNativeEvents + (W3C_MODEL ? w3cNativeEvents : ''))))
 
     , customEvents = (function () {
         var cdp = 'compareDocumentPosition'
@@ -93,18 +94,18 @@
       }())
 
     , fixEvent = (function () {
-        var commonProps  = ('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget detail ' +
-              'eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey ' +
-              'srcElement target timeStamp type view which').split(' ')
-          , mouseProps   = commonProps.concat(('button buttons clientX clientY dataTransfer fromElement ' +
-              'offsetX offsetY pageX pageY screenX screenY toElement').split(' '))
-          , mouseWheelProps = mouseProps.concat(('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
-              'axis').split(' ')) // 'axis' is FF specific
-          , keyProps     = commonProps.concat('char charCode key keyCode keyIdentifier keyLocation'.split(' '))
-          , textProps    = commonProps.concat(['data'])
-          , touchProps   = commonProps.concat('touches targetTouches changedTouches scale rotation'.split(' '))
-          , messageProps = commonProps.concat(['data', 'origin', 'source'])
-          , stateProps   = commonProps.concat(['state'])
+        var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
+              'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
+              'srcElement target timeStamp type view which')
+          , mouseProps   = commonProps.concat(str2arr('button buttons clientX clientY dataTransfer '      +
+              'fromElement offsetX offsetY pageX pageY screenX screenY toElement'))
+          , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
+              'axis')) // 'axis' is FF specific
+          , keyProps     = commonProps.concat(str2arr('char charCode key keyCode keyIdentifier keyLocation'))
+          , textProps    = commonProps.concat(str2arr('data'))
+          , touchProps   = commonProps.concat(str2arr('touches targetTouches changedTouches scale rotation'))
+          , messageProps = commonProps.concat(str2arr('data origin source'))
+          , stateProps   = commonProps.concat(str2arr('state'))
           , overOutRegex = /over|out/
             // some event types need special handling and some need special properties, do that all here
           , typeFixers   = [
@@ -410,7 +411,7 @@
 
     , addListener = function (element, orgType, fn, originalFn, args) {
         var type       = orgType.replace(nameRegex, '')
-          , namespaces = orgType.replace(namespaceRegex, '').split('.')
+          , namespaces = str2arr(orgType.replace(namespaceRegex, ''), '.')
           , entry
 
         if (type == 'unload') fn = once(removeListener, element, type, fn, originalFn) // self clean-up
@@ -460,7 +461,7 @@
 
         if (isString && typeSpec.indexOf(' ') > 0) {
           // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
-          typeSpec = typeSpec.split(' ')
+          typeSpec = str2arr(typeSpec)
           for (i = typeSpec.length; i--;)
             remove(element, typeSpec[i], fn)
           return element
@@ -469,7 +470,7 @@
         if (type && customEvents[type]) type = customEvents[type].type
         if (!typeSpec || isString) {
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
-          if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = namespaces.split('.')
+          if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
           rm(element, type, fn, namespaces)
         } else if (typeof typeSpec == 'function') {
           // remove(el, fn)
@@ -494,8 +495,8 @@
             if (events.hasOwnProperty(type)) add.apply(this, [ element, type, events[type] ])
           }
         } else {
-          args = arguments.length > 3 ? slice.call(arguments, 3) : []
-          types = (isDel ? fn : events).split(' ')
+          args  = arguments.length > 3 ? slice.call(arguments, 3) : []
+          types = str2arr(isDel ? fn : events)
           isDel && (fn = del(events, (originalFn = delfn), $ || selectorEngine)) && (args = slice.call(args, 1))
           // special case for one()
           this === ONE && (fn = once(remove, element, events, fn, originalFn))
@@ -519,12 +520,12 @@
       }
 
     , fire = function (element, type, args) {
-        var types = type.split(' ')
+        var types = str2arr(type)
           , i, j, l, names, handlers
 
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
-          if (names = types[i].replace(namespaceRegex, '')) names = names.split('.')
+          if (names = types[i].replace(namespaceRegex, '')) names = str2arr(names, '.')
           if (!names && !args && element[eventSupport]) {
             fireListener(nativeEvents[type], type, element)
           } else {
