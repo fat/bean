@@ -358,7 +358,7 @@ sink('event object', function (test, ok) {
         }
       }
 
-    , testMouseEvent = function (type, syn) {
+    , testMouseEvent = function (type, syn, complete) {
         getEventObject(
             type
           , 'button'
@@ -366,30 +366,32 @@ sink('event object', function (test, ok) {
           , function (event) {
               ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
               verifyEventObject(event, clickIgnorables)
+              complete()
             }
         )
       }
-  test('click: has correct properties', 1, function () { testMouseEvent('click') })
-  test('dblclick: has correct properties', 1, function () { testMouseEvent('dblclick') })
-  test('mousedown: has correct properties', 1, function () { testMouseEvent('mousedown', 'click') })
-  test('mouseup: has correct properties', 1, function () { testMouseEvent('mouseup', 'click') })
+  test('click: has correct properties', function (complete) { try { testMouseEvent('click', null, complete) } catch (e) { console.log(e.stack) } })
+  test('dblclick: has correct properties', function (complete) { testMouseEvent('dblclick', null, complete) })
+  test('mousedown: has correct properties', function (complete) { testMouseEvent('mousedown', 'click', complete) })
+  test('mouseup: has correct properties', function (complete) { testMouseEvent('mouseup', 'click', complete) })
 
-  var testStateEvent = function (type, syn) {
-        getEventObject(
-            type
-          , window
-          , function (el) {
-              window.history.pushState({}, '/test-state')
-              window.history.go(-1)
-            }
-          , function (event) {
-              ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
-              verifyEventObject(event, commonIgnorables)
-            }
-        )
-      }
+  var testStateEvent = function (type, complete) {
+    getEventObject(
+        type
+      , window
+      , function (el) {
+          window.history.pushState({}, '/test-state')
+          window.history.go(-1)
+        }
+      , function (event) {
+          ok(!!event && !!event.originalEvent && event.type === type, 'got event object')
+          verifyEventObject(event, commonIgnorables)
+          complete()
+        }
+    )
+  }
 
-  test('popstate: has correct properties', 1, function() { testStateEvent('popstate') })
+  test('popstate: has correct properties', function(complete) { testStateEvent('popstate', complete) })
 
   var testKeyEvent = function (type) {
     getEventObject(

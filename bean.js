@@ -244,17 +244,19 @@
             // given a list of namespaces, is our entry in any of them?
             inNamespaces: function (checkNamespaces) {
               var i, j
+              , c = 0
               if (!checkNamespaces)
                 return true
               if (!this.namespaces)
                 return false
               for (i = checkNamespaces.length; i--;) {
                 for (j = this.namespaces.length; j--;) {
-                  if (checkNamespaces[i] === this.namespaces[j])
-                    return true
+                  if (checkNamespaces[i] === this.namespaces[j]) {
+                    c++
+                  }
                 }
               }
-              return false
+              return checkNamespaces.length === c
             }
 
             // match by element, original fn (opt), handler fn (opt)
@@ -421,8 +423,6 @@
           , type = orgType.replace(nameRegex, '')
           , namespaces = orgType.replace(namespaceRegex, '').split('.')
 
-        if (registry.has(element, type, fn))
-          return element // no dupe
         if (type === 'unload')
           fn = once(removeListener, element, type, fn, originalFn) // self clean-up
         if (customEvents[type]) {
