@@ -207,6 +207,9 @@ bean.add(el, 'click', function (e) {
   e.stop();
 });
 
+// Note that your mileage with e.stop() may vary with delegated events as the events are not
+// intercepted at the element in question
+
 // DOMContentLoaded
 bean.add(document, 'DOMContentLoaded', fn);
 
@@ -225,11 +228,15 @@ bean.add(el, 'gesturestart gesturechange gestureend', fn);
 
 Building Bean
 -------------
+
 Bean uses [JSHint](http://www.jshint.com/) to keep some house rules as well as [UglifyJS](https://github.com/mishoo/UglifyJS) for its compression. For those interested in building Bean yourself, first install the development dependencies with *npm install* in the root of the project and then run *make* to build the project.
 
 Tests
 -----
-point your browser at <code>bean/tests/index.html</code>
+
+Bean uses [BusterJS](http://busterjs.org/) for its unit tests. *npm install* will install Buster for you and then you can simply point your browser at <code>bean/tests/tests.html</code>.
+
+A Buster configuration file also exists so you can use *buster-server* to run a capture server to attach multiple browsers to and then *buster-test* to run the tests.
 
 Ender Integration API
 ---------------------
