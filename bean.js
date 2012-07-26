@@ -101,7 +101,8 @@
               'fromElement offsetX offsetY pageX pageY screenX screenY toElement'))
           , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
               'axis')) // 'axis' is FF specific
-          , keyProps     = commonProps.concat(str2arr('char charCode key keyCode keyIdentifier keyLocation'))
+          , keyProps     = commonProps.concat(str2arr('char charCode key keyCode keyIdentifier '          +
+              'keyLocation location'))
           , textProps    = commonProps.concat(str2arr('data'))
           , touchProps   = commonProps.concat(str2arr('touches targetTouches changedTouches scale rotation'))
           , messageProps = commonProps.concat(str2arr('data origin source'))
@@ -165,14 +166,14 @@
           , createPreventDefault = function (event) {
               return function () {
                 if (event[preventDefault]) event[preventDefault]()
-                event.returnValue = false
+                else event.returnValue = false
               }
             }
           , stopPropagation = 'stopPropagation'
           , createStopPropagation = function (event) {
               return function () {
                 if (event[stopPropagation]) event[stopPropagation]()
-                event.cancelBubble = true
+                else event.cancelBubble = true
               }
             }
           , stopImmediatePropagation = 'stopImmediatePropagation'
@@ -185,20 +186,18 @@
               return function () {
                 synEvent[preventDefault]()
                 synEvent[stopPropagation]()
-                synEvent[stopImmediatePropagation]()
                 synEvent.stopped = true
               }
             }
           , copyProps = function (event, result, props) {
               var i, p
               for (i = props.length; i--;) {
-                p = props[i]
-                if (!(p in result) && p in event) result[p] = event[p]
+                if (!((p = props[i]) in result) && p in event) result[p] = event[p]
               }
             }
 
         return function (event, isNative) {
-          var result = { originalEvent: event, isNative: isNative }
+          var result = { originalEvent: event, isNative: isNative, isBean: true }
           if (!event) return result
 
           var i, l, fixer
@@ -235,7 +234,7 @@
       // we use one of these per listener, of any type
     , RegEntry = (function () {
         function entry(element, type, handler, original, namespaces) {
-          var isNative       = this.isNative = nativeEvents[type] && element[eventSupport]
+          var isNative       = this.isNative = nativeEvents[type] && !!element[eventSupport]
           this.element       = element
           this.type          = type
           this.handler       = handler
@@ -245,7 +244,7 @@
           this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
           this.customType    = !W3C_MODEL && !isNative && type
           this[targetS]      = targetElement(element, isNative)
-          this[eventSupport] = this[targetS][eventSupport]
+          this[eventSupport] = !!this[targetS][eventSupport]
         }
 
         entry.prototype = {
