@@ -14,5 +14,8 @@
     }
   , "keywords": [ "ender", "events", "event" ]
   , "main": "./bean.js"
+  , "devDependencies": {
+        "buster": "~0.6.2"
+    }
   , "ender": "./src/ender.js"
 }
