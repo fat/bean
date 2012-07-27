@@ -1,16 +1,18 @@
-require('smoosh').config({
-    'JAVASCRIPT': {
-        'DIST_DIR': './'
-      , 'bean': [
-            './src/copyright.js'
-          , './src/bean.js'
+require("smoosh").config({
+    "JAVASCRIPT": {
+        "DIST_DIR": "./"
+      , "bean": [
+            "./src/copyright.js"
+          , "./src/bean.js"
         ]
     }
   , "JSHINT_OPTS": {
         "predef": [ "assert", "refute", "define", "self" ]
       , "boss": true
+      , "bitwise": false
       , "shadow": true
       , "trailing": true
+      , "immed": true
       , "latedef": true
       , "forin": false
       , "curly": false
@@ -32,5 +34,7 @@ require('smoosh').config({
       , "expr": true
       , "es5": true
       , "strict": false
+      , "quotmark": true
+      , "camelcase": true
     }
 }).run().build().analyze()
