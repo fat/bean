@@ -122,16 +122,16 @@ buster.testCase('event object', {
         , trigger = this.trigger()
         , spy     = this.spy()
 
-      bean.add(el, 'keypress', trigger.wrap(spy))
-
-      Syn.key(el, 'f')
-
       trigger.after(function() {
         assert(spy.calledOnce, 'called once')
         assert(spy.firstCall.args.length, 'has argument')
         assert(spy.firstCall.args[0].keyCode, 'event object has keyCode')
         done()
       })
+
+      bean.add(el, 'keypress', trigger.wrap(spy))
+
+      Syn.key(el, 'f')
     }
 
     // the idea here is that we have a whitelist in bean.js for properties to copy over from the original

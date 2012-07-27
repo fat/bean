@@ -1,5 +1,5 @@
 {
-    "predef": [ "assert", "refute" ]
+    "predef": [ "assert", "refute", "define", "self" ]
   , "boss": true
   , "bitwise": false
   , "shadow": true

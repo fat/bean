@@ -9,9 +9,9 @@ buster.testCase('delegate', {
         assert.same(spy.thisValues[0], target, 'context (this) was set to delegated element')
         assert.same(spy.thisValues[1], target, 'context (this) was set to delegated element')
         assert(spy.firstCall.args[0], 'got an event object argument')
-        assert(spy.secondCall.args[0], 'got an event object argument')
+        assert(spy.secondCall && spy.secondCall.args[0], 'got an event object argument')
         assert.same(spy.firstCall.args[0].currentTarget, target, 'degated event has currentTarget property correctly set')
-        assert.same(spy.secondCall.args[0].currentTarget, target, 'degated event has currentTarget property correctly set')
+        assert.same(spy.secondCall && spy.secondCall.args[0].currentTarget, target, 'degated event has currentTarget property correctly set')
       }
     }
 
@@ -25,17 +25,36 @@ buster.testCase('delegate', {
         , trigger = this.trigger()
         , spy     = this.spy()
 
-      bean.add(el1, '.bar', 'click', trigger.wrap(spy), qwery)
-
-      Syn.click(el2)
-      Syn.click(el3)
-      Syn.click(el4)
-
       var self = this
       trigger.after(function () {
         self.verifySimpleDelegateSpy(spy, el2)
         done()
       })
+
+      bean.add(el1, '.bar', 'click', trigger.wrap(spy), qwery)
+
+      Syn.click(el2)
+      Syn.click(el3)
+      Syn.click(el4)
+    }
+
+  , 'should be able to delegate multiple events': function (done) {
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , el3     = this.byId('baz')
+        , trigger = this.trigger()
+        , spy     = this.spy()
+
+      var self = this
+      trigger.after(function () {
+        self.verifySimpleDelegateSpy(spy, el2)
+        done()
+      }, 50)
+
+      bean.add(el1, '.bar', 'mouseup mousedown', trigger.wrap(spy), qwery)
+
+      Syn.click(el2)
+      Syn.click(el3)
     }
 
   , 'should be able to delegate on arary': function (done) {
@@ -46,17 +65,17 @@ buster.testCase('delegate', {
         , trigger = this.trigger()
         , spy     = this.spy()
 
-      bean.add(el1, [el2], 'click', trigger.wrap(spy), qwery)
-
-      Syn.click(el2)
-      Syn.click(el3)
-      Syn.click(el4)
-
       var self = this
       trigger.after(function () {
         self.verifySimpleDelegateSpy(spy, el2)
         done()
       })
+
+      bean.add(el1, [el2], 'click', trigger.wrap(spy), qwery)
+
+      Syn.click(el2)
+      Syn.click(el3)
+      Syn.click(el4)
     }
 
   , 'should be able to remove delegated handler': function (done) {
@@ -69,15 +88,15 @@ buster.testCase('delegate', {
             bean.remove(el1, 'click', trigger.wrapped(fn))
           }
 
-      bean.add(el1, '.bar', 'click', trigger.wrap(fn), qwery)
-
-      Syn.click(el2)
-      Syn.click(el2)
-
       trigger.after(function () {
         assert.equals(calls, 1, 'degegated event triggered once')
         done()
       })
+
+      bean.add(el1, '.bar', 'click', trigger.wrap(fn), qwery)
+
+      Syn.click(el2)
+      Syn.click(el2)
     }
 
   , 'should use qSA if available': function (done) {
@@ -136,21 +155,10 @@ buster.testCase('delegate', {
         , el2      = this.byId('bar')
         , el3      = this.byId('baz')
         , el4      = this.byId('bang')
-        , selector = "SELECTOR? WE DON'T NEED NO STINKIN' SELECTOR!"
+        , selector = 'SELECTOR? WE DON\'T NEED NO STINKIN\' SELECTOR!'
         , trigger  = this.trigger()
         , stub     = this.stub()
         , spy      = this.spy()
-
-      stub.returns([el2])
-      // TODO: findTarget() is called for setting event.currentTarget as well as checking for a match
-      // fix this so it's only called once, otherwise it's a waste
-      bean.setSelectorEngine(stub)
-
-      bean.add(el1, selector, 'click', trigger.wrap(spy))
-
-      Syn.click(el2)
-      Syn.click(el3)
-      Syn.click(el4)
 
       var self = this
       trigger.after(function () {
@@ -162,5 +170,16 @@ buster.testCase('delegate', {
         bean.setSelectorEngine(null)
         done()
       })
+
+      stub.returns([el2])
+      // TODO: findTarget() is called for setting event.currentTarget as well as checking for a match
+      // fix this so it's only called once, otherwise it's a waste
+      bean.setSelectorEngine(stub)
+
+      bean.add(el1, selector, 'click', trigger.wrap(spy))
+
+      Syn.click(el2)
+      Syn.click(el3)
+      Syn.click(el4)
     }
 })

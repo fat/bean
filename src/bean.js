@@ -224,18 +224,35 @@
 
       // we use one of these per listener, of any type
     , RegEntry = (function () {
-        function entry(element, type, handler, original, namespaces) {
-          var isNative       = this.isNative = nativeEvents[type] && !!element[eventSupport]
+        function entry(element, type, handler, original, namespaces, args) {
+          var customType     = customEvents[type]
+            , isNative
+
+          if (type == 'unload') {
+            // self clean-up
+            handler = once(removeListener, element, type, handler, original)
+          }
+
+          if (customType) {
+            if (customType.condition) {
+              handler = customHandler(element, handler, type, customType.condition, args, true)
+            }
+            type = customType.base || type
+          }
+
+          this.isNative      = isNative = nativeEvents[type] && !!element[eventSupport]
+          this.customType    = !W3C_MODEL && !isNative && type
           this.element       = element
           this.type          = type
-          this.handler       = handler
           this.original      = original
           this.namespaces    = namespaces
-          this.custom        = customEvents[type]
           this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
-          this.customType    = !W3C_MODEL && !isNative && type
           this[targetS]      = targetElement(element, isNative)
           this[eventSupport] = !!this[targetS][eventSupport]
+
+          this.handler = isNative
+              ? nativeHandler(element, handler, args)
+              : customHandler(element, handler, type, false, args, false)
         }
 
         entry.prototype = {
@@ -407,28 +424,7 @@
         }
       }
 
-    , addListener = function (element, orgType, fn, originalFn, args) {
-        var type       = orgType.replace(nameRegex, '')
-          , namespaces = str2arr(orgType.replace(namespaceRegex, ''), '.')
-          , entry
-
-        if (type == 'unload') fn = once(removeListener, element, type, fn, originalFn) // self clean-up
-        if (customEvents[type]) {
-          if (customEvents[type].condition) {
-            fn = customHandler(element, fn, type, customEvents[type].condition, args, true)
-          }
-          type = customEvents[type].base || type
-        }
-        entry = registry.put(new RegEntry(element, type, fn, originalFn, namespaces[0] && namespaces))
-        entry.handler = entry.isNative
-          ? nativeHandler(element, entry.handler, args)
-          : customHandler(element, entry.handler, type, false, args, false)
-        if (entry[eventSupport]) {
-          listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
-        }
-      }
-
-    , del = function (selector, fn, $) {
+    , delegate = function (selector, fn, $) {
             //TODO: findTarget (therefore $) is called twice, once for match and once for
             // setting e.currentTarget, fix this so it's only needed once
         var findTarget = function (target, root) {
@@ -464,8 +460,10 @@
             remove(element, typeSpec[i], fn)
           return element
         }
+
         type = isString && typeSpec.replace(nameRegex, '')
         if (type && customEvents[type]) type = customEvents[type].type
+
         if (!typeSpec || isString) {
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
           if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
@@ -479,27 +477,50 @@
             if (typeSpec.hasOwnProperty(k)) remove(element, k, typeSpec[k])
           }
         }
+
         return element
       }
 
       // 5th argument, $=selector engine, is deprecated and will be removed
     , add = function (element, events, fn, delfn, $) {
-        var originalFn = fn
-          , isDel      = fn && typeof fn == 'string'
-          , type, types, i, args
+        var originalFn  = fn
+          , isDelegated = fn && typeof fn == 'string'
+          , type, types, i, args, entry
 
         if (events && !fn && typeof events == 'object') {
+          //TODO: this can't handle delegated events
           for (type in events) {
             if (events.hasOwnProperty(type)) add.apply(this, [ element, type, events[type] ])
           }
         } else {
           args  = arguments.length > 3 ? slice.call(arguments, 3) : []
-          types = str2arr(isDel ? fn : events)
-          isDel && (fn = del(events, (originalFn = delfn), $ || selectorEngine)) && (args = slice.call(args, 1))
+          types = str2arr(isDelegated ? fn : events)
+
+          if (isDelegated) {
+            fn = delegate(events, (originalFn = delfn), $ || selectorEngine)
+            args = slice.call(args, 1)
+          }
+
           // special case for one()
-          this === ONE && (fn = once(remove, element, events, fn, originalFn))
-          for (i = types.length; i--;) addListener(element, types[i], fn, originalFn, args)
+          if (this === ONE) {
+            fn = once(remove, element, events, fn, originalFn)
+          }
+
+          for (i = types.length; i--;) {
+            entry = registry.put(new RegEntry(
+                element
+              , types[i].replace(nameRegex, '')
+              , fn
+              , originalFn
+              , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
+              , args
+            ))
+            if (entry[eventSupport]) {
+              listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
+            }
+          }
         }
+
         return element
       }
 
