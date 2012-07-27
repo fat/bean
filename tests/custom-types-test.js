@@ -7,52 +7,43 @@ buster.testCase('custom types', {
       globalSetUp.call(this)
 
       this.testRemove = function (done, removeFn) {
-        var html  = document.documentElement
-          , foo   = this.byId('foo')
-          , meSpy = self.spy()
-          , mlSpy = self.spy()
+        var html    = document.documentElement
+          , foo     = this.byId('foo')
+          , trigger = self.trigger()
+          , meSpy   = self.spy()
+          , mlSpy   = self.spy()
 
-        bean.add(foo, 'mouseenter', meSpy)
-        bean.add(foo, 'mouseleave', mlSpy)
-
-        Syn.trigger('mouseover', { relatedTarget: html }, foo)
-        Syn.trigger('mouseout', { relatedTarget: html }, foo)
-
-        removeFn(foo, meSpy, mlSpy)
-
-        Syn.trigger('mouseover', { relatedTarget: html }, foo)
-        Syn.trigger('mouseout', { relatedTarget: html }, foo)
-
-        defer(function () {
+        trigger.after(function () {
           assert.equals(meSpy.callCount, 1, 'removes mouseenter event')
           assert.equals(mlSpy.callCount, 1, 'removes mouseleave event')
           done()
-        }, 50)
+        })
+
+        bean.add(foo, 'mouseenter', trigger.wrap(meSpy))
+        bean.add(foo, 'mouseleave', trigger.wrap(mlSpy))
+
+        Syn.trigger('mouseover', { relatedTarget: html }, foo)
+        Syn.trigger('mouseout', { relatedTarget: html }, foo)
+
+        removeFn(foo, trigger.wrapped(meSpy), trigger.wrapped(mlSpy))
+
+        Syn.trigger('mouseover', { relatedTarget: html }, foo)
+        Syn.trigger('mouseout', { relatedTarget: html }, foo)
       }
     }
 
   , 'tearDown': globalTearDown
 
   , 'mouseenter/mouseleave should wrap simple mouseover/mouseout': function (done) {
-      var html  = document.documentElement
-        , foo   = this.byId('foo')
-        , bar   = this.byId('bar')
-        , bang  = this.byId('bang')
-        , meSpy = this.spy()
-        , mlSpy = this.spy()
+      var html    = document.documentElement
+        , foo     = this.byId('foo')
+        , bar     = this.byId('bar')
+        , bang    = this.byId('bang')
+        , trigger = this.trigger()
+        , meSpy   = this.spy()
+        , mlSpy   = this.spy()
 
-      bean.add(foo, 'mouseenter', meSpy)
-      bean.add(foo, 'mouseleave', mlSpy)
-
-      // relatedTarget is where the mouse came from for mouseover and where it's going to in mouseout
-      Syn.trigger('mouseover', { relatedTarget: html }, foo)
-      Syn.trigger('mouseover', { relatedTarget: foo } , bar)
-      Syn.trigger('mouseover', { relatedTarget: bar } , bang)
-      Syn.trigger('mouseout' , { relatedTarget: bar } , bang)
-      Syn.trigger('mouseout' , { relatedTarget: foo } , bar)
-      Syn.trigger('mouseout' , { relatedTarget: html }, foo)
-
-      defer(function () {
+      trigger.after(function () {
         assert.equals(meSpy.callCount, 1, 'removes mouseenter event')
         assert.equals(mlSpy.callCount, 1, 'removes mouseleave event')
         assert(meSpy.firstCall.args[0], 'has event object argument')
@@ -61,6 +52,17 @@ buster.testCase('custom types', {
         assert.same(mlSpy.firstCall.args[0].currentTarget, foo, 'currentTarget property of event set correctly')
         done()
       }, 50)
+
+      bean.add(foo, 'mouseenter', trigger.wrap(meSpy))
+      bean.add(foo, 'mouseleave', trigger.wrap(mlSpy))
+
+      // relatedTarget is where the mouse came from for mouseover and where it's going to in mouseout
+      Syn.trigger('mouseover', { relatedTarget: html }, foo)
+      Syn.trigger('mouseover', { relatedTarget: foo } , bar)
+      Syn.trigger('mouseover', { relatedTarget: bar } , bang)
+      Syn.trigger('mouseout' , { relatedTarget: bar } , bang)
+      Syn.trigger('mouseout' , { relatedTarget: foo } , bar)
+      Syn.trigger('mouseout' , { relatedTarget: html }, foo)
     }
 
   , 'custom events should be removable': function (done) {
@@ -84,24 +86,15 @@ buster.testCase('custom types', {
     }
 
   , 'custom events should work with delegate': function (done) {
-      var html  = document.documentElement
-        , foo   = this.byId('foo')
-        , bar   = this.byId('bar')
-        , bang  = this.byId('bang')
-        , meSpy = this.spy()
-        , mlSpy = this.spy()
+      var html    = document.documentElement
+        , foo     = this.byId('foo')
+        , bar     = this.byId('bar')
+        , bang    = this.byId('bang')
+        , trigger = this.trigger()
+        , meSpy   = this.spy()
+        , mlSpy   = this.spy()
 
-      bean.add(foo, '.bang', 'mouseenter', meSpy, qwery)
-      bean.add(foo, '.bang', 'mouseleave', mlSpy, qwery)
-
-      Syn.trigger('mouseover', { relatedTarget: html }, foo)
-      Syn.trigger('mouseover', { relatedTarget: foo } , bar)
-      Syn.trigger('mouseover', { relatedTarget: bar } , bang)
-      Syn.trigger('mouseout' , { relatedTarget: bar } , bang)
-      Syn.trigger('mouseout' , { relatedTarget: foo } , bar)
-      Syn.trigger('mouseout' , { relatedTarget: html }, foo)
-
-      defer(function () {
+      trigger.after(function () {
         assert.equals(meSpy.callCount, 1, 'removes mouseenter event')
         assert.equals(mlSpy.callCount, 1, 'removes mouseleave event')
         assert(meSpy.firstCall.args[0], 'has event object argument')
@@ -110,5 +103,15 @@ buster.testCase('custom types', {
         assert.same(mlSpy.firstCall.args[0].currentTarget, bang, 'currentTarget property of event set correctly')
         done()
       }, 50)
+
+      bean.add(foo, '.bang', 'mouseenter', trigger.wrap(meSpy), qwery)
+      bean.add(foo, '.bang', 'mouseleave', trigger.wrap(mlSpy), qwery)
+
+      Syn.trigger('mouseover', { relatedTarget: html }, foo)
+      Syn.trigger('mouseover', { relatedTarget: foo } , bar)
+      Syn.trigger('mouseover', { relatedTarget: bar } , bang)
+      Syn.trigger('mouseout' , { relatedTarget: bar } , bang)
+      Syn.trigger('mouseout' , { relatedTarget: foo } , bar)
+      Syn.trigger('mouseout' , { relatedTarget: html }, foo)
     }
 })

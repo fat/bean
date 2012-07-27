@@ -5,15 +5,16 @@ buster.testCase('event object', {
   , 'tearDown': globalTearDown
 
   , 'should have correct target': function (done) {
-      var el1 = this.byId('foo')
-        , el2 = this.byId('bar')
-        , spy = this.spy()
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , trigger = this.trigger()
+        , spy     = this.spy()
 
-      bean.add(el1, 'click', spy)
+      bean.add(el1, 'click', trigger.wrap(spy))
 
       Syn.click(el2)
 
-      defer(function() {
+      trigger.after(function() {
         assert(spy.calledOnce, 'called once')
         assert(spy.firstCall.args.length, 'has argument')
         assert.same(spy.firstCall.args[0].target, el2, 'event object has correct property')
@@ -23,23 +24,25 @@ buster.testCase('event object', {
 
   , 'event object': {
         'setUp': function () {
-            this.runTest = function (custom, done, verifyFn) {
-            var el = this.byId('foo')
-              , spy = this.spy()
+          var self = this
+          this.runTest = function (custom, done, verifyFn) {
+            var el      = self.byId('foo')
+              , trigger = self.trigger()
+              , spy     = self.spy()
 
-            bean.add(el, custom ? 'customEvent' : 'click', spy)
-
-            if (custom)
-              bean.fire(el, 'customEvent')
-            else
-              Syn.click(el)
-
-            defer(function() {
+            trigger.after(function() {
               assert(spy.calledOnce, 'called once')
               assert(spy.firstCall.args.length, 'has argument')
               verifyFn(spy.firstCall.args[0])
               done()
             })
+
+            bean.add(el, custom ? 'customEvent' : 'click', trigger.wrap(spy))
+
+            if (custom)
+              bean.fire(el, 'customEvent')
+            else
+              Syn.click(el)
           }
         }
 
@@ -80,27 +83,28 @@ buster.testCase('event object', {
             var txt        = self.byId('txt')
               , parent     = self.byId('stopper')
               , fixture    = self.byId('fixtures')
+              , trigger    = self.trigger()
               , parentSpy  = self.spy()
               , txtHandler = function (event) {
                   event.stop()
                 }
 
-            txt.value = ''
-            if (delegate) {
-              bean.add(parent  , '*', 'keypress', txtHandler, qwery)
-              bean.add(fixture      , 'keypress', parentSpy , qwery)
-            } else {
-              bean.add(txt   , 'keypress', txtHandler)
-              bean.add(parent, 'keypress', parentSpy)
-            }
-
-            Syn.key(txt, 'f')
-
-            defer(function () {
+            trigger.after(function () {
               refute(parentSpy.called, 'parent should not receive event')
               refute(txt.value.length, 'input is has no text after keypress')
               done()
             })
+
+            txt.value = ''
+            if (delegate) {
+              bean.add(parent  , '*', 'keypress', trigger.wrap(txtHandler), qwery)
+              bean.add(fixture      , 'keypress', trigger.wrap(parentSpy), qwery)
+            } else {
+              bean.add(txt   , 'keypress', trigger.wrap(txtHandler))
+              bean.add(parent, 'keypress', trigger.wrap(parentSpy))
+            }
+
+            Syn.key(txt, 'f')
           }
         }
 
@@ -114,14 +118,15 @@ buster.testCase('event object', {
     }
 
   , 'should have keyCode': function (done) {
-      var el  = this.byId('input')
-        , spy = this.spy()
+      var el      = this.byId('input')
+        , trigger = this.trigger()
+        , spy     = this.spy()
 
-      bean.add(el, 'keypress', spy)
+      bean.add(el, 'keypress', trigger.wrap(spy))
 
       Syn.key(el, 'f')
 
-      defer(function() {
+      trigger.after(function() {
         assert(spy.calledOnce, 'called once')
         assert(spy.firstCall.args.length, 'has argument')
         assert(spy.firstCall.args[0].keyCode, 'event object has keyCode')

@@ -18,63 +18,66 @@ buster.testCase('delegate', {
   , 'tearDown': globalTearDown
 
   , 'should be able to delegate on selectors': function (done) {
-      var el1 = this.byId('foo')
-        , el2 = this.byId('bar')
-        , el3 = this.byId('baz')
-        , el4 = this.byId('bang')
-        , spy = this.spy()
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , el3     = this.byId('baz')
+        , el4     = this.byId('bang')
+        , trigger = this.trigger()
+        , spy     = this.spy()
 
-      bean.add(el1, '.bar', 'click', spy, qwery)
+      bean.add(el1, '.bar', 'click', trigger.wrap(spy), qwery)
 
       Syn.click(el2)
       Syn.click(el3)
       Syn.click(el4)
 
       var self = this
-      defer(function () {
+      trigger.after(function () {
         self.verifySimpleDelegateSpy(spy, el2)
         done()
-      }, 50)
+      })
     }
 
   , 'should be able to delegate on arary': function (done) {
-      var el1 = this.byId('foo')
-        , el2 = this.byId('bar')
-        , el3 = this.byId('baz')
-        , el4 = this.byId('bang')
-        , spy = this.spy()
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , el3     = this.byId('baz')
+        , el4     = this.byId('bang')
+        , trigger = this.trigger()
+        , spy     = this.spy()
 
-      bean.add(el1, [el2], 'click', spy, qwery)
+      bean.add(el1, [el2], 'click', trigger.wrap(spy), qwery)
 
       Syn.click(el2)
       Syn.click(el3)
       Syn.click(el4)
 
       var self = this
-      defer(function () {
+      trigger.after(function () {
         self.verifySimpleDelegateSpy(spy, el2)
         done()
-      }, 50)
+      })
     }
 
   , 'should be able to remove delegated handler': function (done) {
-      var el1   = this.byId('foo')
-        , el2   = this.byId('bar')
-        , calls = 0
-        , fn    = function () {
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , calls   = 0
+        , trigger = this.trigger(50)
+        , fn      = function () {
             calls++
-            bean.remove(el1, 'click', fn)
+            bean.remove(el1, 'click', trigger.wrapped(fn))
           }
 
-      bean.add(el1, '.bar', 'click', fn, qwery)
+      bean.add(el1, '.bar', 'click', trigger.wrap(fn), qwery)
 
       Syn.click(el2)
       Syn.click(el2)
 
-      defer(function () {
+      trigger.after(function () {
         assert.equals(calls, 1, 'degegated event triggered once')
         done()
-      }, 50)
+      })
     }
 
   , 'should use qSA if available': function (done) {
@@ -83,23 +86,24 @@ buster.testCase('delegate', {
         return done()
       }
 
-      var el1 = this.byId('foo')
-        , el2 = this.byId('bar')
-        , el3 = this.byId('baz')
-        , el4 = this.byId('bang')
-        , spy = this.spy()
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , el3     = this.byId('baz')
+        , el4     = this.byId('bang')
+        , trigger = this.trigger()
+        , spy     = this.spy()
+        , self    = this
 
-      bean.add(el1, '.bar', 'click', spy)
+      trigger.after(function () {
+        self.verifySimpleDelegateSpy(spy, el2)
+        done()
+      })
+
+      bean.add(el1, '.bar', 'click', trigger.wrap(spy))
 
       Syn.click(el2)
       Syn.click(el3)
       Syn.click(el4)
-
-      var self = this
-      defer(function () {
-        self.verifySimpleDelegateSpy(spy, el2)
-        done()
-      }, 50)
     }
 
   , 'should throw error when no qSA available and no selector engine set': function (done) {
@@ -108,9 +112,9 @@ buster.testCase('delegate', {
         return done()
       }
 
-      var el1 = this.byId('foo')
-        , el2 = this.byId('bar')
-        , spy = this.spy()
+      var el1     = this.byId('foo')
+        , el2     = this.byId('bar')
+        , spy     = this.spy()
 
       bean.add(el1, '.bar', 'click', spy)
 
@@ -133,6 +137,7 @@ buster.testCase('delegate', {
         , el3      = this.byId('baz')
         , el4      = this.byId('bang')
         , selector = "SELECTOR? WE DON'T NEED NO STINKIN' SELECTOR!"
+        , trigger  = this.trigger()
         , stub     = this.stub()
         , spy      = this.spy()
 
@@ -141,14 +146,14 @@ buster.testCase('delegate', {
       // fix this so it's only called once, otherwise it's a waste
       bean.setSelectorEngine(stub)
 
-      bean.add(el1, selector, 'click', spy)
+      bean.add(el1, selector, 'click', trigger.wrap(spy))
 
       Syn.click(el2)
       Syn.click(el3)
       Syn.click(el4)
 
       var self = this
-      defer(function () {
+      trigger.after(function () {
         // 6, see? lots of wasteful calls
         assert.equals(stub.callCount, 6, 'selector engine called')
         assert.same(stub.firstCall.args[0], selector, 'selector engine called with selector argument')
@@ -156,6 +161,6 @@ buster.testCase('delegate', {
         self.verifySimpleDelegateSpy(spy, el2)
         bean.setSelectorEngine(null)
         done()
-      }, 50)
+      })
     }
 })

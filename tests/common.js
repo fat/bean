@@ -48,12 +48,16 @@ var features = {
   , removeFixtures = function () {
       document.body.removeChild(document.getElementById('fixtures'))
     }
+  , SpyTrigger = function () {}
   , globalSetUp = function () {
       var removables = this.removables = []
 
       this.byId = function (id) {
         var el = document.getElementById(id)
-        if (el) removables.push(el) // auto clean up
+        if (el) {
+          bean.remove(el)
+          removables.push(el) // auto clean up
+        }
         return el
       }
 
@@ -69,6 +73,9 @@ var features = {
         return el
       }
 
+      this.trigger = function () {
+        return new SpyTrigger()
+      }
     }
   , globalTearDown = function () {
       for (var i = 0; i < this.removables.length; i++)
@@ -76,6 +83,36 @@ var features = {
 
       //removeFixtures()
     }
+
+SpyTrigger.prototype.after = function (fn, delay) {
+  this._after = fn
+  this._delay = delay || 1
+}
+SpyTrigger.prototype.wrap = function (spy) {
+  if (spy._SpyTriggerWrap)
+    return spy._SpyTriggerWrap
+
+  var self = this
+    , fn = function () {
+        self._trigger()
+        spy.apply(this, arguments)
+      }
+  fn.$ = spy
+  spy._SpyTriggerWrap = fn
+  return fn
+}
+SpyTrigger.prototype.wrapped = function (spy) {
+  return spy._SpyTriggerWrap
+}
+SpyTrigger.prototype._trigger = function () {
+  if (this._after) {
+    this.reset()
+    this._timeout = setTimeout(this._after, this._delay)
+  }
+}
+SpyTrigger.prototype.reset = function () {
+  if (this._timeout) clearTimeout(this._timeout)
+}
 
 if (!window.console) window.console = { log: function () {}}
 
