@@ -16,8 +16,8 @@
     <table cellpadding="0" cellspacing="0" >
       <thead>
         <th></th>
-        <th>../bean.js</th>
-        <th>../src/bean.js</th>
+        <th>/tmp/bean.js (old)</th>
+        <th>../../src/bean.js (current</th>
         <th>NWEvents</th>
         <th>jQuery</th>
       </thead>
@@ -30,13 +30,14 @@
     <script src="../support/syn/mouse.js"></script>
     <script src="../support/syn/browsers.js"></script>
     <script src="../support/syn/key.js"></script>
-    <script src="../bean.js"></script>
-    <script src="../src/bean.js"></script>
+    <script src="/tmp/bean.js"></script>
+    <script src="../../src/bean.js"></script>
     <script type="text/javascript">
       var newbean = bean.noConflict()
+      if (!bean) alert('You need to place an older version of bean at /tmp/bean.js')
     </script>
-    <script src="../support/nwevents/src/nwevents.js"></script>
-    <script src="../support/nwevents/src/modules/nwevents-pubsub.js"></script>
+    <script src="nwevents.js"></script>
+    <script src="nwevents-pubsub.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.js"></script>
     <script>
 
@@ -627,14 +628,15 @@
 
       suite.on( 'cycle', cycle)
         .on( 'complete'
-            , function(e, benchmark) {
+            , function(e) {
                 var item = document.createElement('h3')
                 item.innerHTML = 'benchmarking complete!'
                 document.body.appendChild(item)
               }
             )
 
-      function cycle(e, benchmark) {
+      function cycle(e) {
+        var benchmark = e.target
         if (benchmark.error) throw benchmark.error
         var id = 'result_' + benchmark.name.replace(/\W/g, '_')
           , tbody = document.getElementById('results')
