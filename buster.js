@@ -3,7 +3,7 @@ var config = module.exports
 config['Bean Tests'] = {
     environment: 'browser'
   , sources: [
-        'tests/support/qwery/qwery.js'
+        'node_modules/qwery/qwery.js'
       , 'tests/support/syn/synthetic.js'
       , 'tests/support/syn/mouse.js'
       , 'tests/support/syn/browsers.js'
