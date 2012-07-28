@@ -104,6 +104,8 @@ buster.testCase('custom types', {
         done()
       }, 50)
 
+      bean.setSelectorEngine(qwery)
+
       bean.add(foo, '.bang', 'mouseenter', trigger.wrap(meSpy), qwery)
       bean.add(foo, '.bang', 'mouseleave', trigger.wrap(mlSpy), qwery)
 

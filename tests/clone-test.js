@@ -89,6 +89,8 @@ buster.testCase('clone', {
         done()
       })
 
+      bean.setSelectorEngine(qwery)
+
       bean.add(foo, '.bang', 'click', trigger.wrap(spy1), qwery)
       bean.add(foo, '.baz' , 'click', trigger.wrap(spy2), qwery)
 

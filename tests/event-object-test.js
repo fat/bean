@@ -95,10 +95,12 @@ buster.testCase('event object', {
               done()
             })
 
+            bean.setSelectorEngine(qwery)
+
             txt.value = ''
             if (delegate) {
-              bean.add(parent  , '*', 'keypress', trigger.wrap(txtHandler), qwery)
-              bean.add(fixture      , 'keypress', trigger.wrap(parentSpy), qwery)
+              bean.add(parent  , '*', 'keypress', trigger.wrap(txtHandler))
+              bean.add(fixture      , 'keypress', trigger.wrap(parentSpy))
             } else {
               bean.add(txt   , 'keypress', trigger.wrap(txtHandler))
               bean.add(parent, 'keypress', trigger.wrap(parentSpy))

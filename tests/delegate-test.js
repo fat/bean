@@ -4,6 +4,8 @@ buster.testCase('delegate', {
     'setUp': function () {
       globalSetUp.call(this)
 
+      bean.setSelectorEngine(qwery)
+
       this.verifySimpleDelegateSpy = function (spy, target) {
         assert.equals(spy.callCount, 2, 'delegated on selector')
         assert.same(spy.thisValues[0], target, 'context (this) was set to delegated element')
@@ -15,7 +17,10 @@ buster.testCase('delegate', {
       }
     }
 
-  , 'tearDown': globalTearDown
+  , 'tearDown': function () {
+      globalTearDown.call(this)
+      bean.setSelectorEngine() // reset to default
+    }
 
   , 'should be able to delegate on selectors': function (done) {
       var el1     = this.byId('foo')
@@ -31,7 +36,7 @@ buster.testCase('delegate', {
         done()
       })
 
-      bean.add(el1, '.bar', 'click', trigger.wrap(spy), qwery)
+      bean.add(el1, '.bar', 'click', trigger.wrap(spy))
 
       Syn.click(el2)
       Syn.click(el3)
@@ -51,13 +56,13 @@ buster.testCase('delegate', {
         done()
       }, 50)
 
-      bean.add(el1, '.bar', 'mouseup mousedown', trigger.wrap(spy), qwery)
+      bean.add(el1, '.bar', 'mouseup mousedown', trigger.wrap(spy))
 
       Syn.click(el2)
       Syn.click(el3)
     }
 
-  , 'should be able to delegate on arary': function (done) {
+  , 'should be able to delegate on array': function (done) {
       var el1     = this.byId('foo')
         , el2     = this.byId('bar')
         , el3     = this.byId('baz')
@@ -71,7 +76,7 @@ buster.testCase('delegate', {
         done()
       })
 
-      bean.add(el1, [el2], 'click', trigger.wrap(spy), qwery)
+      bean.add(el1, [el2], 'click', trigger.wrap(spy))
 
       Syn.click(el2)
       Syn.click(el3)
@@ -93,7 +98,7 @@ buster.testCase('delegate', {
         done()
       })
 
-      bean.add(el1, '.bar', 'click', trigger.wrap(fn), qwery)
+      bean.add(el1, '.bar', 'click', trigger.wrap(fn))
 
       Syn.click(el2)
       Syn.click(el2)
@@ -118,6 +123,7 @@ buster.testCase('delegate', {
         done()
       })
 
+      bean.setSelectorEngine() // reset to default
       bean.add(el1, '.bar', 'click', trigger.wrap(spy))
 
       Syn.click(el2)
@@ -135,6 +141,7 @@ buster.testCase('delegate', {
         , el2     = this.byId('bar')
         , spy     = this.spy()
 
+      bean.setSelectorEngine() // reset to default
       bean.add(el1, '.bar', 'click', spy)
 
       window.onerror = function (e) {

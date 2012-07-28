@@ -47,7 +47,9 @@
         'seeked ended durationchange timeupdate play pause ratechange '  + // media
         'volumechange cuechange '                                        + // media
         'checking noupdate downloading cached updateready obsolete '       // appcache
-    , str2arr = function (s, d) { return s.split(d || ' ') }
+    , str2arr  = function (s, d) { return s.split(d || ' ') }
+    , isString = function (s) { return typeof s == 'string' }
+    , isArray  = function (a) { return Object.prototype.toString.call(a) === '[object Array]' }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
@@ -291,7 +293,9 @@
               if (!type || type == '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (t.charAt(0) == '$') forAll(element, t.substr(1), original, handler, fn)
+                  if (t.charAt(0) == '$') {
+                    forAll(element, t.substr(1), original, handler, fn)
+                  }
                 }
               } else {
                 var i = 0, l, list = map['$' + type], all = element == '*'
@@ -316,7 +320,9 @@
 
           , get = function (element, type, original) {
               var entries = []
-              forAll(element, type, original, null, function (entry) { return entries.push(entry) })
+              forAll(element, type, original, null, function (entry) {
+                return entries.push(entry)
+              })
               return entries
             }
 
@@ -345,16 +351,19 @@
         return { has: has, get: get, put: put, del: del, entries: entries }
       }())
 
-    , selectorEngine = doc[qSA]
-        ? function (s, r) {
-            return r[qSA](s)
-          }
-        : function () {
-            throw new Error('Bean: No selector engine installed') // eeek
-          }
-
+    , selectorEngine
     , setSelectorEngine = function (e) {
-        selectorEngine = e
+        if (!arguments.length) {
+          selectorEngine = doc[qSA]
+            ? function (s, r) {
+                return r[qSA](s)
+              }
+            : function () {
+                throw new Error('Bean: No selector engine installed') // eeek
+              }
+        } else {
+          selectorEngine = e
+        }
       }
 
       // add and remove listeners to DOM elements
@@ -424,11 +433,11 @@
         }
       }
 
-    , delegate = function (selector, fn, $) {
+    , delegate = function (selector, fn) {
             //TODO: findTarget (therefore $) is called twice, once for match and once for
             // setting e.currentTarget, fix this so it's only needed once
         var findTarget = function (target, root) {
-              var i, array = typeof selector == 'string' ? $(selector, root) : selector
+              var i, array = isString(selector) ? selectorEngine(selector, root) : selector
               for (; target && target !== root; target = target.parentNode) {
                 for (i = array.length; i--;) {
                   if (array[i] === target) return target
@@ -443,17 +452,16 @@
         handler.__beanDel = {
             ft       : findTarget // attach it here for customEvents to use too
           , selector : selector
-          , $        : $
         }
         return handler
       }
 
     , remove = function (element, typeSpec, fn) {
         var rm       = removeListener
-          , isString = typeSpec && typeof typeSpec == 'string'
+          , isTypeStr = isString(typeSpec)
           , k, type, namespaces, i
 
-        if (isString && typeSpec.indexOf(' ') > 0) {
+        if (isTypeStr && typeSpec.indexOf(' ') > 0) {
           // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
           typeSpec = str2arr(typeSpec)
           for (i = typeSpec.length; i--;)
@@ -461,12 +469,12 @@
           return element
         }
 
-        type = isString && typeSpec.replace(nameRegex, '')
+        type = isTypeStr && typeSpec.replace(nameRegex, '')
         if (type && customEvents[type]) type = customEvents[type].type
 
-        if (!typeSpec || isString) {
+        if (!typeSpec || isTypeStr) {
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
-          if (namespaces = isString && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
+          if (namespaces = isTypeStr && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
           rm(element, type, fn, namespaces)
         } else if (typeof typeSpec == 'function') {
           // remove(el, fn)
@@ -481,47 +489,59 @@
         return element
       }
 
-      // 5th argument, $=selector engine, is deprecated and will be removed
-    , add = function (element, events, fn, delfn, $) {
-        var originalFn  = fn
-          , isDelegated = fn && typeof fn == 'string'
-          , type, types, i, args, entry
+    , on = function(element, events, selector, fn) {
+        var originalFn, type, types, i, args, entry
 
-        if (events && !fn && typeof events == 'object') {
+        if (selector === undefined && typeof events == 'object') {
           //TODO: this can't handle delegated events
           for (type in events) {
-            if (events.hasOwnProperty(type)) add.apply(this, [ element, type, events[type] ])
-          }
-        } else {
-          args  = arguments.length > 3 ? slice.call(arguments, 3) : []
-          types = str2arr(isDelegated ? fn : events)
-
-          if (isDelegated) {
-            fn = delegate(events, (originalFn = delfn), $ || selectorEngine)
-            args = slice.call(args, 1)
-          }
-
-          // special case for one()
-          if (this === ONE) {
-            fn = once(remove, element, events, fn, originalFn)
-          }
-
-          for (i = types.length; i--;) {
-            entry = registry.put(new RegEntry(
-                element
-              , types[i].replace(nameRegex, '')
-              , fn
-              , originalFn
-              , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
-              , args
-            ))
-            if (entry[eventSupport]) {
-              listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
+            if (events.hasOwnProperty(type)) {
+              on.call(this, element, type, events[type])
             }
+          }
+          return
+        }
+
+        if (isString(selector) || isArray(selector)) {
+          originalFn = fn
+          args = slice.call(arguments, 4)
+          fn = delegate(selector, originalFn, selectorEngine)
+        } else {
+          args = slice.call(arguments, 3)
+          fn = originalFn = selector
+        }
+
+        types = str2arr(events)
+
+        // special case for one()
+        if (this === ONE) {
+          fn = once(remove, element, events, fn, originalFn)
+        }
+
+        for (i = types.length; i--;) {
+          entry = registry.put(new RegEntry(
+              element
+            , types[i].replace(nameRegex, '')
+            , fn
+            , originalFn
+            , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
+            , args
+          ))
+          if (entry[eventSupport]) {
+            listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
           }
         }
 
         return element
+      }
+
+    , add = function (element, events, fn, delfn) {
+        return on.apply(
+            this
+          , !isString(fn)
+              ? slice.call(arguments)
+              : [ element, fn,  events, delfn ].concat(arguments.length > 3 ? slice.call(arguments, 5) : [])
+        )
       }
 
     , one = function () {
@@ -568,7 +588,7 @@
           if (handlers[i].original) {
             beanDel = handlers[i].handler.__beanDel
             if (beanDel) {
-              args = [ element, beanDel.selector, handlers[i].type, handlers[i].original, beanDel.$]
+              args = [ element, beanDel.selector, handlers[i].type, handlers[i].original ]
             } else
               args = [ element, handlers[i].type, handlers[i].original ]
             add.apply(null, args)
@@ -579,6 +599,7 @@
 
     , bean = {
           add               : add
+        , on                : on
         , one               : one
         , remove            : remove
         , clone             : clone
@@ -602,6 +623,8 @@
     }
     win[attachEvent]('onunload', cleanup)
   }
+
+  setSelectorEngine()
 
   return bean
 }));

@@ -4,7 +4,7 @@ buster.testCase('custom', {
     'setUp': globalSetUp
   , 'tearDown': globalTearDown
 
-  , 'custom: should be able to add single custom events': function (done) {
+  , 'should be able to add single custom events': function (done) {
       var el      = this.byId('input')
         , trigger = this.trigger()
         , spy     = this.spy()
@@ -18,7 +18,7 @@ buster.testCase('custom', {
       bean.fire(el, 'partytime')
     }
 
-  , 'custom: should bubble up dom like traditional events': function (done) {
+  , 'should bubble up dom like traditional events': function (done) {
       if (features.w3c) {
         //dean edwards' onpropertychange hack doesn't bubble unfortunately :(
         var el1     = this.byId('foo')
@@ -39,7 +39,7 @@ buster.testCase('custom', {
       }
     }
 
-  , 'custom: should be able to add, fire and remove custom events to document': function (done) {
+  , 'should be able to add, fire and remove custom events to document': function (done) {
       var calls   = 0
         , trigger = this.trigger()
 
@@ -59,7 +59,7 @@ buster.testCase('custom', {
       bean.fire(document, 'justlookatthat')
     }
 
-  , 'custom: should be able to add, fire and remove custom events to window': function (done) {
+  , 'should be able to add, fire and remove custom events to window': function (done) {
       var calls   = 0
         , trigger = this.trigger()
 

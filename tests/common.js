@@ -1,4 +1,4 @@
-/*global bean:true*/
+/*global bean:true, qwery:true*/
 
 var fixturesHTML =
   '<input id="input" type="text" />\n' +
@@ -12,7 +12,6 @@ var fixturesHTML =
   '<div id="stopper">\n' +
   '  <input type="text" id="txt" value="">\n' +
   '</div>\n'
-
 
 var features = {
         w3c: !!window.addEventListener
@@ -51,6 +50,7 @@ var features = {
   , SpyTrigger = function () {}
   , globalSetUp = function () {
       var removables = this.removables = []
+      this.timeout = 1000
 
       this.byId = function (id) {
         var el = document.getElementById(id)
@@ -115,5 +115,4 @@ SpyTrigger.prototype.reset = function () {
 }
 
 if (!window.console) window.console = { log: function () {}}
-
 insertFixtures()
