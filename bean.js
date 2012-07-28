@@ -608,6 +608,7 @@
 
     , bean = {
           add               : add
+        , on                : on
         , one               : one
         , remove            : remove
         , clone             : clone
