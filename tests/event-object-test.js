@@ -145,7 +145,8 @@ buster.testCase('event object', {
   , 'event object properties': {
         'setUp': function () {
           var commonIgnorables = ('cancelBubble clipboardData defaultPrevented explicitOriginalTarget getPreventDefault initEvent initUIEvent isChar ' +
-                'originalTarget preventCapture preventBubble rangeOffset rangeParent returnValue stopImmediatePropagation synthetic initPopStateEvent').split(' ')
+                'originalTarget preventCapture preventBubble rangeOffset rangeParent returnValue stopImmediatePropagation synthetic initPopStateEvent ' +
+                'preventDefault stopPropagation').split(' ')
               // stuff from IE8 and below
             , oldIEIgnorables = ('recordset altLeft repeat reason data behaviorCookie source contentOverflow behaviorPart url shiftLeft dataFld ' +
                 'qualifier wheelDelta bookmarks srcFilter nextPage srcUrn origin boundElements propertyName ctrlLeft state').split(' ')

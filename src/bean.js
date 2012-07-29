@@ -48,8 +48,8 @@
         'volumechange cuechange '                                        + // media
         'checking noupdate downloading cached updateready obsolete '       // appcache
     , str2arr  = function (s, d) { return s.split(d || ' ') }
-    , isString = function (s) { return typeof s == 'string' }
-    , isArray  = function (a) { return Object.prototype.toString.call(a) === '[object Array]' }
+    , isString = function (o) { return typeof o == 'string' }
+    , isFunction = function (o) { return typeof o == 'function' }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
@@ -86,7 +86,7 @@
         }
       }())
 
-    , fixEvent = (function () {
+    , Event = (function () {
         var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
               'srcElement target timeStamp type view which')
@@ -155,68 +155,61 @@
                 }
             ]
           , typeFixerMap = {} // used to map event types to fixer functions (above), a basic cache mechanism
-          , preventDefault = 'preventDefault'
-          , createPreventDefault = function (event) {
-              return function () {
-                if (event[preventDefault]) event[preventDefault]()
-                else event.returnValue = false
-              }
-            }
-          , stopPropagation = 'stopPropagation'
-          , createStopPropagation = function (event) {
-              return function () {
-                if (event[stopPropagation]) event[stopPropagation]()
-                else event.cancelBubble = true
-              }
-            }
-          , stopImmediatePropagation = 'stopImmediatePropagation'
-          , createStopImmediatePropagation = function (event) {
-              return function () {
-                if (event[stopImmediatePropagation]) event[stopImmediatePropagation]()
-              }
-            }
-          , createStop = function (synEvent) {
-              return function () {
-                synEvent[preventDefault]()
-                synEvent[stopPropagation]()
-                synEvent.stopped = true
-              }
-            }
-          , copyProps = function (event, result, props) {
-              var i, p
-              for (i = props.length; i--;) {
-                if (!((p = props[i]) in result) && p in event) result[p] = event[p]
-              }
-            }
 
-        return function (event, isNative) {
-          var result = { originalEvent: event, isNative: isNative, isBean: true }
-          if (!event) return result
+          , Event = function (event, isNative) {
+              this[originalEvent] = event
+              this.isNative       = isNative
+              this.isBean         = true
 
-          var i, l, fixer
-            , type   = event.type
-            , target = event[targetS] || event.srcElement
+              if (!event) return
 
-          result[preventDefault]  = createPreventDefault(event)
-          result[stopPropagation] = createStopPropagation(event)
-          result[stopImmediatePropagation] = createStopImmediatePropagation(event)
-          result.stop             = createStop(result)
-          result[targetS]         = target && target.nodeType === 3 ? target.parentNode : target
+              var type   = event.type
+                , target = event[targetS] || event.srcElement
+                , i, l, p, props, fixer
 
-          if (isNative) { // we only need basic augmentation on custom events, the rest expensive & pointless
-            fixer = typeFixerMap[type]
-            if (!fixer) { // haven't encountered this event type before, map a fixer function for it
-              for (i = 0, l = typeFixers.length; i < l; i++) {
-                if (typeFixers[i].reg.test(type)) { // guaranteed to match at least one, last is .*
-                  typeFixerMap[type] = fixer = typeFixers[i].fix
-                  break
+              this[targetS] = target && target.nodeType === 3 ? target.parentNode : target
+
+              if (isNative) { // we only need basic augmentation on custom events, the rest expensive & pointless
+                fixer = typeFixerMap[type]
+                if (!fixer) { // haven't encountered this event type before, map a fixer function for it
+                  for (i = 0, l = typeFixers.length; i < l; i++) {
+                    if (typeFixers[i].reg.test(type)) { // guaranteed to match at least one, last is .*
+                      typeFixerMap[type] = fixer = typeFixers[i].fix
+                      break
+                    }
+                  }
+                }
+
+                props = fixer(event, this, type)
+                for (i = props.length; i--;) {
+                  if (!((p = props[i]) in this) && p in event) this[p] = event[p]
                 }
               }
             }
-            copyProps(event, result, fixer(event, result, type))
-          }
-          return result
+
+          , preventDefault           = 'preventDefault'
+          , stopPropagation          = 'stopPropagation'
+          , stopImmediatePropagation = 'stopImmediatePropagation'
+          , originalEvent            = 'originalEvent'
+
+        Event.prototype[preventDefault] = function () {
+          if (this[originalEvent][preventDefault]) this[originalEvent][preventDefault]()
+          else this[originalEvent].returnValue = false
         }
+        Event.prototype[stopPropagation] = function () {
+          if (this[originalEvent][stopPropagation]) this[originalEvent][stopPropagation]()
+          else this[originalEvent].cancelBubble = true
+        }
+        Event.prototype[stopImmediatePropagation] = function () {
+          if (this[originalEvent][stopImmediatePropagation]) this[originalEvent][stopImmediatePropagation]()
+        }
+        Event.prototype.stop = function () {
+          this[preventDefault]()
+          this[stopPropagation]()
+          this.stopped = true
+        }
+
+        return Event
       }())
 
       // if we're in old IE we can't do onpropertychange on doc or win so we use doc.documentElement for both
@@ -377,7 +370,7 @@
     , nativeHandler = function (element, fn, args) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-              event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
+              event = new Event(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
               if (beanDel) event.currentTarget = beanDel.ft(event[targetS], element) // delegated event, fix the fix
               return fn.apply(element, [event].concat(args))
             }
@@ -394,7 +387,7 @@
                     : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event
               if (handle) {
                 if (event) {
-                  event = fixEvent(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
+                  event = new Event(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
                   event.currentTarget = target
                 }
                 fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
@@ -476,7 +469,7 @@
           // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
           if (namespaces = isTypeStr && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
           rm(element, type, fn, namespaces)
-        } else if (typeof typeSpec == 'function') {
+        } else if (isFunction(typeSpec)) {
           // remove(el, fn)
           rm(element, null, typeSpec)
         } else {
@@ -502,7 +495,8 @@
           return
         }
 
-        if (isString(selector) || isArray(selector)) {
+        if (!isFunction(selector)) {
+          // delegated event
           originalFn = fn
           args = slice.call(arguments, 4)
           fn = delegate(selector, originalFn, selectorEngine)
