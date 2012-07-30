@@ -11,13 +11,10 @@
     , attachEvent    = 'attachEvent'
     , removeEvent    = 'removeEventListener'
     , detachEvent    = 'detachEvent'
-    , ownerDocument  = 'ownerDocument'
-    , targetS        = 'target'
-    , qSA            = 'querySelectorAll'
     , doc            = document || {}
     , root           = doc.documentElement || {}
     , W3C_MODEL      = root[addEvent]
-    , eventSupport   = W3C_MODEL ? addEvent : attachEvent
+    , eventSupport   = W3C_MODEL ? addEvent : 'attachEvent'
     , slice          = Array.prototype.slice
     , ONE            = {} // singleton for quick matching making add() do one()
     , standardNativeEvents =
@@ -57,10 +54,9 @@
       }({}, str2arr(standardNativeEvents + (W3C_MODEL ? w3cNativeEvents : ''))))
 
     , customEvents = (function () {
-        var cdp = 'compareDocumentPosition'
-          , isAncestor = cdp in root
+        var isAncestor = 'compareDocumentPosition' in root
               ? function (element, container) {
-                  return container[cdp] && (container[cdp](element) & 16) === 16
+                  return container.compareDocumentPosition && (container.compareDocumentPosition(element) & 16) === 16
                 }
               : 'contains' in root
                 ? function (element, container) {
@@ -156,18 +152,20 @@
             ]
           , typeFixerMap = {} // used to map event types to fixer functions (above), a basic cache mechanism
 
-          , Event = function (event, isNative) {
-              this[originalEvent] = event
+          , Event = function (event, element, isNative) {
+              if (!arguments.length) return
+              event = event || ((element.ownerDocument || element.document || element).parentWindow || win).event
+              this.originalEvent = event
               this.isNative       = isNative
               this.isBean         = true
 
               if (!event) return
 
               var type   = event.type
-                , target = event[targetS] || event.srcElement
+                , target = event.target || event.srcElement
                 , i, l, p, props, fixer
 
-              this[targetS] = target && target.nodeType === 3 ? target.parentNode : target
+              this.target = target && target.nodeType === 3 ? target.parentNode : target
 
               if (isNative) { // we only need basic augmentation on custom events, the rest expensive & pointless
                 fixer = typeFixerMap[type]
@@ -187,26 +185,27 @@
               }
             }
 
-          , preventDefault           = 'preventDefault'
-          , stopPropagation          = 'stopPropagation'
-          , stopImmediatePropagation = 'stopImmediatePropagation'
-          , originalEvent            = 'originalEvent'
-
-        Event.prototype[preventDefault] = function () {
-          if (this[originalEvent][preventDefault]) this[originalEvent][preventDefault]()
-          else this[originalEvent].returnValue = false
+        Event.prototype.preventDefault = function () {
+          if (this.originalEvent.preventDefault) this.originalEvent.preventDefault()
+          else this.originalEvent.returnValue = false
         }
-        Event.prototype[stopPropagation] = function () {
-          if (this[originalEvent][stopPropagation]) this[originalEvent][stopPropagation]()
-          else this[originalEvent].cancelBubble = true
+        Event.prototype.stopPropagation = function () {
+          if (this.originalEvent.stopPropagation) this.originalEvent.stopPropagation()
+          else this.originalEvent.cancelBubble = true
         }
-        Event.prototype[stopImmediatePropagation] = function () {
-          if (this[originalEvent][stopImmediatePropagation]) this[originalEvent][stopImmediatePropagation]()
+        Event.prototype.stopImmediatePropagation = function () {
+          if (this.originalEvent.stopImmediatePropagation) this.originalEvent.stopImmediatePropagation()
         }
         Event.prototype.stop = function () {
-          this[preventDefault]()
-          this[stopPropagation]()
+          this.preventDefault()
+          this.stopPropagation()
           this.stopped = true
+        }
+        Event.prototype.clone = function (currentTarget) {
+          var ne = new Event(), p
+          for (p in this) ne[p] = this[p]
+          ne.currentTarget = currentTarget
+          return ne
         }
 
         return Event
@@ -242,8 +241,8 @@
           this.original      = original
           this.namespaces    = namespaces
           this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
-          this[targetS]      = targetElement(element, isNative)
-          this[eventSupport] = !!this[targetS][eventSupport]
+          this.target      = targetElement(element, isNative)
+          this[eventSupport] = !!this.target[eventSupport]
 
           this.handler = isNative
               ? nativeHandler(element, handler, args)
@@ -320,13 +319,15 @@
             }
 
           , put = function (entry) {
-              (map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
-              return entry
+              var has = !this.has(entry.element, entry.type)
+              ;(map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
+              return has
             }
 
           , del = function (entry) {
               forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
                 list.splice(i, 1)
+                entry._removed = true
                 if (list.length === 0) delete map['$' + entry.type]
                 return false
               })
@@ -347,9 +348,9 @@
     , selectorEngine
     , setSelectorEngine = function (e) {
         if (!arguments.length) {
-          selectorEngine = doc[qSA]
+          selectorEngine = doc.querySelectorAll
             ? function (s, r) {
-                return r[qSA](s)
+                return r.querySelectorAll(s)
               }
             : function () {
                 throw new Error('Bean: No selector engine installed') // eeek
@@ -359,19 +360,28 @@
         }
       }
 
+    , rootListener = function (event) {
+        var listeners = registry.get(this, event.type)
+          , l = listeners.length
+          , i = 0
+        event = new Event(event, this, true)
+        for (; i < l; i++) !listeners[i]._removed && listeners[i].handler.call(this, event)
+      }
+
       // add and remove listeners to DOM elements
-    , listener = W3C_MODEL ? function (element, type, fn, add) {
-        element[add ? addEvent : removeEvent](type, fn, false)
-      } : function (element, type, fn, add, custom) {
+    , listener = W3C_MODEL ? function (element, type, add) {
+        element[add ? addEvent : removeEvent](type, rootListener, false)
+      } : function (element, type, add, custom) {
         if (custom && add && element['_on' + custom] == null) element['_on' + custom] = 0
-        element[add ? attachEvent : detachEvent]('on' + type, fn)
+        element[add ? attachEvent : detachEvent]('on' + type, rootListener)
       }
 
     , nativeHandler = function (element, fn, args) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-              event = new Event(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, true)
-              if (beanDel) event.currentTarget = beanDel.ft(event[targetS], element) // delegated event, fix the fix
+              if (beanDel) {
+                event = event.clone(beanDel.ft(event.target, element)) // delegated event, fix the fix
+              }
               return fn.apply(element, [event].concat(args))
             }
         handler.__beanDel = beanDel
@@ -381,13 +391,13 @@
     , customHandler = function (element, fn, type, condition, args, isNative) {
         var beanDel = fn.__beanDel
           , handler = function (event) {
-              var target = beanDel ? beanDel.ft(event[targetS], element) : this // deleated event
+              var target = beanDel ? beanDel.ft(event.target, element) : this // deleated event
                 , handle = condition
                     ? condition.apply(target, arguments)
                     : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event
               if (handle) {
                 if (event) {
-                  event = new Event(event || ((this[ownerDocument] || this.document || this).parentWindow || win).event, isNative)
+                  event = new Event(event, this, isNative)
                   event.currentTarget = target
                 }
                 fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
@@ -401,27 +411,33 @@
     , once = function (rm, element, type, fn, originalFn) {
         // wrap the handler in a handler that does a remove as well
         return function () {
-          rm(element, type, originalFn)
           fn.apply(this, arguments)
+          rm(element, type, originalFn)
         }
       }
 
     , removeListener = function (element, orgType, handler, namespaces) {
         var type     = (orgType && orgType.replace(nameRegex, ''))
-          , handlers = registry.get(element, type, handler)
-          , i, l, entry
+          , handlers = registry.get(element, type)
+          , removed  = {}
+          , i, l
 
         for (i = 0, l = handlers.length; i < l; i++) {
-          if (handlers[i].inNamespaces(namespaces)) {
-            if ((entry = handlers[i])[eventSupport]) {
-              listener(entry[targetS], entry.eventType, entry.handler, false, entry.type)
-            }
+          if ((!handler || handlers[i].original === handler) && handlers[i].inNamespaces(namespaces)) {
             // TODO: this is problematic, we have a registry.get() and registry.del() that
             // both do registry searches so we waste cycles doing this. Needs to be rolled into
             // a single registry.forAll(fn) that removes while finding, but the catch is that
             // we'll be splicing the arrays that we're iterating over. Needs extra tests to
             // make sure we don't screw it up. @rvagg
-            registry.del(entry)
+            registry.del(handlers[i])
+            if (!removed[handlers[i].eventType] && handlers[i][eventSupport])
+              removed[handlers[i].eventType] = { t: handlers[i].eventType, c: handlers[i].type }
+          }
+        }
+        for (i in removed) {
+          if (!registry.has(element, removed[i].t)) {
+            // last listener of this type, remove the rootListener
+            listener(element, removed[i].t, false, removed[i].c)
           }
         }
       }
@@ -438,7 +454,7 @@
               }
             }
           , handler = function (e) {
-              var match = findTarget(e[targetS], this)
+              var match = findTarget(e.target, this)
               if (match) fn.apply(match, arguments)
             }
 
@@ -483,7 +499,7 @@
       }
 
     , on = function(element, events, selector, fn) {
-        var originalFn, type, types, i, args, entry
+        var originalFn, type, types, i, args, entry, first
 
         if (selector === undefined && typeof events == 'object') {
           //TODO: this can't handle delegated events
@@ -513,7 +529,7 @@
         }
 
         for (i = types.length; i--;) {
-          entry = registry.put(new RegEntry(
+          first = registry.put(entry = new RegEntry(
               element
             , types[i].replace(nameRegex, '')
             , fn
@@ -521,8 +537,9 @@
             , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
             , args
           ))
-          if (entry[eventSupport]) {
-            listener(entry[targetS], entry.eventType, entry.handler, true, entry.customType)
+          if (entry[eventSupport] && first) {
+            // first event of this type on this element, add root listener
+            listener(element, entry.eventType, true, entry.customType)
           }
         }
 
@@ -578,14 +595,12 @@
         var handlers = registry.get(from, type)
           , i, l, args, beanDel
 
-        for (i = 0, l = handlers.length;i < l; i++) {
+        for (i = 0, l = handlers.length; i < l; i++) {
           if (handlers[i].original) {
-            beanDel = handlers[i].handler.__beanDel
-            if (beanDel) {
-              args = [ element, beanDel.selector, handlers[i].type, handlers[i].original ]
-            } else
-              args = [ element, handlers[i].type, handlers[i].original ]
-            add.apply(null, args)
+            args = [ element, handlers[i].type ]
+            if (beanDel = handlers[i].handler.__beanDel) args.push(beanDel.selector)
+            args.push(handlers[i].original)
+            on.apply(null, args)
           }
         }
         return element

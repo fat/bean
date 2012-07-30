@@ -299,7 +299,7 @@ buster.testCase('add', {
               , spy     = self.spy()
 
             trigger.after(function () {
-              assert(spy.calledOnce, 'handler called exactly one time')
+              assert.equals(spy.callCount, 1, 'handler called exactly one time')
               done()
             })
 
