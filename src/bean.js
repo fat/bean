@@ -400,7 +400,7 @@
                   event = new Event(event, this, isNative)
                   event.currentTarget = target
                 }
-                fn.apply(element, event && (!args || args.length === 0) ? arguments : slice.call(arguments, event ? 0 : 1).concat(args))
+                fn.apply(element, slice.call(arguments, event ? 0 : 1).concat(args || []))
               }
             }
 
@@ -417,7 +417,7 @@
       }
 
     , removeListener = function (element, orgType, handler, namespaces) {
-        var type     = (orgType && orgType.replace(nameRegex, ''))
+        var type     = orgType && orgType.replace(nameRegex, '')
           , handlers = registry.get(element, type)
           , removed  = {}
           , i, l
@@ -443,8 +443,8 @@
       }
 
     , delegate = function (selector, fn) {
-            //TODO: findTarget (therefore $) is called twice, once for match and once for
-            // setting e.currentTarget, fix this so it's only needed once
+        //TODO: findTarget (therefore $) is called twice, once for match and once for
+        // setting e.currentTarget, fix this so it's only needed once
         var findTarget = function (target, root) {
               var i, array = isString(selector) ? selectorEngine(selector, root) : selector
               for (; target && target !== root; target = target.parentNode) {
@@ -465,16 +465,16 @@
         return handler
       }
 
-    , remove = function (element, typeSpec, fn) {
-        var rm       = removeListener
+    , off = function (element, typeSpec, fn) {
+        var rm        = removeListener
           , isTypeStr = isString(typeSpec)
           , k, type, namespaces, i
 
         if (isTypeStr && typeSpec.indexOf(' ') > 0) {
-          // remove(el, 't1 t2 t3', fn) or remove(el, 't1 t2 t3')
+          // off(el, 't1 t2 t3', fn) or off(el, 't1 t2 t3')
           typeSpec = str2arr(typeSpec)
           for (i = typeSpec.length; i--;)
-            remove(element, typeSpec[i], fn)
+            off(element, typeSpec[i], fn)
           return element
         }
 
@@ -482,16 +482,16 @@
         if (type && customEvents[type]) type = customEvents[type].type
 
         if (!typeSpec || isTypeStr) {
-          // remove(el) or remove(el, t1.ns) or remove(el, .ns) or remove(el, .ns1.ns2.ns3)
+          // off(el) or off(el, t1.ns) or off(el, .ns) or off(el, .ns1.ns2.ns3)
           if (namespaces = isTypeStr && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
           rm(element, type, fn, namespaces)
         } else if (isFunction(typeSpec)) {
-          // remove(el, fn)
+          // off(el, fn)
           rm(element, null, typeSpec)
         } else {
-          // remove(el, { t1: fn1, t2, fn2 })
+          // off(el, { t1: fn1, t2, fn2 })
           for (k in typeSpec) {
-            if (typeSpec.hasOwnProperty(k)) remove(element, k, typeSpec[k])
+            if (typeSpec.hasOwnProperty(k)) off(element, k, typeSpec[k])
           }
         }
 
@@ -514,24 +514,24 @@
         if (!isFunction(selector)) {
           // delegated event
           originalFn = fn
-          args = slice.call(arguments, 4)
-          fn = delegate(selector, originalFn, selectorEngine)
+          args       = slice.call(arguments, 4)
+          fn         = delegate(selector, originalFn, selectorEngine)
         } else {
-          args = slice.call(arguments, 3)
-          fn = originalFn = selector
+          args       = slice.call(arguments, 3)
+          fn         = originalFn = selector
         }
 
         types = str2arr(events)
 
         // special case for one()
         if (this === ONE) {
-          fn = once(remove, element, events, fn, originalFn)
+          fn = once(off, element, events, fn, originalFn)
         }
 
         for (i = types.length; i--;) {
           first = registry.put(entry = new RegEntry(
               element
-            , types[i].replace(nameRegex, '')
+            , types[i].replace(nameRegex, '') // event type
             , fn
             , originalFn
             , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
@@ -593,9 +593,11 @@
 
     , clone = function (element, from, type) {
         var handlers = registry.get(from, type)
-          , i, l, args, beanDel
+          , l = handlers.length
+          , i = 0
+          , args, beanDel
 
-        for (i = 0, l = handlers.length; i < l; i++) {
+        for (; i < l; i++) {
           if (handlers[i].original) {
             args = [ element, handlers[i].type ]
             if (beanDel = handlers[i].handler.__beanDel) args.push(beanDel.selector)
@@ -607,10 +609,11 @@
       }
 
     , bean = {
-          add               : add
-        , on                : on
+          on                : on
+        , add               : add
         , one               : one
-        , remove            : remove
+        , off               : off
+        , remove            : off
         , clone             : clone
         , fire              : fire
         , setSelectorEngine : setSelectorEngine
@@ -625,7 +628,7 @@
     var cleanup = function () {
       var i, entries = registry.entries()
       for (i in entries) {
-        if (entries[i].type && entries[i].type !== 'unload') remove(entries[i].element, entries[i].type)
+        if (entries[i].type && entries[i].type !== 'unload') off(entries[i].element, entries[i].type)
       }
       win[detachEvent]('onunload', cleanup)
       win.CollectGarbage && win.CollectGarbage()
