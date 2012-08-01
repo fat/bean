@@ -8,15 +8,18 @@
     , namespaceRegex = /[^\.]*(?=\..*)\.|.*/
     , nameRegex      = /\..*/
     , addEvent       = 'addEventListener'
-    , attachEvent    = 'attachEvent'
     , removeEvent    = 'removeEventListener'
-    , detachEvent    = 'detachEvent'
     , doc            = document || {}
     , root           = doc.documentElement || {}
     , W3C_MODEL      = root[addEvent]
     , eventSupport   = W3C_MODEL ? addEvent : 'attachEvent'
-    , slice          = Array.prototype.slice
     , ONE            = {} // singleton for quick matching making add() do one()
+
+    , slice          = Array.prototype.slice
+    , str2arr        = function (s, d) { return s.split(d || ' ') }
+    , isString       = function (o) { return typeof o == 'string' }
+    , isFunction     = function (o) { return typeof o == 'function' }
+
     , standardNativeEvents =
         'click dblclick mouseup mousedown contextmenu '                  + // mouse buttons
         'mousewheel mousemultiwheel DOMMouseScroll '                     + // mouse wheel
@@ -44,9 +47,6 @@
         'seeked ended durationchange timeupdate play pause ratechange '  + // media
         'volumechange cuechange '                                        + // media
         'checking noupdate downloading cached updateready obsolete '       // appcache
-    , str2arr  = function (s, d) { return s.split(d || ' ') }
-    , isString = function (o) { return typeof o == 'string' }
-    , isFunction = function (o) { return typeof o == 'function' }
 
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
@@ -85,7 +85,7 @@
     , Event = (function () {
         var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
-              'srcElement target timeStamp type view which')
+              'srcElement target timeStamp type view which propertyName')
           , mouseProps   = commonProps.concat(str2arr('button buttons clientX clientY dataTransfer '      +
               'fromElement offsetX offsetY pageX pageY screenX screenY toElement'))
           , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
@@ -218,60 +218,78 @@
 
       // we use one of these per listener, of any type
     , RegEntry = (function () {
-        function entry(element, type, handler, original, namespaces, args) {
-          var customType     = customEvents[type]
-            , isNative
-
-          if (type == 'unload') {
-            // self clean-up
-            handler = once(removeListener, element, type, handler, original)
-          }
-
-          if (customType) {
-            if (customType.condition) {
-              handler = customHandler(element, handler, type, customType.condition, args, true)
-            }
-            type = customType.base || type
-          }
-
-          this.isNative      = isNative = nativeEvents[type] && !!element[eventSupport]
-          this.customType    = !W3C_MODEL && !isNative && type
-          this.element       = element
-          this.type          = type
-          this.original      = original
-          this.namespaces    = namespaces
-          this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
-          this.target      = targetElement(element, isNative)
-          this[eventSupport] = !!this.target[eventSupport]
-
-          this.handler = isNative
-              ? nativeHandler(element, handler, args)
-              : customHandler(element, handler, type, false, args, false)
-        }
-
-        entry.prototype = {
-            // given a list of namespaces, is our entry in any of them?
-            inNamespaces: function (checkNamespaces) {
-              var i, j, c = 0
-              if (!checkNamespaces) return true
-              if (!this.namespaces) return false
-              for (i = checkNamespaces.length; i--;) {
-                for (j = this.namespaces.length; j--;) {
-                  if (checkNamespaces[i] == this.namespaces[j]) c++
+        var wrappedHandler = function (element, fn, condition, args) {
+            var call = function (event, eargs) {
+                  return fn.apply(element, args ? slice.call(eargs, event ? 0 : 1).concat(args) : eargs)
                 }
-              }
-              return checkNamespaces.length === c
+              , findTarget = function (event, eventElement) {
+                  return fn.__beanDel ? fn.__beanDel.ft(event.target, element) : eventElement
+                }
+              , handler = condition
+                  ? function (event) {
+                      var target = findTarget(event, this) // deleated event
+                      if (condition.apply(target, arguments)) {
+                        if (event) event.currentTarget = target
+                        return call(event, arguments)
+                      }
+                    }
+                  : function (event) {
+                      if (fn.__beanDel) event = event.clone(findTarget(event)) // delegated event, fix the fix
+                      return call(event, arguments)
+                    }
+            handler.__beanDel = fn.__beanDel
+            return handler
+          }
+        , RegEntry = function (element, type, handler, original, namespaces, args, root) {
+            var customType     = customEvents[type]
+              , isNative
+
+            if (type == 'unload') {
+              // self clean-up
+              handler = once(removeListener, element, type, handler, original)
             }
 
-            // match by element, original fn (opt), handler fn (opt)
-          , matches: function (checkElement, checkOriginal, checkHandler) {
-              return this.element === checkElement &&
-                (!checkOriginal || this.original === checkOriginal) &&
-                (!checkHandler || this.handler === checkHandler)
+            if (customType) {
+              if (customType.condition) {
+                handler = wrappedHandler(element, handler, customType.condition, args)
+              }
+              type = customType.base || type
             }
+
+            this.isNative      = isNative = nativeEvents[type] && !!element[eventSupport]
+            this.customType    = !W3C_MODEL && !isNative && type
+            this.element       = element
+            this.type          = type
+            this.original      = original
+            this.namespaces    = namespaces
+            this.eventType     = W3C_MODEL || isNative ? type : 'propertychange'
+            this.target        = targetElement(element, isNative)
+            this[eventSupport] = !!this.target[eventSupport]
+            this.root          = root
+            this.handler       = wrappedHandler(element, handler, null, args)
+          }
+
+        // given a list of namespaces, is our entry in any of them?
+        RegEntry.prototype.inNamespaces = function (checkNamespaces) {
+          var i, j, c = 0
+          if (!checkNamespaces) return true
+          if (!this.namespaces) return false
+          for (i = checkNamespaces.length; i--;) {
+            for (j = this.namespaces.length; j--;) {
+              if (checkNamespaces[i] == this.namespaces[j]) c++
+            }
+          }
+          return checkNamespaces.length === c
         }
 
-        return entry
+        // match by element, original fn (opt), handler fn (opt)
+        RegEntry.prototype.matches = function (checkElement, checkOriginal, checkHandler) {
+          return this.element === checkElement &&
+            (!checkOriginal || this.original === checkOriginal) &&
+            (!checkHandler || this.handler === checkHandler)
+        }
+
+        return RegEntry
       }())
 
     , registry = (function () {
@@ -304,7 +322,7 @@
               var i, list = map['$' + type]
               if (list) {
                 for (i = list.length; i--;) {
-                  if (list[i].matches(element, original, null)) return true
+                  if (!list[i].root && list[i].matches(element, original, null)) return true
                 }
               }
               return false
@@ -319,7 +337,7 @@
             }
 
           , put = function (entry) {
-              var has = !this.has(entry.element, entry.type)
+              var has = !entry.root && !this.has(entry.element, entry.type)
               ;(map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
               return has
             }
@@ -327,7 +345,7 @@
           , del = function (entry) {
               forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
                 list.splice(i, 1)
-                entry._removed = true
+                entry.removed = true
                 if (list.length === 0) delete map['$' + entry.type]
                 return false
               })
@@ -360,53 +378,52 @@
         }
       }
 
-    , rootListener = function (event) {
-        var listeners = registry.get(this, event.type)
+    , rootListener = function (event, type) {
+        if (!W3C_MODEL && type && event && event.propertyName != '_on' + type) return
+
+        var listeners = registry.get(this, type || event.type)
           , l = listeners.length
           , i = 0
+
         event = new Event(event, this, true)
-        for (; i < l; i++) !listeners[i]._removed && listeners[i].handler.call(this, event)
+        if (type) event.type = type
+
+        for (; i < l; i++) {
+          if (!listeners[i].removed && !listeners[i].root) {
+            listeners[i].handler.call(this, event)
+          }
+        }
       }
 
       // add and remove listeners to DOM elements
-    , listener = W3C_MODEL ? function (element, type, add) {
-        element[add ? addEvent : removeEvent](type, rootListener, false)
-      } : function (element, type, add, custom) {
-        if (custom && add && element['_on' + custom] == null) element['_on' + custom] = 0
-        element[add ? attachEvent : detachEvent]('on' + type, rootListener)
-      }
-
-    , nativeHandler = function (element, fn, args) {
-        var beanDel = fn.__beanDel
-          , handler = function (event) {
-              if (beanDel) {
-                event = event.clone(beanDel.ft(event.target, element)) // delegated event, fix the fix
-              }
-              return fn.apply(element, [event].concat(args))
-            }
-        handler.__beanDel = beanDel
-        return handler
-      }
-
-    , customHandler = function (element, fn, type, condition, args, isNative) {
-        var beanDel = fn.__beanDel
-          , handler = function (event) {
-              var target = beanDel ? beanDel.ft(event.target, element) : this // deleated event
-                , handle = condition
-                    ? condition.apply(target, arguments)
-                    : W3C_MODEL ? true : event && event.propertyName == '_on' + type || !event
-              if (handle) {
-                if (event) {
-                  event = new Event(event, this, isNative)
-                  event.currentTarget = target
-                }
-                fn.apply(element, slice.call(arguments, event ? 0 : 1).concat(args || []))
+    , listener = W3C_MODEL
+        ? function (element, type, add) {
+            element[add ? addEvent : removeEvent](type, rootListener, false)
+          }
+        : function (element, type, add, custom) {
+            var entry
+            if (add) {
+              registry.put(entry = new RegEntry(
+                  element
+                , custom || type
+                , function (event) { // handler
+                    rootListener.call(element, event, custom)
+                  }
+                , rootListener
+                , null
+                , null
+                , true // is root
+              ))
+              if (custom && element['_on' + custom] == null) element['_on' + custom] = 0
+              entry.target.attachEvent('on' + entry.eventType, entry.handler)
+            } else {
+              entry = registry.get(element, custom || type, rootListener)[0]
+              if (entry) {
+                entry.target.detachEvent('on' + entry.eventType, entry.handler)
+                registry.del(entry)
               }
             }
-
-        handler.__beanDel = beanDel
-        return handler
-      }
+          }
 
     , once = function (rm, element, type, fn, originalFn) {
         // wrap the handler in a handler that does a remove as well
@@ -423,7 +440,7 @@
           , i, l
 
         for (i = 0, l = handlers.length; i < l; i++) {
-          if ((!handler || handlers[i].original === handler) && handlers[i].inNamespaces(namespaces)) {
+          if ((!handler || handlers[i].original === handler) && !handlers[i].root && handlers[i].inNamespaces(namespaces)) {
             // TODO: this is problematic, we have a registry.get() and registry.del() that
             // both do registry searches so we waste cycles doing this. Needs to be rolled into
             // a single registry.forAll(fn) that removes while finding, but the catch is that
@@ -466,8 +483,7 @@
       }
 
     , off = function (element, typeSpec, fn) {
-        var rm        = removeListener
-          , isTypeStr = isString(typeSpec)
+        var isTypeStr = isString(typeSpec)
           , k, type, namespaces, i
 
         if (isTypeStr && typeSpec.indexOf(' ') > 0) {
@@ -484,10 +500,10 @@
         if (!typeSpec || isTypeStr) {
           // off(el) or off(el, t1.ns) or off(el, .ns) or off(el, .ns1.ns2.ns3)
           if (namespaces = isTypeStr && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
-          rm(element, type, fn, namespaces)
+          removeListener(element, type, fn, namespaces)
         } else if (isFunction(typeSpec)) {
           // off(el, fn)
-          rm(element, null, typeSpec)
+          removeListener(element, null, typeSpec)
         } else {
           // off(el, { t1: fn1, t2, fn2 })
           for (k in typeSpec) {
@@ -546,17 +562,18 @@
         return element
       }
 
+      // deprecated, has delegate-selector in the wrong position, kept (for now) for backward-compatibility
     , add = function (element, events, fn, delfn) {
         return on.apply(
-            this
+            null
           , !isString(fn)
               ? slice.call(arguments)
-              : [ element, fn,  events, delfn ].concat(arguments.length > 3 ? slice.call(arguments, 5) : [])
+              : [ element, fn, events, delfn ].concat(arguments.length > 3 ? slice.call(arguments, 5) : [])
         )
       }
 
     , one = function () {
-        return add.apply(ONE, arguments)
+        return on.apply(ONE, arguments)
       }
 
     , fireListener = W3C_MODEL ? function (isNative, type, element) {
@@ -584,7 +601,9 @@
             handlers = registry.get(element, type)
             args = [false].concat(args)
             for (j = 0, l = handlers.length; j < l; j++) {
-              if (handlers[j].inNamespaces(names)) handlers[j].handler.apply(element, args)
+              if (!handlers[j].root && handlers[j].inNamespaces(names)) {
+                handlers[j].handler.apply(element, args)
+              }
             }
           }
         }
@@ -598,7 +617,7 @@
           , args, beanDel
 
         for (; i < l; i++) {
-          if (handlers[i].original) {
+          if (!handlers[i].root && handlers[i].original) {
             args = [ element, handlers[i].type ]
             if (beanDel = handlers[i].handler.__beanDel) args.push(beanDel.selector)
             args.push(handlers[i].original)
@@ -623,17 +642,17 @@
           }
       }
 
-  if (win[attachEvent]) {
+  if (win.attachEvent) {
     // for IE, clean up on unload to avoid leaks
     var cleanup = function () {
       var i, entries = registry.entries()
       for (i in entries) {
         if (entries[i].type && entries[i].type !== 'unload') off(entries[i].element, entries[i].type)
       }
-      win[detachEvent]('onunload', cleanup)
+      win.detachEvent('onunload', cleanup)
       win.CollectGarbage && win.CollectGarbage()
     }
-    win[attachEvent]('onunload', cleanup)
+    win.attachEvent('onunload', cleanup)
   }
 
   setSelectorEngine()
