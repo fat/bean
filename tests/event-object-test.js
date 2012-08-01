@@ -10,12 +10,12 @@ buster.testCase('event object', {
         , trigger = this.trigger()
         , spy     = this.spy()
 
-      bean.add(el1, 'click', trigger.wrap(spy))
+      bean.on(el1, 'click', trigger.wrap(spy))
 
       Syn.click(el2)
 
       trigger.after(function() {
-        assert(spy.calledOnce, 'called once')
+        assert.equals(spy.callCount, 1, 'called once')
         assert(spy.firstCall.args.length, 'has argument')
         assert.same(spy.firstCall.args[0].target, el2, 'event object has correct property')
         done()
@@ -31,13 +31,13 @@ buster.testCase('event object', {
               , spy     = self.spy()
 
             trigger.after(function() {
-              assert(spy.calledOnce, 'called once')
+              assert.equals(spy.callCount, 1, 'called once')
               assert(spy.firstCall.args.length, 'has argument')
               verifyFn(spy.firstCall.args[0])
               done()
             })
 
-            bean.add(el, custom ? 'customEvent' : 'click', trigger.wrap(spy))
+            bean.on(el, custom ? 'customEvent' : 'click', trigger.wrap(spy))
 
             if (custom)
               bean.fire(el, 'customEvent')
@@ -57,7 +57,6 @@ buster.testCase('event object', {
             assert.isFunction(event.preventDefault, 'event object has preventDefault method')
           })
         }
-
 
       , 'should have stopPropagation method on custom event': function (done) {
           this.runTest(true, done, function (event) {
@@ -99,11 +98,11 @@ buster.testCase('event object', {
 
             txt.value = ''
             if (delegate) {
-              bean.add(parent  , '*', 'keypress', trigger.wrap(txtHandler))
-              bean.add(fixture      , 'keypress', trigger.wrap(parentSpy))
+              bean.on(parent  , 'keypress', '*', trigger.wrap(txtHandler))
+              bean.on(fixture , 'keypress'     , trigger.wrap(parentSpy))
             } else {
-              bean.add(txt   , 'keypress', trigger.wrap(txtHandler))
-              bean.add(parent, 'keypress', trigger.wrap(parentSpy))
+              bean.on(txt   , 'keypress', trigger.wrap(txtHandler))
+              bean.on(parent, 'keypress', trigger.wrap(parentSpy))
             }
 
             Syn.key(txt, 'f')
@@ -125,13 +124,13 @@ buster.testCase('event object', {
         , spy     = this.spy()
 
       trigger.after(function() {
-        assert(spy.calledOnce, 'called once')
+        assert.equals(spy.callCount, 1, 'called once')
         assert(spy.firstCall.args.length, 'has argument')
         assert(spy.firstCall.args[0].keyCode, 'event object has keyCode')
         done()
       })
 
-      bean.add(el, 'keypress', trigger.wrap(spy))
+      bean.on(el, 'keypress', trigger.wrap(spy))
 
       Syn.key(el, 'f')
     }
@@ -163,7 +162,7 @@ buster.testCase('event object', {
                       callback(e)
                     }
                 el = elType === window ? elType : el;
-                bean.add(el, evType, handler)
+                bean.on(el, evType, handler)
                 trigger(el)
               }
 

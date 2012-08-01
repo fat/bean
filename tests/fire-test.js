@@ -14,7 +14,7 @@ buster.testCase('fire', {
         done()
       })
 
-      bean.add(el, 'click', trigger.wrap(spy))
+      bean.on(el, 'click', trigger.wrap(spy))
       bean.fire(el, 'click')
     }
 
@@ -30,8 +30,8 @@ buster.testCase('fire', {
         done()
       })
 
-      bean.add(el, 'mousedown', trigger.wrap(mouseDownSpy))
-      bean.add(el, 'mouseup', trigger.wrap(mouseUpSpy))
+      bean.on(el, 'mousedown', trigger.wrap(mouseDownSpy))
+      bean.on(el, 'mouseup', trigger.wrap(mouseUpSpy))
       bean.fire(el, 'mousedown mouseup')
     }
 
@@ -42,7 +42,7 @@ buster.testCase('fire', {
         , spy     = this.spy()
 
       trigger.after(function () {
-        assert(spy.calledOnce, 'single call')
+        assert.equals(spy.callCount, 1, 'single call')
         assert.equals(spy.firstCall.args.length, 3, 'called with 3 arguments')
         assert.equals(spy.firstCall.args[0], 1, 'called with correct argument 1')
         assert.equals(spy.firstCall.args[1], 2, 'called with correct argument 2')
@@ -50,7 +50,7 @@ buster.testCase('fire', {
         done()
       })
 
-      bean.add(el, 'foo', trigger.wrap(spy))
+      bean.on(el, 'foo', trigger.wrap(spy))
       bean.fire(el, 'foo', [1, 2, 3])
     }
 })

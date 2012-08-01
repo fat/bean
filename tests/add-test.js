@@ -72,7 +72,7 @@ buster.testCase('add', {
               , spy     = self.spy()
 
             trigger.after(function () {
-              assert(spy.calledOnce, 'single call')
+              assert.equals(spy.callCount, 1, 'single call')
               assert(spy.calledOn(el), 'called with element as scope (this)')
               done()
             })
@@ -145,7 +145,7 @@ buster.testCase('add', {
               , spy     = self.spy()
 
             trigger.after(function () {
-              assert(spy.calledTwice, 'adds multiple events by space seperating them')
+              assert.equals(spy.callCount, 2, 'adds multiple events by space seperating them')
               done()
             })
        
@@ -196,8 +196,8 @@ buster.testCase('add', {
               , keydownSpy = self.spy()
 
             trigger.after(function () {
-              assert(clickSpy.calledOnce, 'adds multiple events simultaneously with an object literal (click)')
-              assert(keydownSpy.calledOnce, 'adds multiple events simultaneously with an object literal (keydown)')
+              assert.equals(clickSpy.callCount, 1, 'adds multiple events simultaneously with an object literal (click)')
+              assert.equals(keydownSpy.callCount, 1, 'adds multiple events simultaneously with an object literal (keydown)')
               done()
             })
 
