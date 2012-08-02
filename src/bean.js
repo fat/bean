@@ -20,6 +20,8 @@
     , isString       = function (o) { return typeof o == 'string' }
     , isFunction     = function (o) { return typeof o == 'function' }
 
+      // events that we consider to be 'native', anything not in this list will
+      // be treated as a custom event
     , standardNativeEvents =
         'click dblclick mouseup mousedown contextmenu '                  + // mouse buttons
         'mousewheel mousemultiwheel DOMMouseScroll '                     + // mouse wheel
@@ -48,11 +50,14 @@
         'volumechange cuechange '                                        + // media
         'checking noupdate downloading cached updateready obsolete '       // appcache
 
+      // convert to a hash for quick lookups
     , nativeEvents = (function (hash, events, i) {
         for (i = 0; i < events.length; i++) events[i] && (hash[events[i]] = 1)
         return hash
       }({}, str2arr(standardNativeEvents + (W3C_MODEL ? w3cNativeEvents : ''))))
 
+      // custom events are events that we *fake*, they are not provided natively but
+      // we can use native events to generate them
     , customEvents = (function () {
         var isAncestor = 'compareDocumentPosition' in root
               ? function (element, container) {
@@ -82,7 +87,10 @@
         }
       }())
 
+      // we provide a consistent Event object across browsers by taking the actual DOM
+      // event object and generating a new one from its properties.
     , Event = (function () {
+            // a whitelist of properties (for different event types) tells us what to check for and copy
         var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
               'srcElement target timeStamp type view which propertyName')
@@ -185,6 +193,8 @@
               }
             }
 
+        // preventDefault() and stopPropagation() are a consistent interface to those functions
+        // on the DOM, stop() is an alias for both of them together
         Event.prototype.preventDefault = function () {
           if (this.originalEvent.preventDefault) this.originalEvent.preventDefault()
           else this.originalEvent.returnValue = false
@@ -193,17 +203,20 @@
           if (this.originalEvent.stopPropagation) this.originalEvent.stopPropagation()
           else this.originalEvent.cancelBubble = true
         }
+        Event.prototype.stop = function () {
+          this.preventDefault()
+          this.stopPropagation()
+          this.stopped = true
+        }
+        // stopImmediatePropagation() has to be handled internally because we manage the event list for
+        // each element
+        // note that originalElement may be a Bean#Event object in some situations
         Event.prototype.stopImmediatePropagation = function () {
           if (this.originalEvent.stopImmediatePropagation) this.originalEvent.stopImmediatePropagation()
           this.isImmediatePropagationStopped = function () { return true }
         }
         Event.prototype.isImmediatePropagationStopped = function () {
           return this.originalEvent.isImmediatePropagationStopped && this.originalEvent.isImmediatePropagationStopped()
-        }
-        Event.prototype.stop = function () {
-          this.preventDefault()
-          this.stopPropagation()
-          this.stopped = true
         }
         Event.prototype.clone = function (currentTarget) {
           //TODO: this is ripe for optimisation, new events are *expensive*
@@ -221,8 +234,13 @@
         return !W3C_MODEL && !isNative && (element === doc || element === win) ? root : element
       }
 
-      // we use one of these per listener, of any type
+      /**
+        * Bean maintains an internal registry for event listeners. We don't touch elements, objects
+        * or functions to identify them, instead we store everything in the registry.
+        * Each event listener has a RegEntry object, we have one 'registry' for the whole instance.
+        */
     , RegEntry = (function () {
+        // each handler is wrapped so we can handle delegation and custom events
         var wrappedHandler = function (element, fn, condition, args) {
             var call = function (event, eargs) {
                   return fn.apply(element, args ? slice.call(eargs, event ? 0 : 1).concat(args) : eargs)
@@ -245,6 +263,7 @@
             handler.__beanDel = fn.__beanDel
             return handler
           }
+
         , RegEntry = function (element, type, handler, original, namespaces, args, root) {
             var customType     = customEvents[type]
               , isNative
@@ -299,7 +318,9 @@
 
     , registry = (function () {
         // our map stores arrays by event type, just because it's better than storing
-        // everything in a single array. uses '$' as a prefix for the keys for safety
+        // everything in a single array.
+        // uses '$' as a prefix for the keys for safety and 'r' as a special prefix for
+        // rootListeners so we can look them up fast
         var map = {}
 
           // generic functional search of our registry for matching listeners,
@@ -370,6 +391,8 @@
         return { has: has, get: get, put: put, del: del, entries: entries }
       }())
 
+      // we need a selector engine for delegated events, use querySelectorAll if it exists
+      // but for older browsers we need Qwery, Sizzle or similar
     , selectorEngine
     , setSelectorEngine = function (e) {
         if (!arguments.length) {
@@ -385,6 +408,8 @@
         }
       }
 
+      // we attach this listener to each DOM event that we need to listen to, only once
+      // per event type per DOM element
     , rootListener = function (event, type) {
         if (!W3C_MODEL && type && event && event.propertyName != '_on' + type) return
 
@@ -395,6 +420,8 @@
         event = new Event(event, this, true)
         if (type) event.type = type
 
+        // iterate through all handlers registered for this type, calling them unless they have
+        // been removed by a previous handler or stopImmediatePropagation() has been called
         for (; i < l && !event.isImmediatePropagationStopped(); i++) {
           if (!listeners[i].removed) listeners[i].handler.call(this, event)
         }
@@ -403,9 +430,12 @@
       // add and remove listeners to DOM elements
     , listener = W3C_MODEL
         ? function (element, type, add) {
+            // new browsers
             element[add ? addEvent : removeEvent](type, rootListener, false)
           }
         : function (element, type, add, custom) {
+            // IE8 and below, use attachEvent/detachEvent and we have to piggy-back propertychange events
+            // to simulate event bubbling etc.
             var entry
             if (add) {
               registry.put(entry = new RegEntry(
@@ -456,6 +486,7 @@
               removed[handlers[i].eventType] = { t: handlers[i].eventType, c: handlers[i].type }
           }
         }
+        // check each type/element for removed listeners and remove the rootListener where it's no longer needed
         for (i in removed) {
           if (!registry.has(element, removed[i].t, null, false)) {
             // last listener of this type, remove the rootListener
@@ -464,6 +495,7 @@
         }
       }
 
+      // set up a delegate helper using the given selector, wrap the handler function
     , delegate = function (selector, fn) {
         //TODO: findTarget (therefore $) is called twice, once for match and once for
         // setting e.currentTarget, fix this so it's only needed once
@@ -480,6 +512,7 @@
               if (match) fn.apply(match, arguments)
             }
 
+        // __beanDel isn't pleasant but it's a private function, not exposed outside of Bean
         handler.__beanDel = {
             ft       : findTarget // attach it here for customEvents to use too
           , selector : selector
@@ -487,6 +520,24 @@
         return handler
       }
 
+    , fireListener = W3C_MODEL ? function (isNative, type, element) {
+        // modern browsers, do a proper dispatchEvent()
+        var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
+        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
+        element.dispatchEvent(evt)
+      } : function (isNative, type, element) {
+        // old browser use onpropertychange, just increment a custom property to trigger the event
+        element = targetElement(element, isNative)
+        isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++
+      }
+
+      /**
+        * Public API: off(), on(), add(), (remove()), one(), fire(), clone()
+        */
+
+      /**
+        * off(element[, eventType(s)[, handler ]])
+        */
     , off = function (element, typeSpec, fn) {
         var isTypeStr = isString(typeSpec)
           , k, type, namespaces, i
@@ -519,6 +570,9 @@
         return element
       }
 
+      /**
+        * on(element, eventType(s)[, selector], handler[, args ])
+        */
     , on = function(element, events, selector, fn) {
         var originalFn, type, types, i, args, entry, first
 
@@ -544,12 +598,13 @@
 
         types = str2arr(events)
 
-        // special case for one()
+        // special case for one(), wrap in a self-removing handler
         if (this === ONE) {
           fn = once(off, element, events, fn, originalFn)
         }
 
         for (i = types.length; i--;) {
+          // add new handler to the registry and check if it's the first for this element/type
           first = registry.put(entry = new RegEntry(
               element
             , types[i].replace(nameRegex, '') // event type
@@ -568,7 +623,11 @@
         return element
       }
 
-      // deprecated, has delegate-selector in the wrong position, kept (for now) for backward-compatibility
+      /**
+        * add(element[, selector], eventType(s), handler[, args ])
+        *
+        * Deprecated: kept (for now) for backward-compatibility
+        */
     , add = function (element, events, fn, delfn) {
         return on.apply(
             null
@@ -578,20 +637,19 @@
         )
       }
 
+      /**
+        * one(element, eventType(s)[, selector], handler[, args ])
+        */
     , one = function () {
         return on.apply(ONE, arguments)
       }
 
-    , fireListener = W3C_MODEL ? function (isNative, type, element) {
-        var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
-        evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
-        element.dispatchEvent(evt)
-      } : function (isNative, type, element) {
-        element = targetElement(element, isNative)
-        // if not-native then we're using onpropertychange so we just increment a custom property
-        isNative ? element.fireEvent('on' + type, doc.createEventObject()) : element['_on' + type]++
-      }
-
+      /**
+        * fire(element, eventType(s)[, args ])
+        *
+        * The optional 'args' argument must be an array, if no 'args' argument is provided
+        * then we can use the browser's DOM event system, otherwise we trigger handlers manually
+        */
     , fire = function (element, type, args) {
         var types = str2arr(type)
           , i, j, l, names, handlers
@@ -607,7 +665,7 @@
             handlers = registry.get(element, type, null, false)
             args = [false].concat(args)
             for (j = 0, l = handlers.length; j < l; j++) {
-              if (!handlers[j].root && handlers[j].inNamespaces(names)) {
+              if (handlers[j].inNamespaces(names)) {
                 handlers[j].handler.apply(element, args)
               }
             }
@@ -616,6 +674,11 @@
         return element
       }
 
+      /**
+        * clone(dstElement, srcElement[, eventType ])
+        *
+        * TODO: perhaps for consistency we should allow the same flexibility in type specifiers?
+        */
     , clone = function (element, from, type) {
         var handlers = registry.get(from, type, null, false)
           , l = handlers.length
@@ -623,7 +686,7 @@
           , args, beanDel
 
         for (; i < l; i++) {
-          if (!handlers[i].root && handlers[i].original) {
+          if (handlers[i].original) {
             args = [ element, handlers[i].type ]
             if (beanDel = handlers[i].handler.__beanDel) args.push(beanDel.selector)
             args.push(handlers[i].original)
@@ -648,8 +711,8 @@
           }
       }
 
+  // for IE, clean up on unload to avoid leaks
   if (win.attachEvent) {
-    // for IE, clean up on unload to avoid leaks
     var cleanup = function () {
       var i, entries = registry.entries()
       for (i in entries) {
@@ -661,6 +724,7 @@
     win.attachEvent('onunload', cleanup)
   }
 
+  // initialize selector engine to internal default (qSA or throw Error)
   setSelectorEngine()
 
   return bean
