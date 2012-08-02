@@ -195,6 +195,10 @@
         }
         Event.prototype.stopImmediatePropagation = function () {
           if (this.originalEvent.stopImmediatePropagation) this.originalEvent.stopImmediatePropagation()
+          this.isImmediatePropagationStopped = function () { return true }
+        }
+        Event.prototype.isImmediatePropagationStopped = function () {
+          return this.originalEvent.isImmediatePropagationStopped && this.originalEvent.isImmediatePropagationStopped()
         }
         Event.prototype.stop = function () {
           this.preventDefault()
@@ -202,8 +206,9 @@
           this.stopped = true
         }
         Event.prototype.clone = function (currentTarget) {
-          var ne = new Event(), p
-          for (p in this) ne[p] = this[p]
+          //TODO: this is ripe for optimisation, new events are *expensive*
+          // improving this will speed up delegated events
+          var ne = new Event(this, this.element, this.isNative)
           ne.currentTarget = currentTarget
           return ne
         }
@@ -390,7 +395,7 @@
         event = new Event(event, this, true)
         if (type) event.type = type
 
-        for (; i < l; i++) {
+        for (; i < l && !event.isImmediatePropagationStopped(); i++) {
           if (!listeners[i].removed) listeners[i].handler.call(this, event)
         }
       }

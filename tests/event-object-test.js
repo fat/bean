@@ -58,6 +58,12 @@ buster.testCase('event object', {
           })
         }
 
+      , 'should have stopImmediatePropagation method': function (done) {
+          this.runTest(false, done, function (event) {
+            assert.isFunction(event.stopImmediatePropagation, 'event object has stopImmediatePropagation method')
+          })
+        }
+
       , 'should have stopPropagation method on custom event': function (done) {
           this.runTest(true, done, function (event) {
             assert.isFunction(event.stopPropagation, 'event object has stopPropagation method')
@@ -67,6 +73,12 @@ buster.testCase('event object', {
       , 'should have preventDefault method on custom event': function (done) {
           this.runTest(true, done, function (event) {
             assert.isFunction(event.preventDefault, 'event object has preventDefault method')
+          })
+        }
+
+      , 'should have stopImmediatePropagation method on custom event': function (done) {
+          this.runTest(true, done, function (event) {
+            assert.isFunction(event.stopImmediatePropagation, 'event object has stopImmediatePropagation method')
           })
         }
     }
@@ -114,6 +126,58 @@ buster.testCase('event object', {
         }
 
       , 'should preventDefault and stopPropagation on delegated events': function (done) {
+          this.runTest(true, done)
+        }
+    }
+
+  , 'stopImmediatePropagation()': {
+        'setUp': function () {
+          var self = this
+
+          this.runTest = function (delegate, done) {
+            // we should be able to prevent a keypress and event propagation with stop()
+            // on the keypress event, checking the parent doesn't receive the keypress
+            // and then checking the input contents on a keyup, it should be empty.
+            var stopper    = self.byId('stopper')
+              , txt        = self.byId('txt')
+              , trigger    = self.trigger()
+              , spy1       = self.spy()
+              , spy2       = self.spy()
+              , spy3       = self.spy()
+              , stopHandler = function (event) {
+                  event.stopImmediatePropagation()
+                }
+
+            trigger.after(function () {
+              assert.equals(spy1.callCount, 1, 'first spy should be called')
+              assert.equals(spy2.callCount, 0, 'second spy should not be called')
+              assert.equals(spy3.callCount, 0, 'third spy should not be called')
+              done()
+            })
+
+            bean.setSelectorEngine(qwery)
+
+            if (delegate) {
+              bean.on(stopper , 'click', '[type=text]', trigger.wrap(spy1))
+              bean.on(stopper , 'click', '[type=text]', trigger.wrap(stopHandler))
+              bean.on(stopper , 'click', '[type=text]', trigger.wrap(spy2))
+              bean.on(stopper , 'click', '[type=text]', trigger.wrap(spy3))
+              Syn.click(txt)
+            } else {
+              bean.on(stopper , 'click', trigger.wrap(spy1))
+              bean.on(stopper , 'click', trigger.wrap(stopHandler))
+              bean.on(stopper , 'click', trigger.wrap(spy2))
+              bean.on(stopper , 'click', trigger.wrap(spy3))
+              Syn.click(stopper)
+            }
+          }
+        }
+
+      , 'should stop immediate propagation': function(done) {
+          this.runTest(false, done)
+        }
+
+      , 'should stop immediate propagation on delegated events': function (done) {
           this.runTest(true, done)
         }
     }
