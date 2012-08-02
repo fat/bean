@@ -299,16 +299,17 @@
 
           // generic functional search of our registry for matching listeners,
           // `fn` returns false to break out of the loop
-          , forAll = function (element, type, original, handler, fn) {
+          , forAll = function (element, type, original, handler, root, fn) {
+              var pfx = root ? 'r' : '$'
               if (!type || type == '*') {
                 // search the whole registry
                 for (var t in map) {
-                  if (t.charAt(0) == '$') {
-                    forAll(element, t.substr(1), original, handler, fn)
+                  if (t.charAt(0) == pfx) {
+                    forAll(element, t.substr(1), original, handler, root, fn)
                   }
                 }
               } else {
-                var i = 0, l, list = map['$' + type], all = element == '*'
+                var i = 0, l, list = map[pfx + type], all = element == '*'
                 if (!list) return
                 for (l = list.length; i < l; i++) {
                   if ((all || list[i].matches(element, original, handler)) && !fn(list[i], list, i, type)) return
@@ -316,10 +317,10 @@
               }
             }
 
-          , has = function (element, type, original) {
+          , has = function (element, type, original, root) {
               // we're not using forAll here simply because it's a bit slower and this
               // needs to be fast
-              var i, list = map['$' + type]
+              var i, list = map[(root ? 'r' : '$') + type]
               if (list) {
                 for (i = list.length; i--;) {
                   if (!list[i].root && list[i].matches(element, original, null)) return true
@@ -328,25 +329,26 @@
               return false
             }
 
-          , get = function (element, type, original) {
+          , get = function (element, type, original, root) {
               var entries = []
-              forAll(element, type, original, null, function (entry) {
+              forAll(element, type, original, null, root, function (entry) {
                 return entries.push(entry)
               })
               return entries
             }
 
           , put = function (entry) {
-              var has = !entry.root && !this.has(entry.element, entry.type)
-              ;(map['$' + entry.type] || (map['$' + entry.type] = [])).push(entry)
+              var has = !entry.root && !this.has(entry.element, entry.type, null, false)
+                , key = (entry.root ? 'r' : '$') + entry.type
+              ;(map[key] || (map[key] = [])).push(entry)
               return has
             }
 
           , del = function (entry) {
-              forAll(entry.element, entry.type, null, entry.handler, function (entry, list, i) {
+              forAll(entry.element, entry.type, null, entry.handler, entry.root, function (entry, list, i) {
                 list.splice(i, 1)
                 entry.removed = true
-                if (list.length === 0) delete map['$' + entry.type]
+                if (list.length === 0) delete map[(entry.root ? 'r' : '$') + entry.type]
                 return false
               })
             }
@@ -381,7 +383,7 @@
     , rootListener = function (event, type) {
         if (!W3C_MODEL && type && event && event.propertyName != '_on' + type) return
 
-        var listeners = registry.get(this, type || event.type)
+        var listeners = registry.get(this, type || event.type, null, false)
           , l = listeners.length
           , i = 0
 
@@ -389,9 +391,7 @@
         if (type) event.type = type
 
         for (; i < l; i++) {
-          if (!listeners[i].removed && !listeners[i].root) {
-            listeners[i].handler.call(this, event)
-          }
+          if (!listeners[i].removed) listeners[i].handler.call(this, event)
         }
       }
 
@@ -417,7 +417,7 @@
               if (custom && element['_on' + custom] == null) element['_on' + custom] = 0
               entry.target.attachEvent('on' + entry.eventType, entry.handler)
             } else {
-              entry = registry.get(element, custom || type, rootListener)[0]
+              entry = registry.get(element, custom || type, rootListener, true)[0]
               if (entry) {
                 entry.target.detachEvent('on' + entry.eventType, entry.handler)
                 registry.del(entry)
@@ -435,12 +435,12 @@
 
     , removeListener = function (element, orgType, handler, namespaces) {
         var type     = orgType && orgType.replace(nameRegex, '')
-          , handlers = registry.get(element, type)
+          , handlers = registry.get(element, type, null, false)
           , removed  = {}
           , i, l
 
         for (i = 0, l = handlers.length; i < l; i++) {
-          if ((!handler || handlers[i].original === handler) && !handlers[i].root && handlers[i].inNamespaces(namespaces)) {
+          if ((!handler || handlers[i].original === handler) && handlers[i].inNamespaces(namespaces)) {
             // TODO: this is problematic, we have a registry.get() and registry.del() that
             // both do registry searches so we waste cycles doing this. Needs to be rolled into
             // a single registry.forAll(fn) that removes while finding, but the catch is that
@@ -452,7 +452,7 @@
           }
         }
         for (i in removed) {
-          if (!registry.has(element, removed[i].t)) {
+          if (!registry.has(element, removed[i].t, null, false)) {
             // last listener of this type, remove the rootListener
             listener(element, removed[i].t, false, removed[i].c)
           }
@@ -552,6 +552,7 @@
             , originalFn
             , str2arr(types[i].replace(namespaceRegex, ''), '.') // namespaces
             , args
+            , false // not root
           ))
           if (entry[eventSupport] && first) {
             // first event of this type on this element, add root listener
@@ -598,7 +599,7 @@
           } else {
             // non-native event, either because of a namespace, arguments or a non DOM element
             // iterate over all listeners and manually 'fire'
-            handlers = registry.get(element, type)
+            handlers = registry.get(element, type, null, false)
             args = [false].concat(args)
             for (j = 0, l = handlers.length; j < l; j++) {
               if (!handlers[j].root && handlers[j].inNamespaces(names)) {
@@ -611,7 +612,7 @@
       }
 
     , clone = function (element, from, type) {
-        var handlers = registry.get(from, type)
+        var handlers = registry.get(from, type, null, false)
           , l = handlers.length
           , i = 0
           , args, beanDel
