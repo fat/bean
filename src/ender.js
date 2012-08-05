@@ -1,46 +1,53 @@
 !function ($) {
   var b = require('bean')
+
     , integrate = function (method, type, method2) {
         var _args = type ? [type] : []
         return function () {
           for (var i = 0, l = this.length; i < l; i++) {
-            if (!arguments.length && method == 'add' && type) method = 'fire'
+            if (!arguments.length && method == 'on' && type) method = 'fire'
             b[method].apply(this, [this[i]].concat(_args, Array.prototype.slice.call(arguments, 0)))
           }
           return this
         }
       }
-    , add = integrate('add')
-    , remove = integrate('remove')
-    , fire = integrate('fire')
+
+    , add   = integrate('add')
+    , on    = integrate('on')
+    , one   = integrate('one')
+    , off   = integrate('off')
+    , fire  = integrate('fire')
+    , clone = integrate('clone')
+
+    , hover = function (enter, leave, i) { // i for internal
+        for (i = this.length; i--;) {
+          b.on.call(this, this[i], 'mouseenter', enter)
+          b.on.call(this, this[i], 'mouseleave', leave)
+        }
+        return this
+      }
 
     , methods = {
-          on: add // NOTE: .on() is likely to change in the near future, don't rely on this as-is see https://github.com/fat/bean/issues/55
-        , addListener: add
-        , bind: add
-        , listen: add
-        , delegate: add
+          on             : on
+        , addListener    : on
+        , bind           : on
+        , listen         : on
+        , delegate       : add // jQuery compat, same arg order as add()
 
-        , one: integrate('one')
+        , one            : one
 
-        , off: remove
-        , unbind: remove
-        , unlisten: remove
-        , removeListener: remove
-        , undelegate: remove
+        , off            : off
+        , unbind         : off
+        , unlisten       : off
+        , removeListener : off
+        , undelegate     : off
 
-        , emit: fire
-        , trigger: fire
+        , emit           : fire
+        , trigger        : fire
 
-        , cloneEvents: integrate('clone')
+        , cloneEvents    : clone
 
-        , hover: function (enter, leave, i) { // i for internal
-            for (i = this.length; i--;) {
-              b.add.call(this, this[i], 'mouseenter', enter)
-              b.add.call(this, this[i], 'mouseleave', leave)
-            }
-            return this
-          }
+        , hover          : hover
       }
 
     , shortcuts =
@@ -49,10 +56,10 @@
         + 'mousemove resize scroll select submit unload').split(' ')
 
   for (var i = shortcuts.length; i--;) {
-    methods[shortcuts[i]] = integrate('add', shortcuts[i])
+    methods[shortcuts[i]] = integrate('on', shortcuts[i])
   }
 
   b.setSelectorEngine($)
 
   $.ender(methods, true)
-}(ender)
+}(ender);
