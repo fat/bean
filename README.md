@@ -1,3 +1,4 @@
+[![build status](https://secure.travis-ci.org/fat/bean.png)](http://travis-ci.org/fat/bean)
 Bean
 ----
 Bean is a small, slick, cross-platform, framework-agnostic event utility designed for desktop, mobile, and touch-based browsers. In its simplest form - it works like this:
