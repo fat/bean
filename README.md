@@ -350,6 +350,12 @@ Running `make` will assemble the *bean.js* file in the root of the repository. P
   * [Rod Vagg](https://github.com/fat/bean/commits/master?author=rvagg) ([GitHub](https://github.com/rvagg) - [Twitter](https://twitter.com/rvagg))
   * [Dustin Diaz](https://github.com/fat/bean/commits/master?author=ded) ([GitHub](https://github.com/ded) - [Twitter](https://twitter.com/ded))
 
+Special thanks to:
+
+ * [Dean Edwards](http://dean.edwards.name/)
+ * [Diego Perini](https://github.com/dperini/nwevents)
+ * [The entire MooTools team](https://github.com/mootools/mootools-core)
+
 ## Licence & copyright
 
 Bean is copyright &copy; 2011-2012 Jacob Thornton and licenced under the MIT licence. All rights not explicitly granted in the MIT license are reserved. See the included LICENSE file for more details.
