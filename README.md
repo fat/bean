@@ -24,7 +24,7 @@ Bean has five main methods, each packing quite a punch.
 ### on(element, eventType[, selector], handler[, args ])
 <code>bean.on()</code> lets you attach event listeners to both elements and objects.
 
-** Arguments **
+**Arguments**
 
   * **element / object** (DOM Element or Object) - an HTML DOM element or any JavaScript Object
   * **event type(s)** (String) - an event (or multiple events, space separated) to listen to
@@ -34,7 +34,7 @@ Bean has five main methods, each packing quite a punch.
 
 Optionally, event types and handlers can be passed in an object of the form `{ 'eventType': handler }` as the second argument.
 
-** Examples **
+**Examples**
 
 ```js
 // simple
@@ -56,7 +56,7 @@ bean.on(element, {
 });
 ```
 
-** Delegation **
+**Delegation**
 
 A String as the 3rd argument to `on()` will be interpreted as a selector for event delegation. Events for child elements will cause the element to be checked against the selector and the event to be fired if a match is found. The event behaves the same way as if you listened directly to the element it was fired on.
 
@@ -71,13 +71,13 @@ bean.on(element, [el, el2, el3], 'click', handler);
 bean.on(element, $('.myClass'), 'click', handler);
 ```
 
-** Notes **
+**Notes**
 
  * Prior to v1, Bean used `add()` as its primary handler-adding interface, it still exists but uses the original argument order for delegated events: `add(element[, selector], eventType, handler[, args ])`. This may be removed in future versions of Bean.
 
  * The focus, blur, and submit events will not delegate due to [vagaries](http://www.quirksmode.org/blog/archives/2008/04/delegating_the.html) of the DOM model. This *may* be addressed in a future version of Bean.
 
-** Namespacing **
+**Namespacing**
 
 Bean supports namespacing your events. This makes it much easier to target the handlers later when using `off()` or `fire()`, both of these methods match namespaced handlers in the same way.
 
@@ -98,7 +98,7 @@ bean.fire(element, 'click.fat.foo');    // trigger 1
 bean.off(element, 'click.fat.ded');     // remove nothing
 ```
 
-** Notes **
+**Notes**
 
  * Prior to v1, Bean matched multiple namespaces in `fire()` and `remove()` calls using OR rather than AND.
 
@@ -107,7 +107,7 @@ bean.off(element, 'click.fat.ded');     // remove nothing
 ### one(element, eventType[, selector], handler[, args ])
 <code>bean.one()</code> is an alias for <code>bean.on()</code> except that the handler will only be executed once and then removed for the event type(s).
 
-** Notes **
+**Notes**
 
  * Prior to v1, `one()` used the same argument ordering as `add()` (see note above), it now uses the new `on()` ordering.
 
@@ -116,7 +116,7 @@ bean.off(element, 'click.fat.ded');     // remove nothing
 ### off(element[, eventType[, handler ]])
 <code>bean.off()</code> is how you get rid of handlers once you no longer want them active. It's also a good idea to call *off* on elements before you remove them from your DOM; this gives Bean a chance to clean up some things and prevents memory leaks.
 
-** Arguments **
+**Arguments**
 
   * **element / object** (DOM Element or Object) - an HTML DOM element or any JavaScript Object
   * **event type(s)** (optional String) - an event (or multiple events, space separated) to remove
@@ -124,7 +124,7 @@ bean.off(element, 'click.fat.ded');     // remove nothing
 
 Optionally, event types and handlers can be passed in an object of the form `{ 'eventType': handler }` as the second argument, just like `on()`.
 
-** Examples **
+**Examples**
 
 ```js
 // remove a single event handlers
@@ -146,7 +146,7 @@ bean.off(element);
 bean.off(element, { click: clickHandler, keyup: keyupHandler })
 ```
 
-** Notes **
+**Notes**
 
  * Prior to Bean v1, `remove()` was the primary removal interface. This is retained as an alias for backward compatibility but may eventually be removed.
 
@@ -155,7 +155,7 @@ bean.off(element, { click: clickHandler, keyup: keyupHandler })
 ### clone(destElement, srcElement[, eventType ])
 <code>bean.clone()</code> is a method for cloning events from one DOM element or object to another.
 
-** Examples **
+**Examples**
 
 ```js
 // clone all events at once by doing this:
@@ -170,7 +170,7 @@ bean.clone(toElement, fromElement, 'click');
 ### fire(element, eventType[, args ])
 <code>bean.fire()</code> gives you the ability to trigger events.
 
-** Examples **
+**Examples**
 
 ```js
 // fire a single event on an element
@@ -180,7 +180,7 @@ bean.fire(element, 'click');
 bean.fire(element, 'mousedown mouseup');
 ```
 
-** Notes **
+**Notes**
 
  * An optional args array may be passed to `fire()` which will in turn be passed to the event handlers. Handlers will be triggered manually, outside of the DOM, even if you're trying to fire standard DOM events.
 
@@ -192,7 +192,7 @@ bean.fire(element, 'mousedown mouseup');
 
 The selector engine simply needs to be a function that takes two arguments: a selector string and a root element, it should return an array of matched DOM elements. [Qwery](https://github.com/ded/qwery), [Sel](https://github.com/amccollum/sel), [Sizzle](https://github.com/jquery/sizzle), [NWMatcher](https://github.com/dperini/nwmatcher) and other selector engines should all be compatible with Bean.
 
-** Examples **
+**Examples**
 
 ```js
 bean.setSelectorEngine(qwery);
@@ -224,7 +224,7 @@ bean.on(el, 'click', function (event) {
 });
 ```
 
-** Notes **
+**Notes**
 
  * Your mileage with the `Event` methods (`preventDefault` etc.) may vary with delegated events as the events are not intercepted at the element in question.
 
@@ -234,7 +234,7 @@ Bean uses methods similar to [Dean Edwards' event model](http://dean.edwards.nam
 
 For all intents and purposes, you can just think of them as native DOM events, which will bubble up and behave you would expect.
 
-** Examples **
+**Examples**
 
 ```js
 bean.on(element, 'partytime', handler);
@@ -245,7 +245,7 @@ bean.fire(element, 'partytime');
 
 Bean provides you with two custom DOM events, *'mouseenter'* and *'mouseleave'*. They are essentially just helpers for making your mouseover / mouseout lives a bit easier.
 
-** Examples **
+**Examples**
 
 ```js
 bean.on(element, 'mouseenter', enterHandler);
@@ -269,35 +269,35 @@ bean.fire(inst, 'complete');
 
 If you use Bean with Ender its API is greatly extended through its bridge file. This extension aims to give Bean the look and feel of jQuery.
 
-** Add events **
+**Add events**
 
  + on - <code>$(element).on('click', fn);</code>
  + addListener - <code>$(element).addListener('click', fn);</code>
  + bind - <code>$(element).bind('click', fn);</code>
  + listen - <code>$(element).listen('click', fn);</code>
 
-** Remove events **
+**Remove events**
 
  + off - <code>$(element).off('click');</code>
  + unbind - <code>$(element).unbind('click');</code>
  + unlisten - <code>$(element).unlisten('click');</code>
  + removeListener - <code>$(element).removeListener('click');</code>
 
-** Delegate events **
+**Delegate events**
 
  + on - <code>$(element).on('click', '.foo', fn);</code>
  + delegate - <code>$(element).delegate('.foo', 'click', fn);</code>
  + undelegate - <code>$(element).undelegate('.foo', 'click');</code>
 
-** Clone events **
+**Clone events**
 
  + cloneEvents - <code>$(element).cloneEvents('.foo', fn);</code>
 
-** Custom events **
+**Custom events**
 
  + fire / emit / trigger - <code>$(element).trigger('click')</code>
 
-** Special events **
+**Special events**
 
  + hover - <code>$(element).hover(enterfn, leavefn);</code>
  + blur - <code>$(element).blur(fn);</code>
