@@ -576,6 +576,7 @@
     , on = function(element, events, selector, fn) {
         var originalFn, type, types, i, args, entry, first
 
+        //TODO: the undefined check means you can't pass an 'args' argument, fix this perhaps?
         if (selector === undefined && typeof events == 'object') {
           //TODO: this can't handle delegated events
           for (type in events) {

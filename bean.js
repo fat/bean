@@ -1,14 +1,10 @@
 /*!
-  * bean.js - copyright Jacob Thornton 2011
+  * Bean - copyright (c) Jacob Thornton 2011-2012
   * https://github.com/fat/bean
-  * MIT License
-  * special thanks to:
-  * dean edwards: http://dean.edwards.name/
-  * dperini: https://github.com/dperini/nwevents
-  * the entire mootools team: github.com/mootools/mootools-core
+  * MIT license
   */
 !(function (name, context, definition) {
-  if (typeof module != 'undefined') module.exports = definition(name, context);
+  if (typeof module != 'undefined' && module.exports) module.exports = definition(name, context);
   else if (typeof define == 'function' && typeof define.amd  == 'object') define(definition);
   else context[name] = definition(name, context);
 }('bean', this, function (name, context) {
@@ -585,6 +581,7 @@
     , on = function(element, events, selector, fn) {
         var originalFn, type, types, i, args, entry, first
 
+        //TODO: the undefined check means you can't pass an 'args' argument, fix this perhaps?
         if (selector === undefined && typeof events == 'object') {
           //TODO: this can't handle delegated events
           for (type in events) {
