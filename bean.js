@@ -115,7 +115,7 @@
                 { // key events
                     reg: /key/i
                   , fix: function (event, newEvent) {
-                      newEvent.keyCode = event.which || event.keyCode
+                      newEvent.keyCode = event.keyCode || event.which
                       return keyProps
                     }
                 }

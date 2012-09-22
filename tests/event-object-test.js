@@ -345,7 +345,6 @@ buster.testCase('event object', {
             , function (el) { Syn.trigger('keyup', { which: 'g', keyCode: 'f' }, el) }
             , function (event) {
                 verifyEventObject(event, 'keyup', keyIgnorables)
-                console.log(event)
                 assert.equals(event.keyCode, 'f', 'correct keyCode')
                 done()
               }
