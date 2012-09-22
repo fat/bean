@@ -1,4 +1,4 @@
-/*global bean:true, qwery:true, buster:true, Syn:true, assert:true, defer:true, features:true, globalSetUp:true, globalTearDown:true*/
+/*global bean:true, qwery:true, buster:true, Syn:true, assert:true, features:true, globalSetUp:true, globalTearDown:true*/
 
 buster.testCase('event object', {
     'setUp': globalSetUp
@@ -216,11 +216,11 @@ buster.testCase('event object', {
             , clickIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(('charCode defaultPrevented initMouseEvent keyCode layerX layerY ' +
                 'initNSMouseEvent x y state webkitMovementY webkitMovementX').split(' '))
             , oldIEKeyIgnorables = 'fromElement toElement dataTransfer button x y screenX screenY clientX clientY offsetX offsetY state'.split(' ')
-            , keyIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(oldIEKeyIgnorables).concat('initKeyEvent layerX layerY pageX pageY state'.split(' '))
+            , keyIgnorables = this.keyIgnorables = commonIgnorables.concat(oldIEIgnorables).concat(oldIEKeyIgnorables).concat('initKeyEvent layerX layerY pageX pageY state'.split(' '))
 
             , el = this.byId('input')
 
-            , getEventObject = function (evType, elType, trigger, callback) {
+            , getEventObject = this.getEventObject = function (evType, elType, trigger, callback) {
                 var handler = function (e) {
                       bean.remove(el)
                       callback(e)
@@ -238,7 +238,7 @@ buster.testCase('event object', {
                 return false
               }
 
-            , verifyEventObject = function (event, type, ignorables) {
+            , verifyEventObject = this.verifyEventObject = function (event, type, ignorables) {
                 var p, orig = event.originalEvent
 
                 assert(event, 'has event object')
@@ -276,7 +276,7 @@ buster.testCase('event object', {
             getEventObject(
                 type
               , window
-              , function (el) {
+              , function () {
                   window.history.pushState({}, 'test state', '#test-state')
                   window.history.go(-1)
                 }
@@ -332,6 +332,24 @@ buster.testCase('event object', {
 
       , 'keypress: has correct properties': function (done) {
           this.testKeyEvent('keypress', done)
+        }
+
+        // see https://github.com/fat/bean/pull/61 & https://github.com/fat/bean/issues/76
+      , 'key events prefer "keyCode" rather than "which"': function (done) {
+          var verifyEventObject = this.verifyEventObject
+            , keyIgnorables = this.keyIgnorables
+
+          this.getEventObject(
+              'keyup'
+            , 'input'
+            , function (el) { Syn.trigger('keyup', { which: 'g', keyCode: 'f' }, el) }
+            , function (event) {
+                verifyEventObject(event, 'keyup', keyIgnorables)
+                console.log(event)
+                assert.equals(event.keyCode, 'f', 'correct keyCode')
+                done()
+              }
+          )
         }
     }
 })
