@@ -1,2 +1,4 @@
-node_modules
 *.swp
+node_modules
+/build
+/component.json
