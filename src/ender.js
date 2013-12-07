@@ -21,8 +21,8 @@
 
     , hover = function (enter, leave, i) { // i for internal
         for (i = this.length; i--;) {
-          b['on'].call(this, this[i], 'mouseenter', enter)
-          b['on'].call(this, this[i], 'mouseleave', leave)
+          b.on.call(this, this[i], 'mouseenter', enter)
+          b.on.call(this, this[i], 'mouseleave', leave)
         }
         return this
       }
@@ -55,11 +55,23 @@
         + 'keyup load mousedown mouseenter mouseleave mouseout mouseover mouseup '
         + 'mousemove resize scroll select submit unload').split(' ')
 
+  // Tell the Closure Compiler to preserve the bean API method names.
+  b['on'] = b.on
+  b['add'] = b.add
+  b['one'] = b.one
+  b['off'] = b.off
+  b['remove'] = b.remove
+  b['clone'] = b.clone
+  b['fire'] = b.fire
+  b['Event'] = b.Event
+  b['setSelectorEngine'] = b.setSelectorEngine
+  b['noConflict'] = b.noConflict
+
   for (var i = shortcuts.length; i--;) {
     methods[shortcuts[i]] = integrate('on', shortcuts[i])
   }
 
-  b['setSelectorEngine']($)
+  b.setSelectorEngine($)
 
   $.ender(methods, true)
 }(ender);
