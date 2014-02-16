@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<title>bean.fire() demo</title>
+<style>
+  html { font-family:sans-serif; color:#111; background:#efefef }
+  body { margin:1em auto; width:96% }
+  #test { font-weight:bold }
+  #test:hover { cursor:crosshair }
+</style>
+
+<p>Open the console.</p>
+<div id="test">div#test</div>
+
+<script src="../src/bean.js"></script>
+<script>
+!function(bean) {
+  var plain = {}, el = document.getElementById('test')
+  function handler() {
+    console.log(arguments)
+  }
+
+  [
+    [el, 'click'], [el, 'wow'], [plain, 'wow'],
+    [el, 'click.x'], [el, 'wow.x'], [plain, 'wow.x']
+  ].some(function(a) {
+    console.group(a[0].toString().slice(8, -1) + ': "' + a[1] + '" event')
+    bean.on(a[0], a[1], handler)
+    bean.fire(a[0], a[1]) // no extras
+    bean.fire(a[0], a[1], [1, 2]) // array extras
+    console.groupEnd()
+  }, void console.log('All groups should look alike:'))
+
+}(bean);
+</script>
