@@ -1,5 +1,5 @@
 var fs = require("fs");
-var data = fs.readFileSync('package.json', "utf8");
+var data = fs.readFileSync("package.json", "utf8");
 var packagejson = JSON.parse(data);
 fs.writeFileSync("component.json", JSON.stringify({
         name: packagejson.name,
