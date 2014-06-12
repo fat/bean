@@ -13,7 +13,7 @@ fs.readFile('./package.json', "utf8", function (err, data) {
             main: "bean.js",
             scripts: ["bean.js"],
             repo: "https://github.com/fat/bean"
-        }, null, 4),
+        }, null, 2),
         function (err) {
             if (err) {
                 console.log(err);
