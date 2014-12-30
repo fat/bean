@@ -98,11 +98,11 @@
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
               'srcElement target timeStamp type view which propertyName')
           , mouseProps   = commonProps.concat(str2arr('button buttons clientX clientY dataTransfer '      +
-              'fromElement offsetX offsetY pageX pageY screenX screenY toElement'))
+              'fromElement offsetX offsetY pageX pageY screenX screenY toElement movementX movementY region'))
           , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
               'axis')) // 'axis' is FF specific
           , keyProps     = commonProps.concat(str2arr('char charCode key keyCode keyIdentifier '          +
-              'keyLocation location'))
+              'keyLocation location isComposing code'))
           , textProps    = commonProps.concat(str2arr('data'))
           , touchProps   = commonProps.concat(str2arr('touches targetTouches changedTouches scale rotation'))
           , messageProps = commonProps.concat(str2arr('data origin source'))
