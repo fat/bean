@@ -96,7 +96,7 @@
             // a whitelist of properties (for different event types) tells us what to check for and copy
         var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
-              'srcElement target timeStamp type view which propertyName')
+              'srcElement target timeStamp type view which propertyName path')
           , mouseProps   = commonProps.concat(str2arr('button buttons clientX clientY dataTransfer '      +
               'fromElement offsetX offsetY pageX pageY screenX screenY toElement movementX movementY region'))
           , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
