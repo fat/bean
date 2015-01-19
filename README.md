@@ -7,7 +7,7 @@ bean.on(element, 'click', function (e) {
 });
 ```
 
-Bean is included in [Ender](http://ender.no.de)'s *starter pack*, "The Jeesh". More details on the Ender interface [below](#ender).
+Bean is included in [Ender](http://enderjs.com/)'s *starter pack*, "The Jeesh". More details on the Ender interface [below](#ender).
 
 ## API
 
