@@ -15,4 +15,5 @@ config['Bean Tests'] = {
   , tests: [
         'tests/*-test.js'
     ]
+	, testHelpers: ["tests/helper.js"]
 }
