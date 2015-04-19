@@ -714,6 +714,10 @@
             context[name] = old
             return this
           }
+        , 'addEventListener'    : on
+        , 'removeEventListener' : off
+        , 'dispatchEvent'       : fire
+
       }
 
   // for IE, clean up on unload to avoid leaks
