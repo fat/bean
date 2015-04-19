@@ -700,6 +700,20 @@
         return element
       }
 
+		/**
+		 * mixout(dstObject)
+		 *
+		 * Adds AS3 EventDispatcher type functions to an object 
+		 *
+		 * Note: doesn't use .prototype, so if you want to do it to a class, apply it to .prototype
+		 */
+    , mixout = function (dstObject) {
+        // change function name to 'apply' or something? 'extend'? what's the standard
+        // is it safe to use 'this'? 
+        dstObject.addEventListener = bean.on.bind(this, dstObject);
+        dstObject.removeEventListener = bean.off.bind(this, dstObject);
+        dstObject.dispatchEvent = bean.fire.bind(this, dstObject);
+	 }
     , bean = {
           'on'                : on
         , 'add'               : add
