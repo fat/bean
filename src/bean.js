@@ -527,7 +527,7 @@
         // modern browsers, do a proper dispatchEvent()
         var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
-        element.dispatchEvent(evt)
+        element.dispatchEvent(evt) // XXX: This is quite possibly where we are getting screwed using "dispatchEvent" member name
       } : function (isNative, type, element) {
         // old browser use onpropertychange, just increment a custom property to trigger the event
         element = targetElement(element, isNative)
@@ -661,7 +661,10 @@
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
           if (names = types[i].replace(namespaceRegex, '')) names = str2arr(names, '.')
-          if (!names && !args && element[eventSupport]) {
+          if (!names && !args && element[eventSupport]) { /// XXX: Fairly certain that this is screwing us for giving our object addEventHandler prop
+				 console.debug("bean::fire we think this has native event support and it's a DOM element");
+			 }
+          if (!names && !args && element[eventSupport && element instanceof EventTarget]) {
             fireListener(nativeEvents[type], type, element)
           } else {
             // non-native event, either because of a namespace, arguments or a non DOM element
@@ -712,9 +715,11 @@
     , mixout = function (dstObject) {
         // change function name to 'apply' or something? 'extend'? what's the standard
         // is it safe to use 'this'? 
-        dstObject.addEventListener = bean.on.bind(this, dstObject);
-        dstObject.removeEventListener = bean.off.bind(this, dstObject);
-        dstObject.dispatchEvent = bean.fire.bind(this, dstObject);
+		  // XXX: What is NOT safe, is to use the "special" names .addEventListener, etc, 
+		  //      which is why they have _inFront of them for now.  
+        dstObject._addEventListener = bean.on.bind(this, dstObject);
+        dstObject._removeEventListener = bean.off.bind(this, dstObject);
+        dstObject._dispatchEvent = bean.fire.bind(this, dstObject);
 	 }
     , bean = {
           'on'                : on
@@ -730,9 +735,9 @@
             context[name] = old
             return this
           }
-        , 'addEventListener'    : on
-        , 'removeEventListener' : off
-        , 'dispatchEvent'       : fire
+        // , 'addEventListener'    : on
+        // , 'removeEventListener' : off
+        // , 'dispatchEvent'       : fire
         , 'mixout'              : mixout
 
       }
