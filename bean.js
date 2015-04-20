@@ -421,6 +421,8 @@
     , rootListener = function (event, type) {
         if (!W3C_MODEL && type && event && event.propertyName != '_on' + type) return
 
+
+        if (event == null) return; // For some reason, we are ending up here with an undefined event, when using .dispatchEvent method
         var listeners = registry.get(this, type || event.type, null, false)
           , l = listeners.length
           , i = 0
@@ -666,9 +668,8 @@
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
           if (names = types[i].replace(namespaceRegex, '')) names = str2arr(names, '.')
-          if (!names && !args && element[eventSupport]) { /// XXX: Fairly certain that this is screwing us for giving our object addEventHandler prop
-				 console.debug("bean::fire we think this has native event support and it's a DOM element");
-			 }
+          // added extra condition (instanceof EventTarget) to prevent objects with methods 
+          // named addEventListener being mistaken for EventTargets
           if (!names && !args && element[eventSupport && element instanceof EventTarget]) {
             fireListener(nativeEvents[type], type, element)
           } else {
@@ -708,24 +709,24 @@
         return element
       }
 
-		/**
-		 * mixout(dstObject)
-		 *
-		 * Adds AS3 EventDispatcher type functions to an object 
-		 *
-		 * Note: doesn't use .prototype, so if you want to do it to a class, apply it to .prototype
-		 * TODO: For flexability, it could accept an object as a param, giving the desired names
-		 * for the bean methods, eg { on: "addEventListener", ... }
-		 */
+      /**
+       * mixout(dstObject)
+       *
+       * Adds AS3 EventDispatcher type functions to an object 
+       *
+       * Note: doesn't use .prototype, so if you want to do it to a class, apply it to .prototype
+       * TODO: For flexability, it could accept an object as a param, giving the desired names
+       * for the bean methods, eg { on: "addEventListener", ... }
+       */
     , mixout = function (dstObject) {
         // change function name to 'apply' or something? 'extend'? what's the standard
         // is it safe to use 'this'? 
-		  // XXX: What is NOT safe, is to use the "special" names .addEventListener, etc, 
-		  //      which is why they have _inFront of them for now.  
+        // XXX: What is NOT safe, is to use the "special" names .addEventListener, etc, 
+        //      which is why they have _inFront of them for now.  
         dstObject._addEventListener = bean.on.bind(this, dstObject);
         dstObject._removeEventListener = bean.off.bind(this, dstObject);
         dstObject._dispatchEvent = bean.fire.bind(this, dstObject);
-	 }
+    }
     , bean = {
           'on'                : on
         , 'add'               : add
@@ -765,3 +766,4 @@
 
   return bean
 });
+// vim: set ts=4 sts=132 sw=4 et:
