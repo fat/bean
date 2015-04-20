@@ -711,6 +711,8 @@
 		 * Adds AS3 EventDispatcher type functions to an object 
 		 *
 		 * Note: doesn't use .prototype, so if you want to do it to a class, apply it to .prototype
+		 * TODO: For flexability, it could accept an object as a param, giving the desired names
+		 * for the bean methods, eg { on: "addEventListener", ... }
 		 */
     , mixout = function (dstObject) {
         // change function name to 'apply' or something? 'extend'? what's the standard
@@ -736,6 +738,7 @@
         , 'addEventListener'    : on
         , 'removeEventListener' : off
         , 'dispatchEvent'       : fire
+        , 'mixout'              : mixout
 
       }
 
