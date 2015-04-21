@@ -101,13 +101,13 @@
             // a whitelist of properties (for different event types) tells us what to check for and copy
         var commonProps  = str2arr('altKey attrChange attrName bubbles cancelable ctrlKey currentTarget ' +
               'detail eventPhase getModifierState isTrusted metaKey relatedNode relatedTarget shiftKey '  +
-              'srcElement target timeStamp type view which propertyName')
+              'srcElement target timeStamp type view which propertyName path')
           , mouseProps   = commonProps.concat(str2arr('button buttons clientX clientY dataTransfer '      +
-              'fromElement offsetX offsetY pageX pageY screenX screenY toElement'))
+              'fromElement offsetX offsetY pageX pageY screenX screenY toElement movementX movementY region'))
           , mouseWheelProps = mouseProps.concat(str2arr('wheelDelta wheelDeltaX wheelDeltaY wheelDeltaZ ' +
               'axis')) // 'axis' is FF specific
           , keyProps     = commonProps.concat(str2arr('char charCode key keyCode keyIdentifier '          +
-              'keyLocation location'))
+              'keyLocation location isComposing code'))
           , textProps    = commonProps.concat(str2arr('data'))
           , touchProps   = commonProps.concat(str2arr('touches targetTouches changedTouches scale rotation'))
           , messageProps = commonProps.concat(str2arr('data origin source'))
@@ -421,6 +421,8 @@
     , rootListener = function (event, type) {
         if (!W3C_MODEL && type && event && event.propertyName != '_on' + type) return
 
+
+        if (event == null) return; // For some reason, we are ending up here with an undefined event, when using .dispatchEvent method
         var listeners = registry.get(this, type || event.type, null, false)
           , l = listeners.length
           , i = 0
@@ -532,7 +534,7 @@
         // modern browsers, do a proper dispatchEvent()
         var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
-        element.dispatchEvent(evt)
+        element.dispatchEvent(evt) // XXX: This is quite possibly where we are getting screwed using "dispatchEvent" member name
       } : function (isNative, type, element) {
         // old browser use onpropertychange, just increment a custom property to trigger the event
         element = targetElement(element, isNative)
@@ -666,7 +668,9 @@
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
           if (names = types[i].replace(namespaceRegex, '')) names = str2arr(names, '.')
-          if (!names && !args && element[eventSupport]) {
+          // added extra condition (instanceof EventTarget) to prevent objects with methods 
+          // named addEventListener being mistaken for EventTargets
+          if (!names && !args && element[eventSupport && element instanceof EventTarget]) {
             fireListener(nativeEvents[type], type, element)
           } else {
             // non-native event, either because of a namespace, arguments or a non DOM element
@@ -705,6 +709,24 @@
         return element
       }
 
+      /**
+       * mixout(dstObject)
+       *
+       * Adds AS3 EventDispatcher type functions to an object 
+       *
+       * Note: doesn't use .prototype, so if you want to do it to a class, apply it to .prototype
+       * TODO: For flexability, it could accept an object as a param, giving the desired names
+       * for the bean methods, eg { on: "addEventListener", ... }
+       */
+    , mixout = function (dstObject) {
+        // change function name to 'apply' or something? 'extend'? what's the standard
+        // is it safe to use 'this'? 
+        // XXX: What is NOT safe, is to use the "special" names .addEventListener, etc, 
+        //      which is why they have _inFront of them for now.  
+        dstObject._addEventListener = bean.on.bind(this, dstObject);
+        dstObject._removeEventListener = bean.off.bind(this, dstObject);
+        dstObject._dispatchEvent = bean.fire.bind(this, dstObject);
+    }
     , bean = {
           'on'                : on
         , 'add'               : add
@@ -719,6 +741,11 @@
             context[name] = old
             return this
           }
+        // , 'addEventListener'    : on
+        // , 'removeEventListener' : off
+        // , 'dispatchEvent'       : fire
+        , 'mixout'              : mixout
+
       }
 
   // for IE, clean up on unload to avoid leaks
@@ -739,3 +766,4 @@
 
   return bean
 });
+// vim: set ts=4 sts=132 sw=4 et:
