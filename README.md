@@ -67,8 +67,8 @@ bean.on(element, 'click', '.content p', handler);
 // Alternatively, you can pass an array of elements.
 // This cuts down on selector engine work, and is a more performant means of
 // delegation if you know your DOM won't be changing:
-bean.on(element, [el, el2, el3], 'click', handler);
-bean.on(element, $('.myClass'), 'click', handler);
+bean.on(element, 'click', [el, el2, el3], handler);
+bean.on(element, 'click', $('.myClass'), handler);
 ```
 
 **Notes**
