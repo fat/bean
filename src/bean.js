@@ -246,14 +246,14 @@
         // each handler is wrapped so we can handle delegation and custom events
         var wrappedHandler = function (element, fn, condition, args) {
             var call = function (event, eargs) {
-                  return fn.apply(element, args ? slice.call(eargs, event ? 0 : 1).concat(args) : eargs)
+                  return fn.apply(element, args ? slice.call(eargs).concat(args) : eargs)
                 }
               , findTarget = function (event, eventElement) {
                   return fn.__beanDel ? fn.__beanDel.ft(event.target, element) : eventElement
                 }
               , handler = condition
                   ? function (event) {
-                      var target = findTarget(event, this) // deleated event
+                      var target = findTarget(event, this) // delegated event
                       if (condition.apply(target, arguments)) {
                         if (event) event.currentTarget = target
                         return call(event, arguments)
@@ -656,7 +656,7 @@
         */
     , fire = function (element, type, args) {
         var types = str2arr(type)
-          , i, j, l, names, handlers
+          , i, j, l, call, event, names, handlers
 
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
@@ -667,10 +667,13 @@
             // non-native event, either because of a namespace, arguments or a non DOM element
             // iterate over all listeners and manually 'fire'
             handlers = registry.get(element, type, null, false)
-            args = [false].concat(args)
+            event = new Event(null, element, nativeEvents[type])
+            event.type = type
+            call = args ? 'apply' : 'call'
+            args = args ? [event].concat(args) : event
             for (j = 0, l = handlers.length; j < l; j++) {
               if (handlers[j].inNamespaces(names)) {
-                handlers[j].handler.apply(element, args)
+                handlers[j].handler[call](element, args)
               }
             }
           }

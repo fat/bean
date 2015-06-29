@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<title>bean.fire() demo</title>
+<style>
+  html { font-family:sans-serif; color:#111; background:#efefef }
+  body { margin:1em auto; width:96% }
+  #test { font-weight:bold }
+  #test:hover { cursor:crosshair }
+</style>
+
+<p>Open the console.</p>
+<div id="test">div#test</div>
+
+<script src="../src/bean.js"></script>
+<script>
+!function(bean) {
+  var empty = [], plain = {}
+    , win = window, doc = document
+    , el = doc.getElementById('test')
+
+  /**
+   * @param {Array|Object|Node|Window|*} obs target(s)
+   * @param {Array|string|null} type event names(s)
+   * @param {...*} additional arguments to pass to bean.fire()
+   */
+  function demo(obs, type) {
+    var variants = [], rest = empty.slice.call(arguments, 2)
+    obs = empty.concat(null == obs ? demo.defaults[0] : obs)
+    type = null == type ? demo.defaults[1] : type
+    type = typeof type == 'string' ? type.split(' ') : type.slice()
+    obs.length*type.length || console.warn('No variants to demo')
+    
+    obs.some(function(o) {
+      type.some(function(s) {
+        variants.push([o, s].concat(rest))
+      })
+    })
+
+    variants.some(function(a, i) {
+      var ons = [a[0], a[1], demo.handler]
+      i || console.log('')
+      i || console.info('Firing ' + variants.length + ' variants ' + (2 < a.length ? 'w/' : 'w/o') + ' extra args')
+      console.group(a)
+      bean.off.apply(bean, ons)
+      bean.on.apply(bean, ons)
+      bean.fire.apply(bean, a)
+      console.groupEnd()
+    })
+  }
+
+  console.group('EXAMPLES')
+  console.log('bean.fire.demo([{}, document], "blur madeup")')
+  console.log('bean.fire.demo([{}, document], "blur madeup", [1, 2])')
+  console.groupEnd()
+  
+  demo.defaults = [[plain, el, doc, win], 'click click.namespaced madeup madeup.namespaced']
+  demo.handler = function() {
+    console.log(arguments)
+  }
+
+  demo(null, null)
+  demo(null, null, [1, 2])
+  bean.fire.demo = demo
+}(bean);
+</script>

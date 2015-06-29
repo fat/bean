@@ -35,22 +35,25 @@ buster.testCase('fire', {
       bean.fire(el, 'mousedown mouseup')
     }
 
-  , 'should be able to pass multiple arguments to custom event': function (done) {
+  , 'should be able to pass extra arguments to custom event': function (done) {
       // jquery like array syntax
       var el      = this.byId('input')
         , trigger = this.trigger()
         , spy     = this.spy()
+        , extra   = [1, 2, 3]
+        , slice   = extra.slice
+        , type    = 'foo'
 
       trigger.after(function () {
         assert.equals(spy.callCount, 1, 'single call')
-        assert.equals(spy.firstCall.args.length, 3, 'called with 3 arguments')
-        assert.equals(spy.firstCall.args[0], 1, 'called with correct argument 1')
-        assert.equals(spy.firstCall.args[1], 2, 'called with correct argument 2')
-        assert.equals(spy.firstCall.args[2], 3, 'called with correct argument 3')
+        assert.equals(spy.firstCall.args.length, 1+extra.length, 'called with correct arguments.length')
+        assert.equals(typeof(spy.firstCall.args[0] || 0), 'object', 'called with correct arguments[0] type')
+        assert.equals(spy.firstCall.args[0].type, type.split('.')[0], 'called with correct event.type')
+        assert.equals(slice.call(spy.firstCall.args, 1).join(), extra.join(), 'called with correct extra arguments')
         done()
       })
 
-      bean.on(el, 'foo', trigger.wrap(spy))
-      bean.fire(el, 'foo', [1, 2, 3])
+      bean.on(el, type, trigger.wrap(spy))
+      bean.fire(el, type, extra)
     }
 })
