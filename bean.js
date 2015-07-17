@@ -528,7 +528,7 @@
         return handler
       }
 
-    , fireListener = W3C_MODEL ? function (isNative, type, element) {
+    , fireListener = doc.createEvent ? function (isNative, type, element) {
         // modern browsers, do a proper dispatchEvent()
         var evt = doc.createEvent(isNative ? 'HTMLEvents' : 'UIEvents')
         evt[isNative ? 'initEvent' : 'initUIEvent'](type, true, true, win, 1)
