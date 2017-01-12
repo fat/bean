@@ -22,6 +22,32 @@
     , str2arr        = function (s, d) { return s.split(d || ' ') }
     , isString       = function (o) { return typeof o == 'string' }
     , isFunction     = function (o) { return typeof o == 'function' }
+    , isObject       = function (o) { return typeof o == 'object' }
+
+    // Try to build an options object. If any key in `maybeOptions`
+    // matches a key in `defaults`, it will be copied into a clone
+    // of `defaults`, thus overriding the default.
+    , buildOptions = function (originalDefaults, maybeOptions) {
+        var defaults = {}
+
+        for (var key in originalDefaults) {
+          if (originalDefaults.hasOwnProperty(key)) {
+            defaults[key] = originalDefaults[key];
+          }
+        }
+
+        if (!isObject(maybeOptions)) {
+          return defaults;
+        }
+
+        for (key in defaults) {
+          if (defaults.hasOwnProperty(key) && maybeOptions.hasOwnProperty(key)) {
+            defaults[key] = maybeOptions[key]
+          }
+        }
+
+        return defaults
+      }
 
       // events that we consider to be 'native', anything not in this list will
       // be treated as a custom event
@@ -432,11 +458,11 @@
 
       // add and remove listeners to DOM elements
     , listener = W3C_MODEL
-        ? function (element, type, add) {
+        ? function (element, type, add, custom, useCapture) {
             // new browsers
-            element[add ? addEvent : removeEvent](type, rootListener, false)
+            element[add ? addEvent : removeEvent](type, rootListener, useCapture)
           }
-        : function (element, type, add, custom) {
+        : function (element, type, add, custom /*, useCapture */) {
             // IE8 and below, use attachEvent/detachEvent and we have to piggy-back propertychange events
             // to simulate event bubbling etc.
             var entry
@@ -471,7 +497,7 @@
         }
       }
 
-    , removeListener = function (element, orgType, handler, namespaces) {
+    , removeListener = function (element, orgType, handler, namespaces, useCapture) {
         var type     = orgType && orgType.replace(nameRegex, '')
           , handlers = registry.get(element, type, null, false)
           , removed  = {}
@@ -493,7 +519,7 @@
         for (i in removed) {
           if (!registry.has(element, removed[i].t, null, false)) {
             // last listener of this type, remove the rootListener
-            listener(element, removed[i].t, false, removed[i].c)
+            listener(element, removed[i].t, false, removed[i].c, useCapture)
           }
         }
       }
@@ -539,10 +565,14 @@
         */
 
       /**
-        * off(element[, eventType(s)[, handler ]])
+        * off(element[, eventType(s)[, handler ], options])
         */
     , off = function (element, typeSpec, fn) {
-        var isTypeStr = isString(typeSpec)
+        var isTypeStr = isString(typeSpec),
+          defaultOpts = {
+            useCapture: false
+          }
+          , opts = buildOptions(defaultOpts, arguments[arguments.length - 1])
           , k, type, namespaces, i
 
         if (isTypeStr && typeSpec.indexOf(' ') > 0) {
@@ -559,10 +589,10 @@
         if (!typeSpec || isTypeStr) {
           // off(el) or off(el, t1.ns) or off(el, .ns) or off(el, .ns1.ns2.ns3)
           if (namespaces = isTypeStr && typeSpec.replace(namespaceRegex, '')) namespaces = str2arr(namespaces, '.')
-          removeListener(element, type, fn, namespaces)
+          removeListener(element, type, fn, namespaces, opts.useCapture)
         } else if (isFunction(typeSpec)) {
           // off(el, fn)
-          removeListener(element, null, typeSpec)
+          removeListener(element, null, typeSpec, null, opts.useCapture)
         } else {
           // off(el, { t1: fn1, t2, fn2 })
           for (k in typeSpec) {
@@ -574,10 +604,13 @@
       }
 
       /**
-        * on(element, eventType(s)[, selector], handler[, args ])
+        * on(element, eventType(s)[, selector], handler[, args ], [options])
         */
     , on = function(element, events, selector, fn) {
-        var originalFn, type, types, i, args, entry, first
+        var defaultOpts = {
+            useCapture: false
+          },
+          originalFn, type, types, i, args, entry, first, opts
 
         //TODO: the undefined check means you can't pass an 'args' argument, fix this perhaps?
         if (selector === undefined && typeof events == 'object') {
@@ -600,6 +633,7 @@
           fn         = originalFn = selector
         }
 
+        opts = buildOptions(defaultOpts, args[args.length - 1])
         types = str2arr(events)
 
         // special case for one(), wrap in a self-removing handler
@@ -620,7 +654,7 @@
           ))
           if (entry[eventSupport] && first) {
             // first event of this type on this element, add root listener
-            listener(element, entry.eventType, true, entry.customType)
+            listener(element, entry.eventType, true, entry.customType, opts.useCapture)
           }
         }
 
@@ -632,12 +666,12 @@
         *
         * Deprecated: kept (for now) for backward-compatibility
         */
-    , add = function (element, events, fn, delfn) {
+    , add = function (element, events, fn, delfn, options) {
         return on.apply(
             null
           , !isString(fn)
               ? slice.call(arguments)
-              : [ element, fn, events, delfn ].concat(arguments.length > 3 ? slice.call(arguments, 5) : [])
+              : [ element, fn, events, delfn ].concat(arguments.length > 3 ? slice.call(arguments, 4) : [])
         )
       }
 

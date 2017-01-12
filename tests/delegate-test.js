@@ -12,8 +12,8 @@ buster.testCase('delegate', {
         assert.same(spy.thisValues[1], target, 'context (this) was set to delegated element')
         assert(spy.firstCall.args[0], 'got an event object argument')
         assert(spy.secondCall && spy.secondCall.args[0], 'got an event object argument')
-        assert.same(spy.firstCall.args[0].currentTarget, target, 'degated event has currentTarget property correctly set')
-        assert.same(spy.secondCall && spy.secondCall.args[0].currentTarget, target, 'degated event has currentTarget property correctly set')
+        assert.same(spy.firstCall.args[0].currentTarget, target, 'delegated event has currentTarget property correctly set')
+        assert.same(spy.secondCall && spy.secondCall.args[0].currentTarget, target, 'delegated event has currentTarget property correctly set')
       }
     }
 
@@ -128,6 +128,7 @@ buster.testCase('delegate', {
   , 'should be able to remove delegated handler': {
         'setUp': function () {
           var self = this
+
           this.runTest = function (done, regFn) {
             var el1     = self.byId('foo')
               , el2     = self.byId('bar')
@@ -288,5 +289,45 @@ buster.testCase('delegate', {
             bean.add(el1, selector, 'click', wrappedSpy)
           })
         }
+    }
+
+    , 'should capture delegated events when capture is specified': {
+        'setUp': function () {
+          var self = this
+
+          this.runTest = function (done, regFn) {
+            var el1     = self.byId('foo')
+              , el2     = self.byId('bar')
+              , el3     = self.byId('baz')
+              , el4     = self.byId('bang')
+              , trigger = self.trigger()
+              , spy     = self.spy()
+              , mock    = self.spy(el1, 'addEventListener')
+              , wrapped = trigger.wrap(spy)
+
+            trigger.after(function () {
+              self.verifySimpleDelegateSpy(spy, el2)
+              assert(mock.getCall(0).args[2], 'should capture')
+              bean.off(el1, 'click', wrapped, {useCapture: true});
+              done()
+            })
+
+            regFn(el1, wrapped)
+
+            Syn.click(el2)
+            Syn.click(el3)
+            Syn.click(el4)
+          }
+        }
+      , 'on()': function (done) {
+        this.runTest(done, function (el1, wrappedSpy) {
+          bean.on(el1, 'click', '.bar', wrappedSpy, {useCapture: true})
+        })
+      }
+      , 'add()': function (done) {
+        this.runTest(done, function (el1, wrappedSpy) {
+          bean.add(el1, '.bar', 'click', wrappedSpy, {useCapture: true})
+        })
+      }
     }
 })
