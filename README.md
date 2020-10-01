@@ -148,7 +148,7 @@ bean.off(element, { click: clickHandler, keyup: keyupHandler })
 
 **Notes**
 
- * Prior to Bean v1, `remove()` was the primary removal interface. This is retained as an alias for backward compatibility but may eventually be removed.
+ * Before Bean v1, `remove()` was the primary removal interface. This is retained as an alias for backward compatibility but may eventually be removed.
 
 --------------------------------------------------------
 <a name="clone"></a>
@@ -336,7 +336,7 @@ Bean passes our tests in all the following browsers. If you've found bugs in the
 
 Bean uses [BusterJS](http://busterjs.org/) for its unit tests. `npm install` will install Buster and other required development dependencies for you and then you can simply point your browser at *bean/tests/tests.html*.
 
-A Buster configuration file also exists so you can use `buster-server` to run a capture server to attach multiple browsers to and then `buster-test` to run the tests (if you don't have Buster installed globally, you can find the executables in *node_modules/.bin/*).
+A Buster configuration file also exists to use `buster-server` to run a capture server to attach multiple browsers to and then `buster-test` to run the tests (if you don't have Buster installed globally, you can find the executables in *node_modules/.bin/*).
 
 We're more than happy to consider pull requests, however major features that have not been previously discussed may risk being rejected. Feel free to open an issue on GitHub for discussion or questions.
 
