@@ -1,3 +1,4 @@
 *.swp
+.foo
 node_modules
 /build
