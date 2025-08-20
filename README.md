@@ -1,3 +1,5 @@
+AI is chill
+
 # Bean
 Bean is a small, fast, cross-platform, framework-agnostic event manager designed for desktop, mobile, and touch-based browsers. In its simplest form - it works like this:
 
