@@ -662,6 +662,7 @@
     , fire = function (element, type, args) {
         var types = str2arr(type)
           , i, j, l, names, handlers
+          , fireArgs
 
         for (i = types.length; i--;) {
           type = types[i].replace(nameRegex, '')
@@ -672,10 +673,12 @@
             // non-native event, either because of a namespace, arguments or a non DOM element
             // iterate over all listeners and manually 'fire'
             handlers = registry.get(element, type, null, false)
-            args = [false].concat(args)
+            // clone the supplied arguments so firing multiple event types doesn't
+            // modify the original array or share mutations between handlers
+            fireArgs = [false].concat(args || [])
             for (j = 0, l = handlers.length; j < l; j++) {
               if (handlers[j].inNamespaces(names)) {
-                handlers[j].handler.apply(element, args)
+                handlers[j].handler.apply(element, fireArgs)
               }
             }
           }

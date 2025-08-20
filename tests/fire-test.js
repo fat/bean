@@ -53,4 +53,19 @@ buster.testCase('fire', {
       bean.on(el, 'foo', trigger.wrap(spy))
       bean.fire(el, 'foo', [1, 2, 3])
     }
+  , 'should pass arguments once when firing multiple event types': function () {
+      // ensure firing multiple events with custom arguments does not mutate
+      // the original array or leak changes between handlers
+      var el     = this.newObj()
+        , logs   = []
+        , handler = function () { logs.push([].slice.call(arguments)) }
+
+      bean.on(el, 'foo', handler)
+      bean.on(el, 'bar', handler)
+      bean.fire(el, 'foo bar', [1, 2])
+
+      assert.equals(logs.length, 2, 'both events fired')
+      assert.equals(logs[0], [1, 2], 'foo args intact')
+      assert.equals(logs[1], [1, 2], 'bar args intact')
+    }
 })
